@@ -1,0 +1,42 @@
+function main(int argc, str[] argv) -> int {
+    int tmp;
+    tmp = 1 + 2 * 3;
+    int tmp2 = double(10 + tmp, return10()) * (10 - 2) - return10();
+    printi(tmp2);
+
+    if 1 {
+        prints("yes sir");
+        if ((1 + 2) > (1 + 0)) {
+            prints("yes sir 2");
+        }
+    }
+
+    if !((1 + 2) > (1 + 0)) {
+        prints("fuck");
+    }
+
+    return tmp2;
+}
+
+function return10() -> int {
+    return 10;
+}
+
+function double(int a, int b) -> int {
+    return (a + b) * 2;
+}
+
+function(assembly) prints(str idk) -> void {
+"    // do assembly"
+}
+
+function(assembly) printi(int idk) -> void {
+"    // do assembly"
+}
+
+function(assembly, noreturn) exit(int error) -> void {
+"
+    mov r1, r0
+    ret
+"
+}
