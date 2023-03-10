@@ -1,7 +1,7 @@
 import { Compare } from "../features/compare.ts";
 import { Datatype, NamedDatatype } from "../features/datatype.ts";
 import { Function, FunctionCall } from "../features/function.ts";
-import { ParserNode, ParserNodeType } from "../parser.ts";
+import { Parser, ParserNode, ParserNodeType } from "../parser.ts";
 
 class NamedVariable {
     datatype: NamedDatatype;
@@ -161,6 +161,15 @@ export class X86_64_Linux {
 						default:
 							throw new Error("Unsupported " + exp.value);
 					}
+				}
+				break;
+			case ParserNodeType.NOT:
+				{
+					code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+					code += `\tcmp ${target}, 0\n`;
+					code += `\tmov ${second_reg}, 1\n`;
+					code += `\tmov ${target}, 0\n`;
+					code += `\tcmove ${target}, ${second_reg}\n`;
 				}
 				break;
 			case ParserNodeType.ADD:
@@ -334,6 +343,14 @@ export class X86_64_Linux {
 						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
 						code += `\tjmp ${loop_back_lable}\n`;
 						code += loop_exit_label + ":\n";
+					}
+					break;
+				case ParserNodeType.LOOP:
+					{
+						const lable = sc.label();
+						code += lable + ":\n";
+						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
+						code += `\tjmp ${lable}\n`;
 					}
 					break;
 				default:

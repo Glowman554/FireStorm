@@ -6,5 +6,13 @@ function spark(int argc, str[] argv) -> int {
 		prints("Hello world!");
 		idx = idx - 1;
 	}
-	return 0;
+
+	idx = 10;
+	loop {
+		printi(idx);
+		if !idx {
+			return 0;
+		}
+		idx = idx - 1;
+	}
 }

@@ -38,6 +38,7 @@ export enum ParserNodeType {
     VARIABLE_ASSIGN_ARRAY = "variable_assign_array",
 
 	CONDITIONAL_LOOP = "conditional_loop",
+	LOOP = "loop",
 }
 
 export class ParserNode {
@@ -391,6 +392,15 @@ export class Parser {
                             }
                         }
                         break;
+					case "loop":
+						{
+                            this.advance();
+                            this.expect(LexerTokenType.LBRACE);
+							const code_block = this.code_block();
+							this.expect(LexerTokenType.RBRACE);
+							body.push(new ParserNode(ParserNodeType.LOOP, undefined, undefined, code_block));
+						}	
+						break;
 
                     default:
                         {
