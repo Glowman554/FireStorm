@@ -36,6 +36,8 @@ export enum ParserNodeType {
 
     VARIABLE_ASSIGN = "variable_assign",
     VARIABLE_ASSIGN_ARRAY = "variable_assign_array",
+
+	CONDITIONAL_LOOP = "conditional_loop",
 }
 
 export class ParserNode {
@@ -215,8 +217,8 @@ export class Parser {
             return undefined;
         }
 
-        // console.log(this.current);
-        // console.log(token);
+        console.log(this.current);
+        console.log(token);
         throw new Error("Invalid factor");
     }
 
@@ -246,6 +248,7 @@ export class Parser {
                 this.advance();
                 result = new ParserNode(ParserNodeType.DIVIDE, result, this.power(), undefined);
             } else if (this.current.id == LexerTokenType.MODULO) {
+				this.advance();
                 result = new ParserNode(ParserNodeType.MODULO, result, this.power(), undefined);
             } else {
                 throw new Error("Invalid term");
@@ -346,6 +349,7 @@ export class Parser {
                     this.advance();
                     // parse expression here
                     body.push(new ParserNode(ParserNodeType.VARIABLE_DECLARATION, this.expression(), undefined, dt));
+					// console.log(this.current);
                     this.expect(LexerTokenType.END_OF_LINE);
                 }
             } else if (this.current.id == LexerTokenType.RBRACE) {
@@ -368,6 +372,20 @@ export class Parser {
                                 const code_block = this.code_block();
                                 this.expect(LexerTokenType.RBRACE);
                                 body.push(new ParserNode(ParserNodeType.IF, expr, undefined, code_block));
+                            } else {
+                                throw new Error("Expected expression");
+                            }
+                        }
+                        break;
+					case "while":
+                        {
+                            this.advance();
+                            const expr = this.expression();
+                            this.expect(LexerTokenType.LBRACE);
+                            if (expr) {
+                                const code_block = this.code_block();
+                                this.expect(LexerTokenType.RBRACE);
+                                body.push(new ParserNode(ParserNodeType.CONDITIONAL_LOOP, expr, undefined, code_block));
                             } else {
                                 throw new Error("Expected expression");
                             }

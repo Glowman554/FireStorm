@@ -60,10 +60,10 @@ async function main() {
 	code = preprocessor.preprocess(code);
     const lexer = new Lexer(code);
     const tokens = lexer.tokenize();
-    // Deno.writeTextFileSync("test.tokens.json", JSON.stringify(tokens, undefined, 4));
+    Deno.writeTextFileSync(output + ".tokens.json", JSON.stringify(tokens, undefined, 4));
     const parser = new Parser(tokens);
     const global = parser.global();
-    // Deno.writeTextFileSync("test.global.json", JSON.stringify(global, undefined, 4));
+    Deno.writeTextFileSync(output + ".global.json", JSON.stringify(global, undefined, 4));
     // const interpreter = new Interpreter(global);
     // interpreter.execute();
 
@@ -81,7 +81,7 @@ async function main() {
 		case "elf":
 			Deno.writeTextFileSync(output + ".asm", generated);
 			await runCommand(`nasm ${output + ".asm"} -felf64 -o ${output + ".o"} -g`);
-			await runCommand(`gcc ${output + ".o"} -o ${output} --static -g`);
+			await runCommand(`gcc ${output + ".o"} -o ${output} --static -fno-pie -g`);
 			break;
 		default:
 			throw new Error("Mode " + mode + " not found!");

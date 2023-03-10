@@ -1,8 +1,8 @@
 import { LexerTokenType } from "../lexer.ts";
 
-export type Datatype = "int" | "str" | "void";
+export type Datatype = "int" | "str" | "void" | "chr";
 
-export const datatypes: Datatype[] = [ "int", "str", "void" ];
+export const datatypes: Datatype[] = [ "int", "str", "void", "chr" ];
 
 export function datatype_token(datatype: Datatype) {
     switch (datatype) {

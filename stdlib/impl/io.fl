@@ -2,8 +2,15 @@ function(assembly) prints(str idk) -> void {
 "
 	mov rdi, rax
 [extern puts]
-	call puts
-	ret
+	jmp puts
+"
+}
+
+function(assembly) printc(chr idk) -> void {
+"
+	mov rdi, rax
+[extern putchar]
+	jmp putchar
 "
 }
 
@@ -11,8 +18,10 @@ function(assembly) printi(int idk) -> void {
 "
 	mov rdi, .fstr
 	mov rsi, rax
+	mov rax, 0
 [extern printf]
 	jmp printf
+
 .fstr: db '%d', 10, 0
 "
 }

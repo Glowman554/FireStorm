@@ -55,6 +55,9 @@ function spark(int argc, str[] argv) -> int {
 
 	printi(fib(10));
 
+	chr testchr = 65;
+	printc(testchr);
+
 	test();
 
     return 1;

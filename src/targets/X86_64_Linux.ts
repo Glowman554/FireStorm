@@ -16,6 +16,8 @@ class NamedVariable {
 				return 8;
 			case "str":
 				return 8; // 8 byte pointer
+			case "chr":
+				return 1;
 			default:
 				throw new Error("Could not get size for " + this.datatype.datatype);
 		}
@@ -68,7 +70,16 @@ export class StackContext {
 		return this.variables.find((vr) => vr.datatype.name == name);
 	} 
 
+	align() {
+		if (this.ptr % 16 != 0) { // we need to have the stack alined. ALWAYS
+			this.ptr += 1;
+			this.align();
+		}
+	}
+
 	generateBegin(): string {
+		this.align();
+		// console.log(this.ptr);
 		return "\tpush rbp\n\tmov rbp, rsp\n\tsub rsp, " + this.ptr + "\n";
 	}
 
@@ -229,6 +240,10 @@ export class X86_64_Linux {
 									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 									code += `\tmov [rbp - ${sc.getPtr(d.name)}], rax\n`;
 									break;
+								case "chr":
+									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+									code += `\tmov [rbp - ${sc.getPtr(d.name)}], al\n`;
+									break;
 								default:
 									throw new Error("Not supported!");
 							}
@@ -246,6 +261,10 @@ export class X86_64_Linux {
 								case "str":
 									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 									code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
+									break;
+								case "chr":
+									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+									code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], al\n`;
 									break;
 								default:
 									throw new Error("Not supported!");
@@ -296,6 +315,19 @@ export class X86_64_Linux {
 						code += `\tjz ${label}\n`;
 						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
 						code += label + ":\n";
+					}
+					break;
+				case ParserNodeType.CONDITIONAL_LOOP:
+					{
+						const loop_back_lable = sc.label();
+						code += loop_back_lable + ":\n";
+						code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+						const loop_exit_label = sc.label();
+						code += "\tcmp rax, 0\n";
+						code += `\tjz ${loop_exit_label}\n`;
+						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
+						code += `\tjmp ${loop_back_lable}\n`;
+						code += loop_exit_label + ":\n";
 					}
 					break;
 				default:

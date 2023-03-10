@@ -5,4 +5,4 @@
 all: $(patsubst %.fl,%.elf,$(wildcard tests/*.fl))
 
 clean:
-	rm tests/*.elf tests/*.o tests/*.asm
+	rm tests/*.elf tests/*.o tests/*.asm tests/*.json
