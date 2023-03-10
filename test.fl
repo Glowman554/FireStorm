@@ -1,21 +1,30 @@
-function main(int argc, str[] argv) -> int {
+function(global) main(int argc, str[] argv) -> int {
     int tmp;
     tmp = 1 + 2 * 3;
     int tmp2 = double(10 + tmp, return10()) * (10 - 2) - return10();
     printi(tmp2);
 
     if 1 {
-        prints("yes sir");
-        if ((1 + 2) > (1 + 0)) {
-            prints("yes sir 2");
-        }
+        // prints("yes sir");
+		printi(123);
+        //if ((1 + 2) > (1 + 0)) {
+        //    prints("yes sir 2");
+        //}
     }
 
-    if !((1 + 2) > (1 + 0)) {
-        prints("fuck");
+	if 0 * 10 {
+        // prints("yes sir");
+		printi(1234);
+        //if ((1 + 2) > (1 + 0)) {
+        //    prints("yes sir 2");
+        //}
     }
 
-    return tmp2;
+    //if !((1 + 2) > (1 + 0)) {
+    //    prints("fuck");
+    //}
+
+    return 1;
 }
 
 function return10() -> int {
@@ -27,16 +36,24 @@ function double(int a, int b) -> int {
 }
 
 function(assembly) prints(str idk) -> void {
-"    // do assembly"
+"
+	ret
+"
 }
 
 function(assembly) printi(int idk) -> void {
-"    // do assembly"
+"
+	mov rdi, .fstr
+	mov rsi, rax
+[extern printf]
+	call printf
+	ret
+.fstr: db '%d', 10, 0
+"
 }
 
 function(assembly, noreturn) exit(int error) -> void {
 "
-    mov r1, r0
     ret
 "
 }
