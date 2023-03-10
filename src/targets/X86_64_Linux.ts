@@ -332,7 +332,7 @@ export class X86_64_Linux {
 			code += this.generateCodeBlock(f, gc, sc, f.body);
 		}
 
-		console.log(sc);
+		// console.log(sc);
 
 		return precode + f.name + ":\n" + sc.generateBegin() + code + ".out:\n" + sc.generateEnd() + aftercode;
 	}
@@ -357,7 +357,7 @@ export class X86_64_Linux {
 
 		code += gc.generate();
 
-		console.log(gc);
+		// console.log(gc);
 
 		return code;
 	}

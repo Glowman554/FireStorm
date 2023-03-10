@@ -1,4 +1,4 @@
 *.json
-test.asm
-test.elf
-test.o
+*.asm
+*.o
+*.elf

@@ -7,7 +7,7 @@ export class Preprocessor {
 	}
 
 	try_read(file: string): string | undefined {
-		console.log(`try_read(${file})`);
+		// console.log(`try_read(${file})`);
 		try {
 			return Deno.readTextFileSync(file);
 		} catch (_) {
