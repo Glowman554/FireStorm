@@ -6,6 +6,12 @@ function(global) main(int argc, str[] argv) -> int {
     int tmp2 = double(10 + tmp, return10()) * (10 - 2) - return10();
     printi(tmp2);
 
+	str test = "hallo";
+	str test2;
+	test2 = "welt";
+	prints(test);
+	prints(test2);
+
     if 1 {
         prints("yes sir");
 		printi(123);

@@ -186,6 +186,10 @@ export class X86_64_Linux {
 									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 									code += `\tmov [rbp - ${sc.getPtr(d.name)}], rax\n`;
 									break;
+								case "str":
+									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+									code += `\tmov [rbp - ${sc.getPtr(d.name)}], rax\n`;
+									break;
 								default:
 									throw new Error("Not supported!");
 							}
@@ -197,6 +201,10 @@ export class X86_64_Linux {
 						if (block[i].a) {
 							switch (sc.getDatatype(block[i].value as string)) {
 								case "int":
+									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+									code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
+									break;
+								case "str":
 									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 									code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
 									break;
