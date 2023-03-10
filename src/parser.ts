@@ -23,6 +23,7 @@ export enum ParserNodeType {
     MODULO = "modulo",
     POWER = "power",
     VARIABLE_LOOKUP = "variable_lookup",
+    VARIABLE_LOOKUP_ARRAY = "variable_lookup_array",
 
     COMPARE = "compare",
     NOT = "not",
@@ -34,6 +35,7 @@ export enum ParserNodeType {
     RETURN = "return",
 
     VARIABLE_ASSIGN = "variable_assign",
+    VARIABLE_ASSIGN_ARRAY = "variable_assign_array",
 }
 
 export class ParserNode {
@@ -199,8 +201,15 @@ export class Parser {
                     throw new Error("Not implemented");
                 }
             } else {
-                // TODO parse array lookup
-                return new ParserNode(ParserNodeType.VARIABLE_LOOKUP, undefined, undefined, token.value);
+				if (this.current && this.current.id == LexerTokenType.LBRACKET) {
+					this.advance();
+					const expr = this.expression();
+					this.expect(LexerTokenType.RBRACKET);
+					this.advance();
+            		return new ParserNode(ParserNodeType.VARIABLE_LOOKUP_ARRAY, expr, undefined, token.value);
+				} else {
+            		return new ParserNode(ParserNodeType.VARIABLE_LOOKUP, undefined, undefined, token.value);
+				}
             }
         } else if (token.id == LexerTokenType.END_OF_LINE) {
             return undefined;
@@ -378,7 +387,24 @@ export class Parser {
                                 } else {
                                     throw new Error("Expected expression");
                                 }
-                            } else {
+                            } else if (this.current && this.current.id as LexerTokenType == LexerTokenType.LBRACKET) {
+								this.advance();
+								const idx_expr = this.expression();
+                                this.expect(LexerTokenType.RBRACKET);
+								this.advance_expect(LexerTokenType.ASSIGN);
+                                if (idx_expr) {
+									this.advance();
+                                    const expr = this.expression();
+									this.expect(LexerTokenType.END_OF_LINE);
+									if (expr) {
+										body.push(new ParserNode(ParserNodeType.VARIABLE_ASSIGN_ARRAY, idx_expr, expr, possible_variable_name));
+									} else {
+										throw new Error("Expected expression");
+									}
+                                } else {
+                                    throw new Error("Expected expression");
+                                }
+							} else {
                                 this.reverse();
                                 const expr = this.expression();
                                 this.expect(LexerTokenType.END_OF_LINE);

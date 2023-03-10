@@ -64,6 +64,10 @@ export class StackContext {
 		return this.variables.find((vr) => vr.datatype.name == name)?.datatype.datatype;
 	} 
 
+	get(name: string): NamedVariable | undefined {
+		return this.variables.find((vr) => vr.datatype.name == name);
+	} 
+
 	generateBegin(): string {
 		return "\tpush rbp\n\tmov rbp, rsp\n\tsub rsp, " + this.ptr + "\n";
 	}
@@ -182,6 +186,23 @@ export class X86_64_Linux {
 					code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
 				}
 				break;
+			case ParserNodeType.VARIABLE_LOOKUP_ARRAY:
+				{
+					code += this.generateExpression(exp.a as ParserNode, gc, sc, second_reg);
+					const nv = sc.get(exp.value as string);
+					if (nv) {
+						if (!nv.datatype.array) {
+							throw new Error("Not an array");
+						}
+						
+						const size = sc.get(exp.value as string)?.size() as number;
+						code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
+						code += `\tmov ${target}, [${target} + ${size} * ${second_reg}]\n`;
+					} else {
+						throw new Error("Not found");
+					}
+				}
+				break;
 			default:
 				throw new Error("Unsupported " + exp.id);
 		}
@@ -229,6 +250,25 @@ export class X86_64_Linux {
 								default:
 									throw new Error("Not supported!");
 							}
+						}
+					}
+					break;
+				case ParserNodeType.VARIABLE_ASSIGN_ARRAY:
+					{
+						code += this.generateExpression(block[i].a as ParserNode, gc, sc, "rbx");
+						code += this.generateExpression(block[i].b as ParserNode, gc, sc, "rcx");
+
+						const nv = sc.get(block[i].value as string);
+						if (nv) {
+							if (!nv.datatype.array) {
+								throw new Error("Not an array");
+							}
+								
+							const size = sc.get(block[i].value as string)?.size() as number;
+							code += `\tmov rax, [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
+							code += `\tmov [rax + ${size} * rbx], rcx\n`;
+						} else {
+							throw new Error("Not found");
 						}
 					}
 					break;

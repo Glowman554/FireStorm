@@ -1,5 +1,9 @@
 function entry(int argc, str[] argv) -> int {
 	printi(argc);
+	prints(argv[0]);
+	if argc == 2 {
+		prints(argv[1]);
+	}
 	prints("Hello world!");
 
     int tmp;
@@ -15,6 +19,17 @@ function entry(int argc, str[] argv) -> int {
 
 	test = test2;
 	prints(test);
+
+	int[] array = allocate(8 * 4);
+	array[0] = 123 * 1;
+	array[1] = 123 * 2;
+	array[2] = 123 * 3;
+	array[3] = 123 * 4;
+	printi(array[0]);
+	printi(array[1]);
+	printi(array[2]);
+	printi(array[3]);
+	deallocate(array);
 
     if 1 {
         prints("yes sir");
@@ -73,8 +88,7 @@ function(assembly) printi(int idk) -> void {
 	mov rdi, .fstr
 	mov rsi, rax
 [extern printf]
-	call printf
-	ret
+	jmp printf
 .fstr: db '%d', 10, 0
 "
 }
@@ -82,6 +96,22 @@ function(assembly) printi(int idk) -> void {
 function(assembly, noreturn) exit(int error) -> void {
 "
     ret
+"
+}
+
+function(assembly) allocate(int size) -> int {
+"
+	mov rdi, rax
+[extern malloc]
+	jmp malloc
+"
+}
+
+function(assembly) deallocate(int ptr) -> void {
+"
+	mov rdi, rax
+[extern free]
+	jmp free
 "
 }
 
