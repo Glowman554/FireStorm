@@ -155,9 +155,9 @@ export class Lexer {
                 case "<":
                     this.advance();
                     if (this.current && this.current as string == "=") {
-                        tokens.push(new LexerToken(LexerTokenType.MORE_EQUALS, undefined, this.pos - 1));
+                        tokens.push(new LexerToken(LexerTokenType.LESS_EQUALS, undefined, this.pos - 1));
                     } else {
-                        tokens.push(new LexerToken(LexerTokenType.MORE, undefined, this.pos));
+                        tokens.push(new LexerToken(LexerTokenType.LESS, undefined, this.pos));
                     }
                     break;
 
