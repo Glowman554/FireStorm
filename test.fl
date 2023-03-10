@@ -1,11 +1,13 @@
 function(global) main(int argc, str[] argv) -> int {
+	prints("Hello world!");
+
     int tmp;
     tmp = 1 + 2 * 3;
     int tmp2 = double(10 + tmp, return10()) * (10 - 2) - return10();
     printi(tmp2);
 
     if 1 {
-        // prints("yes sir");
+        prints("yes sir");
 		printi(123);
         //if ((1 + 2) > (1 + 0)) {
         //    prints("yes sir 2");
@@ -37,6 +39,9 @@ function double(int a, int b) -> int {
 
 function(assembly) prints(str idk) -> void {
 "
+	mov rdi, rax
+[extern puts]
+	call puts
 	ret
 "
 }

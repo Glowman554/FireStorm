@@ -73,14 +73,34 @@ export class StackContext {
 }
 
 export class GlobalContext {
-	variables: NamedVariable[];
+	global_labels: { val: any, name: NamedDatatype }[];
 
 	constructor() {
-		this.variables = [];
+		this.global_labels = [];
 	}
 
+	label(val: any, datatype: Datatype): string {
+		const label = `global_${this.global_labels.length}`;
+		this.global_labels.push({
+			val: val,
+			name: new NamedDatatype(label, datatype, false)
+		});
+		return label;
+	}
+
+
 	generate(): string {
-		return "";
+		let code = "[section .data]\n";
+		for (let i = 0; i < this.global_labels.length; i++) {
+			switch (this.global_labels[i].name.datatype) {
+				case "str":
+					code += `${this.global_labels[i].name.name}: db "${this.global_labels[i].val}", 0\n`;
+					break;
+				default:
+					throw new Error("Unsupported");
+			}
+		}
+		return code;
 	}
 }
 
@@ -100,6 +120,9 @@ export class X86_64_Linux {
 		switch (exp.id) {
 			case ParserNodeType.NUMBER:
 				code += `\tmov ${target}, ${exp.value as number}\n`;
+				break;
+			case ParserNodeType.STRING:
+				code += `\tmov ${target}, ${gc.label(exp.value as string, "str")}\n`;
 				break;
 			case ParserNodeType.ADD:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
@@ -247,7 +270,7 @@ export class X86_64_Linux {
 		
 		const gc = new GlobalContext();
 
-		let code = "";
+		let code = "[section .code]\n";
 
 		for (let i = 0; i < tmp.length; i++) {
 			switch (tmp[i].id) {
@@ -260,6 +283,8 @@ export class X86_64_Linux {
 		}
 
 		code += gc.generate();
+
+		console.log(gc);
 
 		return code;
 	}
