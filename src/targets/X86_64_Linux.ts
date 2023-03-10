@@ -336,7 +336,8 @@ export class X86_64_Linux {
 		
 		const gc = new GlobalContext();
 
-		let code = "[section .code]\n";
+		let code = "[bits 64]\n";
+		code += "[section .text]\n";
 
 		for (let i = 0; i < tmp.length; i++) {
 			switch (tmp[i].id) {
