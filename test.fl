@@ -13,6 +13,9 @@ function entry(int argc, str[] argv) -> int {
 	prints(test);
 	prints(test2);
 
+	test = test2;
+	prints(test);
+
     if 1 {
         prints("yes sir");
 		printi(123);
@@ -33,7 +36,19 @@ function entry(int argc, str[] argv) -> int {
     //    prints("fuck");
     //}
 
+	printi(fib(10));
+
     return 1;
+}
+
+function fib(int n) -> int {
+    if n == 0 {
+        return n;
+	}
+	if n == 1 {
+        return n;
+	}
+    return fib(n - 1) + fib(n - 2); 
 }
 
 function return10() -> int {

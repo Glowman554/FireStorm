@@ -1,3 +1,4 @@
+import { Compare } from "../features/compare.ts";
 import { Datatype, NamedDatatype } from "../features/datatype.ts";
 import { Function, FunctionCall } from "../features/function.ts";
 import { ParserNode, ParserNodeType } from "../parser.ts";
@@ -124,6 +125,23 @@ export class X86_64_Linux {
 			case ParserNodeType.STRING:
 				code += `\tmov ${target}, ${gc.label(exp.value as string, "str")}\n`;
 				break;
+			case ParserNodeType.COMPARE:
+				{
+					const third_reg = this.registers[this.registers.indexOf(target) + 2];
+					code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+					code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
+					switch (exp.value as Compare) {
+						case "equals":
+							code += `\tcmp ${target}, ${second_reg}\n`;
+							code += `\tmov ${third_reg}, 0\n`;
+							code += `\tmov ${target}, 1\n`;
+							code += `\tcmovne ${target}, ${third_reg}\n`;
+							break;
+						default:
+							throw new Error("Unsupported " + exp.value);
+					}
+				}
+				break;
 			case ParserNodeType.ADD:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
@@ -232,7 +250,7 @@ export class X86_64_Linux {
 				case ParserNodeType.IF:
 					{
 						code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-						let label = sc.label();
+						const label = sc.label();
 						// skip if rax == 0
 						code += "\tcmp rax, 0\n";
 						code += `\tjz ${label}\n`;
