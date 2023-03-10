@@ -1,0 +1,18 @@
+function(assembly) prints(str idk) -> void {
+"
+	mov rdi, rax
+[extern puts]
+	call puts
+	ret
+"
+}
+
+function(assembly) printi(int idk) -> void {
+"
+	mov rdi, .fstr
+	mov rsi, rax
+[extern printf]
+	jmp printf
+.fstr: db '%d', 10, 0
+"
+}

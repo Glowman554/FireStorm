@@ -310,6 +310,7 @@ export class X86_64_Linux {
 		const sc = new StackContext();
 		let code = "";
 		let precode = "";
+		let aftercode = "";
 
 		if (f.attributes.includes("global")) {
 			precode += `[global ${f.name}]\n`;
@@ -318,6 +319,11 @@ export class X86_64_Linux {
 		if (f.attributes.includes("assembly")) {
 			return precode + f.name + ":\n" + code + f.body[0].value as string;
 		} else {
+			if (f.attributes.includes("noreturn")) {
+				aftercode += `\tcall unreachable\n`;
+			} else {
+				aftercode += `\tret\n`;
+			}
 			for (let i = 0; i < f._arguments.length; i++) {
 				sc.register(new NamedVariable(f._arguments[i]));
 				code += `\tmov [rbp - ${sc.getPtr(f._arguments[i].name)}], ${this.registers[i]}\n`;
@@ -328,7 +334,7 @@ export class X86_64_Linux {
 
 		console.log(sc);
 
-		return precode + f.name + ":\n" + sc.generateBegin() + code + ".out:\n" + sc.generateEnd() + "\tret\n";
+		return precode + f.name + ":\n" + sc.generateBegin() + code + ".out:\n" + sc.generateEnd() + aftercode;
 	}
 
 	generate(): string {

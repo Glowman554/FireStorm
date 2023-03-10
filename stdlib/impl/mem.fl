@@ -1,0 +1,15 @@
+function(assembly) allocate(int size) -> int {
+"
+	mov rdi, rax
+[extern malloc]
+	jmp malloc
+"
+}
+
+function(assembly) deallocate(int ptr) -> void {
+"
+	mov rdi, rax
+[extern free]
+	jmp free
+"
+}

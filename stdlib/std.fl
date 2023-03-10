@@ -1,0 +1,23 @@
+$include <impl/io.fl>
+$include <impl/mem.fl>
+
+function(assembly, global) main() -> int {
+"
+	mov rax, rdi
+	mov rbx, rsi
+	jmp spark
+"
+}
+
+function(assembly, noreturn) do_exit(int code) -> void {
+"
+	mov rdi, rax
+[extern exit]
+	jmp exit
+"
+}
+
+function(noreturn) unreachable() -> void {
+	prints("Reached unreachable code!");
+	do_exit(1);
+}

@@ -1,4 +1,6 @@
-function entry(int argc, str[] argv) -> int {
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
 	printi(argc);
 	prints(argv[0]);
 	if argc == 2 {
@@ -53,6 +55,8 @@ function entry(int argc, str[] argv) -> int {
 
 	printi(fib(10));
 
+	test();
+
     return 1;
 }
 
@@ -74,51 +78,7 @@ function double(int a, int b) -> int {
     return (a + b) * 2;
 }
 
-function(assembly) prints(str idk) -> void {
-"
-	mov rdi, rax
-[extern puts]
-	call puts
-	ret
-"
-}
 
-function(assembly) printi(int idk) -> void {
-"
-	mov rdi, .fstr
-	mov rsi, rax
-[extern printf]
-	jmp printf
-.fstr: db '%d', 10, 0
-"
-}
+function(noreturn) test() -> void {
 
-function(assembly, noreturn) exit(int error) -> void {
-"
-    ret
-"
-}
-
-function(assembly) allocate(int size) -> int {
-"
-	mov rdi, rax
-[extern malloc]
-	jmp malloc
-"
-}
-
-function(assembly) deallocate(int ptr) -> void {
-"
-	mov rdi, rax
-[extern free]
-	jmp free
-"
-}
-
-function(assembly, global) main() -> int {
-"
-	mov rax, rdi
-	mov rbx, rsi
-	jmp entry
-"
 }

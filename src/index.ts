@@ -1,10 +1,13 @@
 import { Interpreter } from "./interpreter.ts";
 import { Lexer } from "./lexer.ts";
 import { Parser } from "./parser.ts";
+import { Preprocessor } from "./preprocessor.ts";
 import { X86_64_Linux } from "./targets/X86_64_Linux.ts";
 
 function main() {
-    const code = Deno.readTextFileSync("test.fl");
+    let code = Deno.readTextFileSync("test.fl");
+	const preprocessor = new Preprocessor(["./stdlib/"]);
+	code = preprocessor.preprocess(code);
     const lexer = new Lexer(code);
     const tokens = lexer.tokenize();
     Deno.writeTextFileSync("test.tokens.json", JSON.stringify(tokens, undefined, 4));
