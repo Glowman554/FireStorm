@@ -17,5 +17,9 @@ function fib(int n) -> int {
 		i = i + 1;
 	}
 
-	return f[n];
+	int ret = f[n];
+
+	deallocate(f);
+
+	return ret;
 }
