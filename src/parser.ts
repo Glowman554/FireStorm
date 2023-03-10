@@ -465,7 +465,15 @@ export class Parser {
                 case LexerTokenType.ID:
                     {
                         if (datatypes.includes(this.current.value as Datatype)) {
-                            throw new Error("GLobal variables not yet supported!");
+							const dt = this.datatype(true) as NamedDatatype;
+							if (this.current && this.current.id as LexerTokenType == LexerTokenType.END_OF_LINE) {
+								(global.value as ParserNode[]).push(new ParserNode(ParserNodeType.VARIABLE_DECLARATION, undefined, undefined, dt));
+							} else {
+								this.expect(LexerTokenType.ASSIGN);
+								this.advance();
+								(global.value as ParserNode[]).push(new ParserNode(ParserNodeType.VARIABLE_DECLARATION, this.expression(), undefined, dt));
+								this.expect(LexerTokenType.END_OF_LINE);
+							}
                         } else {
                             switch (this.current.value) {
                                 case "function":

@@ -1,0 +1,11 @@
+$include <std.fl>
+
+int g1 = 10;
+str g2 = "hello";
+
+function spark(int argc, str[] argv) -> int {
+	printi(g1);
+	g1 = 20;
+	printi(g1);
+	prints(g2);
+}

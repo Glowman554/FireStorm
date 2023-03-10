@@ -1,6 +1,7 @@
 import { Compare } from "../features/compare.ts";
 import { Datatype, NamedDatatype } from "../features/datatype.ts";
 import { Function, FunctionCall } from "../features/function.ts";
+import { LexerTokenType } from "../lexer.ts";
 import { Parser, ParserNode, ParserNodeType } from "../parser.ts";
 
 class NamedVariable {
@@ -104,13 +105,38 @@ export class GlobalContext {
 		return label;
 	}
 
+	namedLabel(val: any, datatype: NamedDatatype) {
+		if (this.global_labels.find((v) => v.name.name == datatype.name)) {
+			throw new Error("Already exsists!");
+		}
+		this.global_labels.push({
+			val: val,
+			name: datatype
+		});
+	}
+
+	getPtr(name: string): string | undefined {
+		return this.global_labels.find((vr) => vr.name.name == name)?.name.name;
+	}
+
+	getDatatype(name: string): Datatype | undefined {
+		return this.global_labels.find((vr) => vr.name.name == name)?.name.datatype;
+	} 
+
+	get(name: string): NamedVariable {
+		return new NamedVariable(this.global_labels.find((vr) => vr.name.name == name)?.name as NamedDatatype);
+	} 
+
 
 	generate(): string {
 		let code = "[section .data]\n";
 		for (let i = 0; i < this.global_labels.length; i++) {
 			switch (this.global_labels[i].name.datatype) {
 				case "str":
-					code += `${this.global_labels[i].name.name}: db "${this.global_labels[i].val}", 0\n`;
+					code += `${this.global_labels[i].name.name}: db "${this.global_labels[i].val || 0}", 0\n`;
+					break;
+				case "int":
+					code += `${this.global_labels[i].name.name}: dq ${this.global_labels[i].val || 0}\n`;
 					break;
 				default:
 					throw new Error("Unsupported");
@@ -209,7 +235,15 @@ export class X86_64_Linux {
 				break;
 			case ParserNodeType.VARIABLE_LOOKUP:
 				{
-					code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
+					if (sc.getPtr(exp.value as string)) {
+						code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
+					} else {
+						if (gc.getDatatype(exp.value as string) == "str") {
+							code += `\tmov ${target}, ${gc.getPtr(exp.value as string)}\n`;
+						} else {
+							code += `\tmov ${target}, [${gc.getPtr(exp.value as string)}]\n`;
+						}
+					}
 				}
 				break;
 			case ParserNodeType.VARIABLE_LOOKUP_ARRAY:
@@ -268,21 +302,37 @@ export class X86_64_Linux {
 				case ParserNodeType.VARIABLE_ASSIGN:
 					{
 						if (block[i].a) {
-							switch (sc.getDatatype(block[i].value as string)) {
-								case "int":
-									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-									code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
-									break;
-								case "str":
-									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-									code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
-									break;
-								case "chr":
-									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-									code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], al\n`;
-									break;
-								default:
-									throw new Error("Not supported!");
+							const scd = sc.getDatatype(block[i].value as string);
+							if (scd) {
+								switch (scd) {
+									case "int":
+										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+										code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
+										break;
+									case "str":
+										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+										code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
+										break;
+									case "chr":
+										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+										code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], al\n`;
+										break;
+									default:
+										throw new Error("Not supported!");
+								}
+							} else {
+								switch (gc.getDatatype(block[i].value as string)) {
+									case "int":
+										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+										code += `\tmov [${gc.getPtr(block[i].value as string)}], rax\n`;
+										break;
+									case "chr":
+										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+										code += `\tmov [${gc.getPtr(block[i].value as string)}], al\n`;
+										break;
+									default:
+										throw new Error("Not supported!");
+								}
 							}
 						}
 					}
@@ -404,6 +454,17 @@ export class X86_64_Linux {
 			switch (tmp[i].id) {
 				case ParserNodeType.FUNCTION:
 					code += this.generateFunction(tmp[i].value as Function, gc);
+					break;
+				case ParserNodeType.VARIABLE_DECLARATION:
+					if (tmp[i].a) {
+						if (tmp[i].a?.id == ParserNodeType.STRING || tmp[i].a?.id == ParserNodeType.NUMBER) {
+							gc.namedLabel(tmp[i].a?.value, tmp[i].value as NamedDatatype);
+						} else {
+							throw new Error("Only string and number are supported for globals!");
+						}
+					} else {
+						gc.namedLabel(undefined, tmp[i].value as NamedDatatype);
+					}
 					break;
 				default:
 					throw new Error("Unsupported " + tmp[i].id);
