@@ -13,5 +13,7 @@ function spark(int argc, str[] argv) -> int {
 
 	g3 = allocate(8 * 64);
 	g3[0] = 10;
+	g3[2] = 20;
 	printi(g3[0]);
+	printi(g3[2]);
 }

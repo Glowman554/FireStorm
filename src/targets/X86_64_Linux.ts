@@ -4,6 +4,19 @@ import { Function, FunctionCall } from "../features/function.ts";
 import { LexerTokenType } from "../lexer.ts";
 import { Parser, ParserNode, ParserNodeType } from "../parser.ts";
 
+function dt_to_size(dt: Datatype) {
+	switch (dt) {
+		case "int":
+			return 8;
+		case "str":
+			return 8; // 8 byte pointer
+		case "chr":
+			return 1;
+		default:
+			throw new Error("Could not get size for " + dt);
+	}
+}
+
 class NamedVariable {
     datatype: NamedDatatype;
 
@@ -12,16 +25,7 @@ class NamedVariable {
     }
 
 	size(): number {
-		switch (this.datatype.datatype) {
-			case "int":
-				return 8;
-			case "str":
-				return 8; // 8 byte pointer
-			case "chr":
-				return 1;
-			default:
-				throw new Error("Could not get size for " + this.datatype.datatype);
-		}
+		return dt_to_size(this.datatype.datatype);
 	}
 }
 
@@ -171,6 +175,88 @@ export class X86_64_Linux {
 		}
 	}
 
+	resolveFunction(name: string): ParserNode | undefined {
+        for (const i of this.global.value as ParserNode[]) {
+            if ((i.value as Function).name == name) {
+                return i;
+            }
+        }
+    }
+
+	generateArrayAccess(write: boolean, ptr: string, idx: string, reg: string, dt: Datatype) {
+		if (write) {
+			switch (dt) {
+				case "int":
+					return `\tmov [${ptr} + ${dt_to_size(dt)} * ${idx}], ${reg}\n`;
+				case "str":
+					return `\tmov [${ptr} + ${dt_to_size(dt)} * ${idx}], ${reg}\n`;
+				case "chr":
+					return `\tmov [${ptr} + ${dt_to_size(dt)} * ${idx}], ${this.toLowReg(reg)}\n`;
+				default:
+					throw new Error("Not supported!");
+			} 
+		} else {
+			switch (dt) {
+				case "int":
+					return `\tmov ${reg}, [${ptr} + ${dt_to_size(dt)} * ${idx}]\n`;
+				case "str":
+					return `\tmov ${reg}, [${ptr} + ${dt_to_size(dt)} * ${idx}]\n`;
+				case "chr":
+					return `\tmov ${this.toLowReg(reg)}, [${ptr} + ${dt_to_size(dt)} * ${idx}]\n`;
+				default:
+					throw new Error("Not supported!");
+			} 
+		}
+	}
+
+	generateStackVariableAccess(write: boolean, ptr: number, reg: string, dt: Datatype) {
+		if (write) {
+			switch (dt) {
+				case "int":
+					return `\tmov [rbp - ${ptr}], ${reg}\n`;
+				case "str":
+					return `\tmov [rbp - ${ptr}], ${reg}\n`;
+				case "chr":
+					return `\tmov [rbp - ${ptr}], ${this.toLowReg(reg)}\n`;
+				default:
+					throw new Error("Not supported!");
+			}
+		} else {
+			switch (dt) {
+				case "int":
+					return `\tmov ${reg}, [rbp - ${ptr}]\n`;
+				case "str":
+					return `\tmov ${reg}, [rbp - ${ptr}]\n`;
+				case "chr":
+					return `\tmov ${this.toLowReg(reg)}, [rbp - ${ptr}]\n`;
+				default:
+					throw new Error("Not supported!");
+			}
+		}
+	}
+
+	generateGlobalVariableAccess(write: boolean, ptr: string, reg: string, dt: Datatype) {
+		if (write) {
+			switch (dt) {
+				case "int":
+					return `\tmov [${ptr}], ${reg}\n`;
+				case "chr":
+					return `\tmov [${ptr}], ${this.toLowReg(reg)}\n`;
+				default:
+					throw new Error("Not supported!");
+			}
+		} else {
+			switch (dt) {
+				case "int":
+					return `\tmov ${reg}, [${ptr}]\n`;
+				case "chr":
+					return `\tmov ${this.toLowReg(reg)}, [${ptr}]\n`;
+				default:
+					throw new Error("Not supported!");
+			}
+		}
+	}
+
 	// generate expression and store result in target
 	generateExpression(exp: ParserNode, gc: GlobalContext, sc: StackContext, target: string = this.registers[0]): string {
 		let code = "";
@@ -237,17 +323,26 @@ export class X86_64_Linux {
 				break;
 			case ParserNodeType.FUNCTION_CALL:
 				{
-					const f = exp.value as FunctionCall;
+					const fc = exp.value as FunctionCall;
 
 					for (let i = 0; i < this.registers.indexOf(target); i++) {
 						code += `\tpush ${this.registers[i]}\n`;
 					}
 
-					for (let i = 0; i < f._arguments.length; i++) {
-						code += this.generateExpression(f._arguments[i], gc, sc, this.registers[i]);
+					for (let i = 0; i < fc._arguments.length; i++) {
+						code += this.generateExpression(fc._arguments[i], gc, sc, this.registers[i]);
 					}
 
-					code += `\tcall ${f.name}\n`;
+					const f = this.resolveFunction(fc.name)?.value as Function | undefined;
+					if (f) {
+						if (f._arguments.length != fc._arguments.length) {
+							throw new Error("To manny or not enough arguments!");
+						}
+					} else {
+						throw new Error("Function " + fc.name + " not found!");
+					}
+
+					code += `\tcall ${fc.name}\n`;
 					code += `\tmov ${target}, rax\n`;
 
 					for (let i = 0; i < this.registers.indexOf(target); i++) {
@@ -258,12 +353,12 @@ export class X86_64_Linux {
 			case ParserNodeType.VARIABLE_LOOKUP:
 				{
 					if (this.lookupContext(exp.value as string, sc, gc) == sc) {
-						code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
+						code += this.generateStackVariableAccess(false, sc.getPtr(exp.value as string) as number, target, sc.getDatatype(exp.value as string) as Datatype);
 					} else {
 						if (gc.getDatatype(exp.value as string) == "str") {
 							code += `\tmov ${target}, ${gc.getPtr(exp.value as string)}\n`;
 						} else {
-							code += `\tmov ${target}, [${gc.getPtr(exp.value as string)}]\n`;
+							code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value as string) as string, target, gc.getDatatype(exp.value as string) as Datatype);
 						}
 					}
 				}
@@ -287,8 +382,7 @@ export class X86_64_Linux {
 							code += "\tpop rcx\n";
 							code += `\tand ${target}, ${third_reg}\n`;
 						} else {
-							const size = sc.get(exp.value as string)?.size() as number;
-							code += `\tmov ${target}, [${target} + ${size} * ${second_reg}]\n`;
+							code += this.generateArrayAccess(false, target, second_reg, target, sc.getDatatype(exp.value as string) as Datatype);
 						}
 					} else {
 						code += `\tmov ${target}, [${gc.getPtr(exp.value as string)}]\n`;
@@ -296,8 +390,7 @@ export class X86_64_Linux {
 						if (!nv.datatype.array) {
 							throw new Error("Bit indexing not supported here!");
 						} else {
-							const size = gc.get(exp.value as string)?.size() as number;
-							code += `\tmov ${target}, [${target} + ${size} * ${second_reg}]\n`;
+							code += this.generateArrayAccess(false, target, second_reg, target, gc.getDatatype(exp.value as string) as Datatype);
 						}
 					}
 				}
@@ -318,23 +411,8 @@ export class X86_64_Linux {
 						sc.register(new NamedVariable(d));
 
 						if (block[i].a) {
-					
-							switch (d.datatype) {
-								case "int":
-									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-									code += `\tmov [rbp - ${sc.getPtr(d.name)}], rax\n`;
-									break;
-								case "str":
-									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-									code += `\tmov [rbp - ${sc.getPtr(d.name)}], rax\n`;
-									break;
-								case "chr":
-									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-									code += `\tmov [rbp - ${sc.getPtr(d.name)}], al\n`;
-									break;
-								default:
-									throw new Error("Not supported!");
-							}
+							code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+							code += this.generateStackVariableAccess(true, sc.getPtr(d.name) as number, "rax", d.datatype);
 						}
 					}
 					break;
@@ -342,36 +420,12 @@ export class X86_64_Linux {
 					{
 						if (block[i].a) {
 							const ctx = this.lookupContext(block[i].value as string, sc, gc);
+							code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+
 							if (ctx == sc) {
-								switch (sc.getDatatype(block[i].value as string)) {
-									case "int":
-										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-										code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
-										break;
-									case "str":
-										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-										code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
-										break;
-									case "chr":
-										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-										code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], al\n`;
-										break;
-									default:
-										throw new Error("Not supported!");
-								}
+								code += this.generateStackVariableAccess(true, sc.getPtr(block[i].value as string) as number, "rax", sc.getDatatype(block[i].value as string) as Datatype);
 							} else {
-								switch (gc.getDatatype(block[i].value as string)) {
-									case "int":
-										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-										code += `\tmov [${gc.getPtr(block[i].value as string)}], rax\n`;
-										break;
-									case "chr":
-										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-										code += `\tmov [${gc.getPtr(block[i].value as string)}], al\n`;
-										break;
-									default:
-										throw new Error("Not supported!");
-								}
+								code += this.generateGlobalVariableAccess(true, gc.getPtr(block[i].value as string) as string, "rax", gc.getDatatype(block[i].value as string) as Datatype);
 							}
 						}
 					}
@@ -386,44 +440,39 @@ export class X86_64_Linux {
 							if (!nv.datatype.array) {
 								throw new Error("Bit assignment not supported");
 							}
-								
-							const size = sc.get(block[i].value as string)?.size() as number;
+
 							code += `\tmov rax, [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
-							code += `\tmov [rax + ${size} * rbx], rcx\n`;
+							code += this.generateArrayAccess(true, "rax", "rbx", "rcx", sc.getDatatype(block[i].value as string) as Datatype);
 						} else {
 							const nv = gc.get(block[i].value as string);
 							if (!nv.datatype.array) {
 								throw new Error("Bit assignment not supported");
 							}
 
-							const size = gc.get(block[i].value as string)?.size() as number;
-
-							switch (gc.getDatatype(block[i].value as string)) {
-								case "int":
-									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-									code += `\tmov rax, [${gc.getPtr(block[i].value as string)}]\n`;
-									code += `\tmov [rax + ${size} * rbx], rcx\n`;
-									break;
-								case "chr":
-									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-									code += `\tmov rax, [${gc.getPtr(block[i].value as string)}]\n`;
-									code += `\tmov [rax + ${size} * rbx], rcx\n`;
-									break;
-								default:
-									throw new Error("Not supported!");
-							} 
+							code += `\tmov rax, [${gc.getPtr(block[i].value as string)}]\n`;
+							code += this.generateArrayAccess(true, "rax", "rbx", "rcx", gc.getDatatype(block[i].value as string) as Datatype);
 						}
+
 					}
 					break;
 				case ParserNodeType.FUNCTION_CALL:
 					{
-						const f = block[i].value as FunctionCall;
+						const fc = block[i].value as FunctionCall;
 		
-						for (let i = 0; i < f._arguments.length; i++) {
-							code += this.generateExpression(f._arguments[i], gc, sc, this.registers[i]);
+						for (let i = 0; i < fc._arguments.length; i++) {
+							code += this.generateExpression(fc._arguments[i], gc, sc, this.registers[i]);
+						}
+
+						const f = this.resolveFunction(fc.name)?.value as Function | undefined;
+						if (f) {
+							if (f._arguments.length != fc._arguments.length) {
+								throw new Error("To manny or not enough arguments!");
+							}
+						} else {
+							throw new Error("Function " + fc.name + " not found!");
 						}
 		
-						code += `\tcall ${f.name}\n`;		
+						code += `\tcall ${fc.name}\n`;		
 					}
 					break;
 				case ParserNodeType.RETURN:
