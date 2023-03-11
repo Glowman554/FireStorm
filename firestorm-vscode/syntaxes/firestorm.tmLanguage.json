@@ -1,0 +1,70 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "FireStorm",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#base-types"
+		},
+		{
+			"include": "#preprocessor"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.firestorm",
+				"match": "\\b(if|while|loop|return|do|function)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.firestorm",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": []
+		},
+		"comments": {
+			"name": "comment.firestorm",
+			"begin": "\\/\\/",
+			"end": "$\\n?",
+			"patterns": []
+		},
+		"base-types": {
+			"patterns": [
+				{
+					"name": "storage.type.firestorm",
+					"match": "\\b(void|int|str|chr)\\b"
+				},
+				{
+					"name": "constant.numeric.firestorm",
+					"match": "\\b[bx0-9a-fA-F]+\\b"
+				}
+			]
+		},
+		"preprocessor": {
+			"name": "meta.preprocessor.firestorm",
+			"begin": "\\$",
+			"end": "\n",
+			"patterns": [
+				{
+					"name": "string.unquoted.firestorm",
+					"begin": "<",
+					"end": ">"
+				},
+				{
+					"name": "keyword.other.firestorm",
+					"match": "\\b(include)\\b"
+				}
+			]
+		}
+	},
+	"scopeName": "source.firestorm"
+}
