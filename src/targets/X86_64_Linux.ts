@@ -3,14 +3,14 @@ import { Datatype, NamedDatatype } from "../features/datatype.ts";
 import { Function, FunctionCall } from "../features/function.ts";
 import { ParserNode, ParserNodeType } from "../parser.ts";
 
-function dt_to_size(dt: Datatype) {
+function dt_to_size(dt: Datatype, array: boolean) {
 	switch (dt) {
 		case "int":
 			return 8;
 		case "str":
 			return 8; // 8 byte pointer
 		case "chr":
-			return 1;
+			return array ? 8 : 1;
 		default:
 			throw new Error("Could not get size for " + dt);
 	}
@@ -24,7 +24,7 @@ class NamedVariable {
     }
 
 	size(): number {
-		return dt_to_size(this.datatype.datatype);
+		return dt_to_size(this.datatype.datatype, this.datatype.array);
 	}
 }
 
@@ -186,84 +186,101 @@ export class X86_64_Linux {
 		if (write) {
 			switch (dt) {
 				case "int":
-					return `\tmov [${ptr} + ${dt_to_size(dt)} * ${idx}], ${reg}\n`;
+					// array needts to be false since we want the size of the elements not of the array ptr
+					return `\tmov [${ptr} + ${dt_to_size(dt, false)} * ${idx}], ${reg}\n`;
 				case "str":
-					return `\tmov [${ptr} + ${dt_to_size(dt)} * ${idx}], ${reg}\n`;
+					return `\tmov [${ptr} + ${dt_to_size(dt, false)} * ${idx}], ${reg}\n`;
 				case "chr":
-					return `\tmov [${ptr} + ${dt_to_size(dt)} * ${idx}], ${this.toLowReg(reg)}\n`;
+					return `\tmov [${ptr} + ${dt_to_size(dt, false)} * ${idx}], ${this.toLowReg(reg)}\n`;
 				default:
 					throw new Error("Not supported!");
 			} 
 		} else {
 			switch (dt) {
 				case "int":
-					return `\tmov ${reg}, [${ptr} + ${dt_to_size(dt)} * ${idx}]\n`;
+					return `\tmov ${reg}, [${ptr} + ${dt_to_size(dt, false)} * ${idx}]\n`;
 				case "str":
-					return `\tmov ${reg}, [${ptr} + ${dt_to_size(dt)} * ${idx}]\n`;
+					return `\tmov ${reg}, [${ptr} + ${dt_to_size(dt, false)} * ${idx}]\n`;
 				case "chr":
-					return `\tmov ${this.toLowReg(reg)}, [${ptr} + ${dt_to_size(dt)} * ${idx}]\n`;
+					return `\tmov ${this.toLowReg(reg)}, [${ptr} + ${dt_to_size(dt, false)} * ${idx}]\n`;
 				default:
 					throw new Error("Not supported!");
 			} 
 		}
 	}
 
-	generateStackVariableAccess(write: boolean, ptr: number, reg: string, dt: Datatype) {
+	generateStackVariableAccess(write: boolean, ptr: number, reg: string, dt: NamedDatatype) {
 		if (write) {
-			switch (dt) {
+			switch (dt.datatype) {
 				case "int":
 					return `\tmov [rbp - ${ptr}], ${reg}\n`;
 				case "str":
 					return `\tmov [rbp - ${ptr}], ${reg}\n`;
 				case "chr":
-					return `\tmov [rbp - ${ptr}], ${this.toLowReg(reg)}\n`;
+					if (dt.array) {
+						return `\tmov [rbp - ${ptr}], ${reg}\n`;
+					} else {
+						return `\tmov [rbp - ${ptr}], ${this.toLowReg(reg)}\n`;
+					}
 				default:
 					throw new Error("Not supported!");
 			}
 		} else {
-			switch (dt) {
+			switch (dt.datatype) {
 				case "int":
 					return `\tmov ${reg}, [rbp - ${ptr}]\n`;
 				case "str":
 					return `\tmov ${reg}, [rbp - ${ptr}]\n`;
 				case "chr":
-					return `\tmov ${this.toLowReg(reg)}, [rbp - ${ptr}]\n`;
+					if (dt.array) {
+						return `\tmov ${reg}, [rbp - ${ptr}]\n`;
+					} else {
+						return `\tmov ${this.toLowReg(reg)}, [rbp - ${ptr}]\n`;
+					}
 				default:
 					throw new Error("Not supported!");
 			}
 		}
 	}
 
-	generateGlobalVariableAccess(write: boolean, ptr: string, reg: string, dt: Datatype) {
+	generateGlobalVariableAccess(write: boolean, ptr: string, reg: string, dt: NamedDatatype) {
 		if (write) {
-			switch (dt) {
+			switch (dt.datatype) {
 				case "int":
 					return `\tmov [${ptr}], ${reg}\n`;
 				case "chr":
-					return `\tmov [${ptr}], ${this.toLowReg(reg)}\n`;
+					if (dt.array) {
+						return `\tmov [${ptr}], ${reg}\n`;
+					} else {
+						return `\tmov [${ptr}], ${this.toLowReg(reg)}\n`;
+					}
 				default:
 					throw new Error("Not supported!");
 			}
 		} else {
-			switch (dt) {
+			switch (dt.datatype) {
 				case "int":
 					return `\tmov ${reg}, [${ptr}]\n`;
 				case "chr":
-					return `\tmov ${this.toLowReg(reg)}, [${ptr}]\n`;
+					if (dt.array) {
+						return `\tmov ${reg}, [${ptr}]\n`;
+					} else {
+						return `\tmov ${this.toLowReg(reg)}, [${ptr}]\n`;
+					}
 				default:
 					throw new Error("Not supported!");
 			}
 		}
 	}
 
-	datatypeToNasmSize(dt: Datatype): string {
+	datatypeToNasmSize(dt: Datatype, array: boolean): string {
 		switch (dt) {
 			case "int":
 				return "qword";
 			case "str":
 				return "qword";
 			case "chr":
-				return "byte";
+				return array ? "qword" : "byte";
 			default:
 				throw new Error("Not supported!");
 		}
@@ -393,12 +410,13 @@ export class X86_64_Linux {
 			case ParserNodeType.VARIABLE_LOOKUP:
 				{
 					if (this.lookupContext(exp.value as string, sc, gc) == sc) {
-						code += this.generateStackVariableAccess(false, sc.getPtr(exp.value as string) as number, target, sc.getDatatype(exp.value as string) as Datatype);
+						code += this.generateStackVariableAccess(false, sc.getPtr(exp.value as string) as number, target, (sc.get(exp.value as string) as NamedVariable).datatype);
 					} else {
 						if (gc.getDatatype(exp.value as string) == "str") {
 							code += `\tmov ${target}, ${gc.getPtr(exp.value as string)}\n`;
 						} else {
-							code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value as string) as string, target, gc.getDatatype(exp.value as string) as Datatype);
+							console.log(exp);
+							code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value as string) as string, target, (gc.get(exp.value as string) as NamedVariable).datatype);
 						}
 					}
 				}
@@ -452,7 +470,7 @@ export class X86_64_Linux {
 
 						if (block[i].a) {
 							code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-							code += this.generateStackVariableAccess(true, sc.getPtr(d.name) as number, "rax", d.datatype);
+							code += this.generateStackVariableAccess(true, sc.getPtr(d.name) as number, "rax", d);
 						}
 					}
 					break;
@@ -463,9 +481,9 @@ export class X86_64_Linux {
 							code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 
 							if (ctx == sc) {
-								code += this.generateStackVariableAccess(true, sc.getPtr(block[i].value as string) as number, "rax", sc.getDatatype(block[i].value as string) as Datatype);
+								code += this.generateStackVariableAccess(true, sc.getPtr(block[i].value as string) as number, "rax", (sc.get(block[i].value as string) as NamedVariable).datatype);
 							} else {
-								code += this.generateGlobalVariableAccess(true, gc.getPtr(block[i].value as string) as string, "rax", gc.getDatatype(block[i].value as string) as Datatype);
+								code += this.generateGlobalVariableAccess(true, gc.getPtr(block[i].value as string) as string, "rax", (gc.get(block[i].value as string) as NamedVariable).datatype);
 							}
 						}
 					}
@@ -475,9 +493,9 @@ export class X86_64_Linux {
 						const ctx = this.lookupContext(block[i].value as string, sc, gc);
 
 						if (ctx == sc) {
-							code += `\tinc ${this.datatypeToNasmSize(sc.getDatatype(block[i].value as string) as Datatype)} [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
+							code += `\tinc ${this.datatypeToNasmSize(sc.getDatatype(block[i].value as string) as Datatype, (sc.get(block[i].value as string) as NamedVariable).datatype.array)} [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
 						} else {
-							code += `\tinc ${this.datatypeToNasmSize(gc.getDatatype(block[i].value as string) as Datatype)} [${gc.getPtr(block[i].value as string)}]\n`;
+							code += `\tinc ${this.datatypeToNasmSize(gc.getDatatype(block[i].value as string) as Datatype, (gc.get(block[i].value as string) as NamedVariable).datatype.array)} [${gc.getPtr(block[i].value as string)}]\n`;
 						}
 					}
 					break;
@@ -486,9 +504,9 @@ export class X86_64_Linux {
 						const ctx = this.lookupContext(block[i].value as string, sc, gc);
 	
 						if (ctx == sc) {
-							code += `\tdec ${this.datatypeToNasmSize(sc.getDatatype(block[i].value as string) as Datatype)} [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
+							code += `\tdec ${this.datatypeToNasmSize(sc.getDatatype(block[i].value as string) as Datatype, (sc.get(block[i].value as string) as NamedVariable).datatype.array)} [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
 						} else {
-							code += `\tdec ${this.datatypeToNasmSize(gc.getDatatype(block[i].value as string) as Datatype)} [${gc.getPtr(block[i].value as string)}]\n`;
+							code += `\tdec ${this.datatypeToNasmSize(gc.getDatatype(block[i].value as string) as Datatype, (gc.get(block[i].value as string) as NamedVariable).datatype.array)} [${gc.getPtr(block[i].value as string)}]\n`;
 						}
 					}
 					break;
@@ -554,23 +572,33 @@ export class X86_64_Linux {
 					break;
 				case ParserNodeType.CONDITIONAL_LOOP:
 					{
-						const loop_back_lable = sc.label();
-						code += loop_back_lable + ":\n";
+						const loop_back_label = sc.label();
+						code += loop_back_label + ":\n";
 						code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 						const loop_exit_label = sc.label();
 						code += "\tcmp rax, 0\n";
 						code += `\tjz ${loop_exit_label}\n`;
 						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
-						code += `\tjmp ${loop_back_lable}\n`;
+						code += `\tjmp ${loop_back_label}\n`;
 						code += loop_exit_label + ":\n";
+					}
+					break;
+				case ParserNodeType.POST_CONDITIONAL_LOOP:
+					{
+						const loop_back_label = sc.label();
+						code += loop_back_label + ":\n";
+						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
+						code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+						code += "\tcmp rax, 0\n";
+						code += `\tjnz ${loop_back_label}\n`;
 					}
 					break;
 				case ParserNodeType.LOOP:
 					{
-						const lable = sc.label();
-						code += lable + ":\n";
+						const label = sc.label();
+						code += label + ":\n";
 						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
-						code += `\tjmp ${lable}\n`;
+						code += `\tjmp ${label}\n`;
 					}
 					break;
 				default:

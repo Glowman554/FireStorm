@@ -41,6 +41,7 @@ export enum ParserNodeType {
 	VARIABLE_DECREASE = "variable_decrease",
 
 	CONDITIONAL_LOOP = "conditional_loop",
+	POST_CONDITIONAL_LOOP = "post_conditional_loop",
 	LOOP = "loop",
 }
 
@@ -395,6 +396,26 @@ export class Parser {
                             }
                         }
                         break;
+					case "do":
+						{
+							this.advance_expect(LexerTokenType.LBRACE);
+							const code_block = this.code_block();
+							this.expect(LexerTokenType.RBRACE);
+							this.advance_expect(LexerTokenType.ID);
+							if (this.current && this.current.value == "while") {
+								this.advance();
+								const expr = this.expression();
+								this.expect(LexerTokenType.END_OF_LINE);
+								if (expr) {
+									body.push(new ParserNode(ParserNodeType.POST_CONDITIONAL_LOOP, expr, undefined, code_block));
+								} else {
+									throw new Error("Expected expression");
+								}
+							} else {
+								throw new Error("Expected while");
+							}
+						}
+						break;
 					case "loop":
 						{
                             this.advance();
