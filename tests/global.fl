@@ -3,9 +3,15 @@ $include <std.fl>
 int g1 = 10;
 str g2 = "hello";
 
+int[] g3;
+
 function spark(int argc, str[] argv) -> int {
 	printi(g1);
 	g1 = 20;
 	printi(g1);
 	prints(g2);
+
+	g3 = allocate(8 * 64);
+	g3[0] = 10;
+	printi(g3[0]);
 }

@@ -115,6 +115,7 @@ export class GlobalContext {
 		});
 	}
 
+
 	getPtr(name: string): string | undefined {
 		return this.global_labels.find((vr) => vr.name.name == name)?.name.name;
 	}
@@ -160,6 +161,16 @@ export class X86_64_Linux {
 		return this.low_registers[this.registers.indexOf(input)];
 	}
 
+	lookupContext(name: string, sc: StackContext, gc: GlobalContext): StackContext | GlobalContext {
+		if (sc.get(name)) {
+			return sc;
+		} else if (gc.get(name)) {
+			return gc;
+		} else {
+			throw new Error(name + "not found!");
+		}
+	}
+
 	// generate expression and store result in target
 	generateExpression(exp: ParserNode, gc: GlobalContext, sc: StackContext, target: string = this.registers[0]): string {
 		let code = "";
@@ -188,6 +199,12 @@ export class X86_64_Linux {
 							code += `\tmov ${third_reg}, 1\n`;
 							code += `\tmov ${target}, 0\n`;
 							code += `\tcmovle ${target}, ${third_reg}\n`;
+							break;
+						case "less":
+							code += `\tcmp ${target}, ${second_reg}\n`;
+							code += `\tmov ${third_reg}, 1\n`;
+							code += `\tmov ${target}, 0\n`;
+							code += `\tcmovl ${target}, ${third_reg}\n`;
 							break;
 						default:
 							throw new Error("Unsupported " + exp.value);
@@ -240,7 +257,7 @@ export class X86_64_Linux {
 				break;
 			case ParserNodeType.VARIABLE_LOOKUP:
 				{
-					if (sc.getPtr(exp.value as string)) {
+					if (this.lookupContext(exp.value as string, sc, gc) == sc) {
 						code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
 					} else {
 						if (gc.getDatatype(exp.value as string) == "str") {
@@ -254,9 +271,9 @@ export class X86_64_Linux {
 			case ParserNodeType.VARIABLE_LOOKUP_ARRAY:
 				{
 					code += this.generateExpression(exp.a as ParserNode, gc, sc, second_reg);
-					code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
-					const nv = sc.get(exp.value as string);
-					if (nv) {
+					if (this.lookupContext(exp.value as string, sc, gc) == sc) {
+						code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
+						const nv = sc.get(exp.value as string) as NamedVariable;
 						if (!nv.datatype.array) {
 							let third_reg = this.registers[this.registers.indexOf(target) + 2];
 							if (third_reg == "rcx") {
@@ -274,7 +291,14 @@ export class X86_64_Linux {
 							code += `\tmov ${target}, [${target} + ${size} * ${second_reg}]\n`;
 						}
 					} else {
-						throw new Error("Not found");
+						code += `\tmov ${target}, [${gc.getPtr(exp.value as string)}]\n`;
+						const nv = gc.get(exp.value as string) as NamedVariable;
+						if (!nv.datatype.array) {
+							throw new Error("Bit indexing not supported here!");
+						} else {
+							const size = gc.get(exp.value as string)?.size() as number;
+							code += `\tmov ${target}, [${target} + ${size} * ${second_reg}]\n`;
+						}
 					}
 				}
 				break;
@@ -317,9 +341,9 @@ export class X86_64_Linux {
 				case ParserNodeType.VARIABLE_ASSIGN:
 					{
 						if (block[i].a) {
-							const scd = sc.getDatatype(block[i].value as string);
-							if (scd) {
-								switch (scd) {
+							const ctx = this.lookupContext(block[i].value as string, sc, gc);
+							if (ctx == sc) {
+								switch (sc.getDatatype(block[i].value as string)) {
 									case "int":
 										code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 										code += `\tmov [rbp - ${sc.getPtr(block[i].value as string)}], rax\n`;
@@ -357,8 +381,8 @@ export class X86_64_Linux {
 						code += this.generateExpression(block[i].a as ParserNode, gc, sc, "rbx");
 						code += this.generateExpression(block[i].b as ParserNode, gc, sc, "rcx");
 
-						const nv = sc.get(block[i].value as string);
-						if (nv) {
+						if (this.lookupContext(block[i].value as string, sc, gc) == sc) {
+							const nv = sc.get(block[i].value as string) as NamedVariable;
 							if (!nv.datatype.array) {
 								throw new Error("Bit assignment not supported");
 							}
@@ -367,7 +391,27 @@ export class X86_64_Linux {
 							code += `\tmov rax, [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
 							code += `\tmov [rax + ${size} * rbx], rcx\n`;
 						} else {
-							throw new Error("Not found");
+							const nv = gc.get(block[i].value as string);
+							if (!nv.datatype.array) {
+								throw new Error("Bit assignment not supported");
+							}
+
+							const size = gc.get(block[i].value as string)?.size() as number;
+
+							switch (gc.getDatatype(block[i].value as string)) {
+								case "int":
+									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+									code += `\tmov rax, [${gc.getPtr(block[i].value as string)}]\n`;
+									code += `\tmov [rax + ${size} * rbx], rcx\n`;
+									break;
+								case "chr":
+									code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+									code += `\tmov rax, [${gc.getPtr(block[i].value as string)}]\n`;
+									code += `\tmov [rax + ${size} * rbx], rcx\n`;
+									break;
+								default:
+									throw new Error("Not supported!");
+							} 
 						}
 					}
 					break;
@@ -472,6 +516,10 @@ export class X86_64_Linux {
 					break;
 				case ParserNodeType.VARIABLE_DECLARATION:
 					if (tmp[i].a) {
+						if ((tmp[i].value as NamedDatatype).array) {
+							throw new Error("Global array inizializers not supported!");
+						}
+
 						if (tmp[i].a?.id == ParserNodeType.STRING || tmp[i].a?.id == ParserNodeType.NUMBER) {
 							gc.namedLabel(tmp[i].a?.value, tmp[i].value as NamedDatatype);
 						} else {
