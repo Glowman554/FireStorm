@@ -1,8 +1,7 @@
 import { Compare } from "../features/compare.ts";
 import { Datatype, NamedDatatype } from "../features/datatype.ts";
 import { Function, FunctionCall } from "../features/function.ts";
-import { LexerTokenType } from "../lexer.ts";
-import { Parser, ParserNode, ParserNodeType } from "../parser.ts";
+import { ParserNode, ParserNodeType } from "../parser.ts";
 
 function dt_to_size(dt: Datatype) {
 	switch (dt) {
@@ -333,6 +332,34 @@ export class X86_64_Linux {
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
 				code += `\timul ${target}, ${second_reg}\n`;
+				break;
+			case ParserNodeType.DIVIDE:
+				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
+
+				if (target != "rax") code += "\tpush rax\n";
+				if (target != "rdx") code += "\tpush rdx\n";
+				code += `\tmov rax, ${target}\n`;
+				code += "\tcqo\n";
+				code += `\tidiv ${second_reg}\n`;
+				code += `\tmov ${target}, rax\n`;
+				if (target != "rdx") code += "\tpop rdx\n";
+				if (target != "rax") code += "\tpop rax\n";
+
+				break;
+			case ParserNodeType.MODULO:
+				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
+	
+				if (target != "rax") code += "\tpush rax\n";
+				if (target != "rdx") code += "\tpush rdx\n";
+				code += `\tmov rax, ${target}\n`;
+				code += "\tcqo\n";
+				code += `\tidiv ${second_reg}\n`;
+				code += `\tmov ${target}, rdx\n`;
+				if (target != "rdx") code += "\tpop rdx\n";
+				if (target != "rax") code += "\tpop rax\n";
+	
 				break;
 			case ParserNodeType.FUNCTION_CALL:
 				{

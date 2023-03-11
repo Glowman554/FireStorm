@@ -1,0 +1,9 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> void {
+	printi(10 + 20);
+	printi(10 - 20);
+	printi(10 * 20);
+	printi(20 / 10);
+	printi(10 % 20);
+}
