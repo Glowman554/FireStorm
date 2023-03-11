@@ -339,10 +339,10 @@ export class X86_64_Linux {
 
 				if (target != "rax") code += "\tpush rax\n";
 				if (target != "rdx") code += "\tpush rdx\n";
-				code += `\tmov rax, ${target}\n`;
+				if (target != "rax") code += `\tmov rax, ${target}\n`;
 				code += "\tcqo\n";
 				code += `\tidiv ${second_reg}\n`;
-				code += `\tmov ${target}, rax\n`;
+				if (target != "rax") code += `\tmov ${target}, rax\n`;
 				if (target != "rdx") code += "\tpop rdx\n";
 				if (target != "rax") code += "\tpop rax\n";
 
@@ -353,10 +353,10 @@ export class X86_64_Linux {
 	
 				if (target != "rax") code += "\tpush rax\n";
 				if (target != "rdx") code += "\tpush rdx\n";
-				code += `\tmov rax, ${target}\n`;
+				if (target != "rax") code += `\tmov rax, ${target}\n`;
 				code += "\tcqo\n";
 				code += `\tidiv ${second_reg}\n`;
-				code += `\tmov ${target}, rdx\n`;
+				if (target != "rdx") code += `\tmov ${target}, rdx\n`;
 				if (target != "rdx") code += "\tpop rdx\n";
 				if (target != "rax") code += "\tpop rax\n";
 	
