@@ -378,6 +378,71 @@ export class X86_64_Linux {
 				if (target != "rax") code += "\tpop rax\n";
 	
 				break;
+			case ParserNodeType.OR:
+				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
+				code += `\tor ${target}, ${second_reg}\n`;
+				break;
+			case ParserNodeType.AND:
+				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
+				code += `\tand ${target}, ${second_reg}\n`;
+				break;
+			case ParserNodeType.XOR:
+				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
+				code += `\txor ${target}, ${second_reg}\n`;
+				break;
+			case ParserNodeType.BIT_NOT:
+				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+				code += `\tnot ${target}\n`;
+				break;
+			case ParserNodeType.SHIFT_LEFT:
+				{
+					code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+					code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
+					let third_reg = this.registers[this.registers.indexOf(target) + 2];
+					if (third_reg == "rcx") {
+						third_reg = "rdx";
+					}
+					if (target == "rcx") {
+						code += `\tmov ${third_reg}, ${target}\n`;
+						code += "\tpush rcx\n";
+						code += `\tmov rcx, ${second_reg}\n`;
+						code += `\tshl ${third_reg}, cl\n`;
+						code += "\tpop rcx\n";
+						code += `\tmov ${target}, ${third_reg}\n`;
+					} else {
+						code += "\tpush rcx\n";
+						code += `\tmov rcx, ${second_reg}\n`;
+						code += `\tshl ${target}, cl\n`;
+						code += "\tpop rcx\n";
+					}
+				}
+				break;
+			case ParserNodeType.SHIFT_RIGHT:
+				{
+					code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
+					code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
+					let third_reg = this.registers[this.registers.indexOf(target) + 2];
+					if (third_reg == "rcx") {
+						third_reg = "rdx";
+					}
+					if (target == "rcx") {
+						code += `\tmov ${third_reg}, ${target}\n`;
+						code += "\tpush rcx\n";
+						code += `\tmov rcx, ${second_reg}\n`;
+						code += `\tshr ${third_reg}, cl\n`;
+						code += "\tpop rcx\n";
+						code += `\tmov ${target}, ${third_reg}\n`;
+					} else {
+						code += "\tpush rcx\n";
+						code += `\tmov rcx, ${second_reg}\n`;
+						code += `\tshr ${target}, cl\n`;
+						code += "\tpop rcx\n";
+					}
+				}
+				break;
 			case ParserNodeType.FUNCTION_CALL:
 				{
 					const fc = exp.value as FunctionCall;

@@ -16,7 +16,12 @@ export enum LexerTokenType {
     MULTIPLY = "multiply", // *
     NUMBER = "number", 
     MODULO = "modulo", // %
-    POWER = "power", // ^
+    XOR = "xor", // ^
+    AND = "and", // &
+    OR = "or", // |
+	SHIFT_LEFT = "shift_left", // <<
+	SHIFT_RIGHT = "shift_right", // >>
+	BIT_NOT = "bit_not", // ~
     END_OF_LINE = "eol", // ;
 
     EQUALS = "equals", // ==
@@ -146,8 +151,17 @@ export class Lexer {
                     tokens.push(new LexerToken(LexerTokenType.MODULO, undefined, this.pos));
                     break;
                 case "^":
-                    tokens.push(new LexerToken(LexerTokenType.POWER, undefined, this.pos));
+                    tokens.push(new LexerToken(LexerTokenType.XOR, undefined, this.pos));
                     break;
+				case "|":
+					tokens.push(new LexerToken(LexerTokenType.OR, undefined, this.pos));
+					break;
+				case "&":
+					tokens.push(new LexerToken(LexerTokenType.AND, undefined, this.pos));
+					break;
+				case "~":
+					tokens.push(new LexerToken(LexerTokenType.BIT_NOT, undefined, this.pos));
+					break;
                 case ";":
                     tokens.push(new LexerToken(LexerTokenType.END_OF_LINE, undefined, this.pos));
                     break;
@@ -156,6 +170,8 @@ export class Lexer {
                     this.advance();
                     if (this.current && this.current as string == "=") {
                         tokens.push(new LexerToken(LexerTokenType.MORE_EQUALS, undefined, this.pos - 1));
+					} else if (this.current && this.current as string == ">") {
+                        tokens.push(new LexerToken(LexerTokenType.SHIFT_RIGHT, undefined, this.pos - 1));
                     } else {
                         tokens.push(new LexerToken(LexerTokenType.MORE, undefined, this.pos));
                     }
@@ -165,7 +181,9 @@ export class Lexer {
                     this.advance();
                     if (this.current && this.current as string == "=") {
                         tokens.push(new LexerToken(LexerTokenType.LESS_EQUALS, undefined, this.pos - 1));
-                    } else {
+					} else if (this.current && this.current as string == "<") {
+                        tokens.push(new LexerToken(LexerTokenType.SHIFT_LEFT, undefined, this.pos - 1));
+					} else {
                         tokens.push(new LexerToken(LexerTokenType.LESS, undefined, this.pos));
                     }
                     break;

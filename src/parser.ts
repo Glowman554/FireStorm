@@ -43,6 +43,13 @@ export enum ParserNodeType {
 	CONDITIONAL_LOOP = "conditional_loop",
 	POST_CONDITIONAL_LOOP = "post_conditional_loop",
 	LOOP = "loop",
+
+	SHIFT_LEFT = "shift_left",
+	SHIFT_RIGHT = "shift_right",
+	AND = "and",
+	OR = "or",
+	XOR = "xor",
+	BIT_NOT = "bit_not",
 }
 
 export class ParserNode {
@@ -179,6 +186,9 @@ export class Parser {
         } else if (token.id == LexerTokenType.NOT) {
             this.advance();
             return new ParserNode(ParserNodeType.NOT, this.expression(), undefined, undefined);
+		} else if (token.id == LexerTokenType.BIT_NOT) {
+            this.advance();
+            return new ParserNode(ParserNodeType.BIT_NOT, this.expression(), undefined, undefined);
         } else if (token.id == LexerTokenType.PLUS) {
             this.advance();
             return new ParserNode(ParserNodeType.PLUS, this.factor(), undefined, undefined);
@@ -227,13 +237,25 @@ export class Parser {
         throw new Error("Invalid factor");
     }
 
-    power(): ParserNode | undefined {
+    bit_logic(): ParserNode | undefined {
         let result = this.factor();
 
-        while (this.current && (this.current.id == LexerTokenType.POWER)) {
-            if (this.current.id == LexerTokenType.POWER) {
+        while (this.current && (this.current.id == LexerTokenType.AND || this.current.id == LexerTokenType.OR || this.current.id == LexerTokenType.XOR || this.current.id == LexerTokenType.SHIFT_LEFT || this.current.id == LexerTokenType.SHIFT_RIGHT)) {
+            if (this.current.id == LexerTokenType.AND) {
                 this.advance();
-                result = new ParserNode(ParserNodeType.POWER, result, this.factor(), undefined);
+                result = new ParserNode(ParserNodeType.AND, result, this.factor(), undefined);
+			} else if (this.current.id == LexerTokenType.OR) {
+				this.advance();
+                result = new ParserNode(ParserNodeType.OR, result, this.factor(), undefined);
+			} else if (this.current.id == LexerTokenType.XOR) {
+				this.advance();
+                result = new ParserNode(ParserNodeType.XOR, result, this.factor(), undefined);
+			} else if (this.current.id == LexerTokenType.SHIFT_LEFT) {
+				this.advance();
+                result = new ParserNode(ParserNodeType.SHIFT_LEFT, result, this.factor(), undefined);
+			} else if (this.current.id == LexerTokenType.SHIFT_RIGHT) {
+				this.advance();
+                result = new ParserNode(ParserNodeType.SHIFT_RIGHT, result, this.factor(), undefined);
             } else {
                 throw new Error("Invalid power");
             }
@@ -243,18 +265,18 @@ export class Parser {
     }
 
     term(): ParserNode | undefined {
-        let result = this.power();
+        let result = this.bit_logic();
 
         while (this.current && (this.current.id == LexerTokenType.MULTIPLY || this.current.id == LexerTokenType.DIVIDE || this.current.id == LexerTokenType.MODULO)) {
             if (this.current.id == LexerTokenType.MULTIPLY) {
                 this.advance()
-                result = new ParserNode(ParserNodeType.MULTIPLY, result, this.power(), undefined);
+                result = new ParserNode(ParserNodeType.MULTIPLY, result, this.bit_logic(), undefined);
             } else if (this.current.id == LexerTokenType.DIVIDE) {
                 this.advance();
-                result = new ParserNode(ParserNodeType.DIVIDE, result, this.power(), undefined);
+                result = new ParserNode(ParserNodeType.DIVIDE, result, this.bit_logic(), undefined);
             } else if (this.current.id == LexerTokenType.MODULO) {
 				this.advance();
-                result = new ParserNode(ParserNodeType.MODULO, result, this.power(), undefined);
+                result = new ParserNode(ParserNodeType.MODULO, result, this.bit_logic(), undefined);
             } else {
                 throw new Error("Invalid term");
             }
