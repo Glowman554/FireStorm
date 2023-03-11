@@ -1,9 +1,17 @@
-function(assembly) prints(str idk) -> void {
-"
-	mov rdi, rax
-[extern puts]
-	jmp puts
-"
+// function(assembly) prints(str idk) -> void {
+// "
+//	mov rdi, rax
+//[extern puts]
+//	jmp puts
+// "
+// }
+
+function prints(chr[] in) -> void {
+	while in[0] {
+		printc(in[0]);
+		in++;
+	}
+	printc(10);
 }
 
 function(assembly) printc(chr idk) -> void {

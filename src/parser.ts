@@ -476,8 +476,8 @@ export class Parser {
                         break;
                 }
             } else {
-                // console.log(this.current);
-                // console.log(body);
+                console.log(this.current);
+                console.log(body);
                 throw new Error("Expected ID");
             }
 

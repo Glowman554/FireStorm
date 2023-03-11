@@ -202,7 +202,7 @@ export class X86_64_Linux {
 				case "str":
 					return `\tmov ${reg}, [${ptr} + ${dt_to_size(dt, false)} * ${idx}]\n`;
 				case "chr":
-					return `\tmov ${this.toLowReg(reg)}, [${ptr} + ${dt_to_size(dt, false)} * ${idx}]\n`;
+					return `\tmov ${this.toLowReg(reg)}, [${ptr} + ${dt_to_size(dt, false)} * ${idx}]\n\tand ${reg}, 0xff\n`;
 				default:
 					throw new Error("Not supported!");
 			} 
@@ -235,7 +235,7 @@ export class X86_64_Linux {
 					if (dt.array) {
 						return `\tmov ${reg}, [rbp - ${ptr}]\n`;
 					} else {
-						return `\tmov ${this.toLowReg(reg)}, [rbp - ${ptr}]\n`;
+						return `\tmov ${this.toLowReg(reg)}, [rbp - ${ptr}]\n\tand ${reg}, 0xff\n`;
 					}
 				default:
 					throw new Error("Not supported!");
@@ -265,7 +265,7 @@ export class X86_64_Linux {
 					if (dt.array) {
 						return `\tmov ${reg}, [${ptr}]\n`;
 					} else {
-						return `\tmov ${this.toLowReg(reg)}, [${ptr}]\n`;
+						return `\tmov ${this.toLowReg(reg)}, [${ptr}]\n\tand ${reg}, 0xff\n`;
 					}
 				default:
 					throw new Error("Not supported!");
