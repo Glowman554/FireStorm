@@ -3,3 +3,5 @@
 *.o
 *.elf
 tests/*.json
+explorer/compiler.js
+explorer/res

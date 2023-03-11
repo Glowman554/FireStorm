@@ -415,7 +415,7 @@ export class X86_64_Linux {
 						if (gc.getDatatype(exp.value as string) == "str") {
 							code += `\tmov ${target}, ${gc.getPtr(exp.value as string)}\n`;
 						} else {
-							console.log(exp);
+							// console.log(exp);
 							code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value as string) as string, target, (gc.get(exp.value as string) as NamedVariable).datatype);
 						}
 					}
