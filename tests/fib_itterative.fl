@@ -14,7 +14,7 @@ function fib(int n) -> int {
 	int i = 2;
 	while i <= n {
 		f[i] = f[i - 1] + f[i - 2];
-		i = i + 1;
+		i++;
 	}
 
 	int ret = f[n];

@@ -26,6 +26,9 @@ export enum LexerTokenType {
     MORE = "more", // >
     MORE_EQUALS = "more_equals", // >=
     NOT = "not", // !
+
+	INCREASE = "increase", // ++
+	DECREASE = "decrease", // --
 }
 
 export type LexerTokenValue =  undefined|string|number;
@@ -119,7 +122,13 @@ export class Lexer {
                     tokens.push(new LexerToken(LexerTokenType.COMMA, undefined, this.pos));
                     break;
                 case "+":
-                    tokens.push(new LexerToken(LexerTokenType.PLUS, undefined, this.pos));
+					this.advance();
+					if (this.current && this.current as string == "+") {
+                    	tokens.push(new LexerToken(LexerTokenType.INCREASE, undefined, this.pos));
+					} else {
+						this.reverse();
+                    	tokens.push(new LexerToken(LexerTokenType.PLUS, undefined, this.pos));
+					}
                     break;
                 case "=":
                     this.advance();
@@ -175,7 +184,9 @@ export class Lexer {
                     this.advance();
                     if (this.current as string == ">") {
                         tokens.push(new LexerToken(LexerTokenType.ARROW, undefined, this.pos - 1));
-                    } else {
+                    } else if (this.current as string == "-") {
+                        tokens.push(new LexerToken(LexerTokenType.DECREASE, undefined, this.pos - 1));
+					} else {
                         this.reverse();
                         tokens.push(new LexerToken(LexerTokenType.MINUS, undefined, this.pos));
                     }

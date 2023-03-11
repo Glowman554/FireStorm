@@ -37,6 +37,9 @@ export enum ParserNodeType {
     VARIABLE_ASSIGN = "variable_assign",
     VARIABLE_ASSIGN_ARRAY = "variable_assign_array",
 
+	VARIABLE_INCREASE = "variable_increase",
+	VARIABLE_DECREASE = "variable_decrease",
+
 	CONDITIONAL_LOOP = "conditional_loop",
 	LOOP = "loop",
 }
@@ -415,6 +418,12 @@ export class Parser {
                                 } else {
                                     throw new Error("Expected expression");
                                 }
+							} else if (this.current && this.current.id as LexerTokenType == LexerTokenType.INCREASE) {
+                                this.advance_expect(LexerTokenType.END_OF_LINE);
+								body.push(new ParserNode(ParserNodeType.VARIABLE_INCREASE, undefined, undefined, possible_variable_name));
+							} else if (this.current && this.current.id as LexerTokenType == LexerTokenType.DECREASE) {
+                                this.advance_expect(LexerTokenType.END_OF_LINE);
+								body.push(new ParserNode(ParserNodeType.VARIABLE_DECREASE, undefined, undefined, possible_variable_name));
                             } else if (this.current && this.current.id as LexerTokenType == LexerTokenType.LBRACKET) {
 								this.advance();
 								const idx_expr = this.expression();

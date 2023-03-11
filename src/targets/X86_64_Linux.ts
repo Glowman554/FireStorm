@@ -257,6 +257,19 @@ export class X86_64_Linux {
 		}
 	}
 
+	datatypeToNasmSize(dt: Datatype): string {
+		switch (dt) {
+			case "int":
+				return "qword";
+			case "str":
+				return "qword";
+			case "chr":
+				return "byte";
+			default:
+				throw new Error("Not supported!");
+		}
+	}
+
 	// generate expression and store result in target
 	generateExpression(exp: ParserNode, gc: GlobalContext, sc: StackContext, target: string = this.registers[0]): string {
 		let code = "";
@@ -427,6 +440,28 @@ export class X86_64_Linux {
 							} else {
 								code += this.generateGlobalVariableAccess(true, gc.getPtr(block[i].value as string) as string, "rax", gc.getDatatype(block[i].value as string) as Datatype);
 							}
+						}
+					}
+					break;
+				case ParserNodeType.VARIABLE_INCREASE:
+					{
+						const ctx = this.lookupContext(block[i].value as string, sc, gc);
+
+						if (ctx == sc) {
+							code += `\tinc ${this.datatypeToNasmSize(sc.getDatatype(block[i].value as string) as Datatype)} [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
+						} else {
+							code += `\tinc ${this.datatypeToNasmSize(gc.getDatatype(block[i].value as string) as Datatype)} [${gc.getPtr(block[i].value as string)}]\n`;
+						}
+					}
+					break;
+				case ParserNodeType.VARIABLE_DECREASE:
+					{
+						const ctx = this.lookupContext(block[i].value as string, sc, gc);
+	
+						if (ctx == sc) {
+							code += `\tdec ${this.datatypeToNasmSize(sc.getDatatype(block[i].value as string) as Datatype)} [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
+						} else {
+							code += `\tdec ${this.datatypeToNasmSize(gc.getDatatype(block[i].value as string) as Datatype)} [${gc.getPtr(block[i].value as string)}]\n`;
 						}
 					}
 					break;

@@ -12,6 +12,6 @@ function print_bits(int x) -> void {
 	int idx = 0;
 	while idx <= 7 {
 		printi(!!x[idx]);
-		idx = idx + 1;
+		idx++;
 	}
 }
