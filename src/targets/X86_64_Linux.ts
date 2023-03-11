@@ -154,6 +154,11 @@ export class X86_64_Linux {
 	}
 
 	registers = [ "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" ]; // TODO: complete
+	low_registers = [ "al", "bl", "cl", "dl", "sil", "dil", "r8l", "r9l", "r10l", "r11l", "r12l", "r13l", "r14l", "r15l" ]; // TODO: complete
+
+	toLowReg(input: string) {
+		return this.low_registers[this.registers.indexOf(input)];
+	}
 
 	// generate expression and store result in target
 	generateExpression(exp: ParserNode, gc: GlobalContext, sc: StackContext, target: string = this.registers[0]): string {
@@ -249,15 +254,25 @@ export class X86_64_Linux {
 			case ParserNodeType.VARIABLE_LOOKUP_ARRAY:
 				{
 					code += this.generateExpression(exp.a as ParserNode, gc, sc, second_reg);
+					code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
 					const nv = sc.get(exp.value as string);
 					if (nv) {
 						if (!nv.datatype.array) {
-							throw new Error("Not an array");
+							let third_reg = this.registers[this.registers.indexOf(target) + 2];
+							if (third_reg == "rcx") {
+								third_reg = "rdx";
+							}
+							// index the bits!
+							code += `\tmov ${third_reg}, 1\n`;
+							code += "\tpush rcx\n";
+							code += `\tmov rcx, ${second_reg}\n`;
+							code += `\tshl ${third_reg}, cl\n`;
+							code += "\tpop rcx\n";
+							code += `\tand ${target}, ${third_reg}\n`;
+						} else {
+							const size = sc.get(exp.value as string)?.size() as number;
+							code += `\tmov ${target}, [${target} + ${size} * ${second_reg}]\n`;
 						}
-						
-						const size = sc.get(exp.value as string)?.size() as number;
-						code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
-						code += `\tmov ${target}, [${target} + ${size} * ${second_reg}]\n`;
 					} else {
 						throw new Error("Not found");
 					}
@@ -345,7 +360,7 @@ export class X86_64_Linux {
 						const nv = sc.get(block[i].value as string);
 						if (nv) {
 							if (!nv.datatype.array) {
-								throw new Error("Not an array");
+								throw new Error("Bit assignment not supported");
 							}
 								
 							const size = sc.get(block[i].value as string)?.size() as number;

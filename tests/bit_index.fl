@@ -1,0 +1,17 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	int x = 245;
+
+	print_bits(x);
+
+	return 0;
+}
+
+function print_bits(int x) -> void {
+	int idx = 0;
+	while idx <= 7 {
+		printi(!!x[idx]);
+		idx = idx + 1;
+	}
+}
