@@ -806,7 +806,9 @@ export class X86_64_Linux {
 			}
 		}
 
-		this.keepFunction(functions, "spark");
+		if (functions.find(v => v.name == "spark")) {
+			this.keepFunction(functions, "spark");
+		}
 
 		for (let i = 0; i < functions.length; i++) {
 			if (functions[i].keep) {
