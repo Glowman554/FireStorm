@@ -2,8 +2,8 @@ import { ParserNode } from "../parser.ts"
 import { NamedDatatype, UnnamedDatatype } from "./datatype.ts";
 
 
-export type FunctionAttribute = "assembly" | "noreturn" | "global";
-export const attributes: FunctionAttribute[] = [ "assembly", "noreturn", "global" ];
+export type FunctionAttribute = "assembly" | "noreturn" | "global" | "keep";
+export const attributes: FunctionAttribute[] = [ "assembly", "noreturn", "global", "keep" ];
 
 export class Function {
     name: string;

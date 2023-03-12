@@ -1,7 +1,7 @@
 $include <impl/io.fl>
 $include <impl/mem.fl>
 
-function(assembly, global) main() -> int {
+function(assembly, global, keep) main() -> int {
 "
 	mov rax, rdi
 	mov rbx, rsi
@@ -17,7 +17,7 @@ function(assembly, noreturn) do_exit(int code) -> void {
 "
 }
 
-function(noreturn) unreachable() -> void {
+function(noreturn, keep) unreachable() -> void {
 	prints("Reached unreachable code!");
 	do_exit(1);
 }

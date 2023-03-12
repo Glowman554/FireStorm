@@ -39,12 +39,20 @@ class NamedVariablePtr extends NamedVariable {
 export class StackContext {
 	variables: NamedVariablePtr[];
 	local_labels: string[];
+	used_functions: string[];
 	ptr: number;
 
 	constructor() {
 		this.variables = [];
 		this.local_labels = [];
+		this.used_functions = [];
 		this.ptr = 8; // allocate 8 bytes for rbp
+	}
+
+	use_function(name: string) {
+		if (!this.used_functions.includes(name)) {
+			this.used_functions.push(name);
+		}
 	}
 
 	register(v: NamedVariable) {
@@ -147,6 +155,20 @@ export class GlobalContext {
 			}
 		}
 		return code;
+	}
+}
+
+class CompiledFunction {
+	code: string;
+	name: string;
+	used_functions: string[];
+	keep: boolean;
+
+	constructor (code: string, name: string, used_functions: string[]) {
+		this.code = code;
+		this.name = name;
+		this.used_functions = used_functions;
+		this.keep = false;
 	}
 }
 
@@ -446,6 +468,7 @@ export class X86_64_Linux {
 			case ParserNodeType.FUNCTION_CALL:
 				{
 					const fc = exp.value as FunctionCall;
+					sc.use_function(fc.name);
 
 					for (let i = 0; i < this.registers.indexOf(target); i++) {
 						code += `\tpush ${this.registers[i]}\n`;
@@ -603,6 +626,7 @@ export class X86_64_Linux {
 				case ParserNodeType.FUNCTION_CALL:
 					{
 						const fc = block[i].value as FunctionCall;
+						sc.use_function(fc.name);
 		
 						for (let i = 0; i < fc._arguments.length; i++) {
 							code += this.generateExpression(fc._arguments[i], gc, sc, this.registers[i]);
@@ -674,7 +698,7 @@ export class X86_64_Linux {
 		return code;
 	}
 
-	generateFunction(f: Function, gc: GlobalContext): string {
+	generateFunction(f: Function, gc: GlobalContext) {
 		const sc = new StackContext();
 		let code = "";
 		let precode = "";
@@ -685,7 +709,7 @@ export class X86_64_Linux {
 		}
 
 		if (f.attributes.includes("assembly")) {
-			return precode + f.name + ":\n" + code + f.body[0].value as string;
+			return { code: precode + f.name + ":\n" + code + f.body[0].value as string, sc };
 		} else {
 			if (f.attributes.includes("noreturn")) {
 				aftercode += `\tcall unreachable\n`;
@@ -702,7 +726,15 @@ export class X86_64_Linux {
 
 		// console.log(sc);
 
-		return precode + f.name + ":\n" + sc.generateBegin() + code + ".out:\n" + sc.generateEnd() + aftercode;
+		return { code: precode + f.name + ":\n" + sc.generateBegin() + code + ".out:\n" + sc.generateEnd() + aftercode, sc };
+	}
+
+	keepFunction(functions: CompiledFunction[], name: string) {
+		const f = functions.find(v => v.name == name) as CompiledFunction;
+		f.keep = true;
+		for (let i = 0; i < f.used_functions.length; i++) {
+			this.keepFunction(functions, f.used_functions[i]);
+		}
 	}
 
 	generate(): string {
@@ -713,10 +745,15 @@ export class X86_64_Linux {
 		let code = "[bits 64]\n";
 		code += "[section .text]\n";
 
+		let functions: CompiledFunction[] = [];
+
 		for (let i = 0; i < tmp.length; i++) {
 			switch (tmp[i].id) {
 				case ParserNodeType.FUNCTION:
-					code += this.generateFunction(tmp[i].value as Function, gc);
+					{
+						const { code, sc } = this.generateFunction(tmp[i].value as Function, gc);
+						functions.push(new CompiledFunction(code, (tmp[i].value as Function).name, sc.used_functions));
+					}
 					break;
 				case ParserNodeType.VARIABLE_DECLARATION:
 					if (tmp[i].a) {
@@ -738,9 +775,29 @@ export class X86_64_Linux {
 			}
 		}
 
-		code += gc.generate();
+		for (let i = 0; i < tmp.length; i++) {
+			switch (tmp[i].id) {
+				case ParserNodeType.FUNCTION:
+					{
+						if ((tmp[i].value as Function).attributes.includes("keep")) {
+							this.keepFunction(functions, (tmp[i].value as Function).name);
+						}
+					}
+					break;
+			}
+		}
 
-		// console.log(gc);
+		this.keepFunction(functions, "spark");
+
+		for (let i = 0; i < functions.length; i++) {
+			if (functions[i].keep) {
+				code += functions[i].code;
+			} else {
+				console.log("Removing unused function " + functions[i].name);
+			}
+		}
+
+		code += gc.generate();
 
 		return code;
 	}

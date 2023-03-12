@@ -1,0 +1,5 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> void {
+	return 0;
+}
