@@ -731,6 +731,11 @@ export class X86_64_Linux {
 
 	keepFunction(functions: CompiledFunction[], name: string) {
 		const f = functions.find(v => v.name == name) as CompiledFunction;
+		
+		if (f.keep) {
+			return; // do not cause loops
+		}
+
 		f.keep = true;
 		for (let i = 0; i < f.used_functions.length; i++) {
 			this.keepFunction(functions, f.used_functions[i]);
