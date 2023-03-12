@@ -1,6 +1,7 @@
 import { Compare } from "../features/compare.ts";
 import { Datatype, NamedDatatype } from "../features/datatype.ts";
 import { Function, FunctionCall } from "../features/function.ts";
+import { If } from "../features/if.ts";
 import { ParserNode, ParserNodeType } from "../parser.ts";
 
 function dt_to_size(dt: Datatype, array: boolean) {
@@ -651,12 +652,25 @@ export class X86_64_Linux {
 				case ParserNodeType.IF:
 					{
 						code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+						const iff = block[i].value as If;
 						const label = sc.label();
-						// skip if rax == 0
-						code += "\tcmp rax, 0\n";
-						code += `\tjz ${label}\n`;
-						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
-						code += label + ":\n";
+						if (iff.false_block) {
+							const label2 = sc.label();
+							// skip if rax == 0
+							code += "\tcmp rax, 0\n";
+							code += `\tjz ${label}\n`;
+							code += this.generateCodeBlock(f, gc, sc, iff.true_block);
+							code += `\tjmp ${label2}\n`;
+							code += label + ":\n";
+							code += this.generateCodeBlock(f, gc, sc, iff.false_block);
+							code += label2 + ":\n";
+						} else {
+							// skip if rax == 0
+							code += "\tcmp rax, 0\n";
+							code += `\tjz ${label}\n`;
+							code += this.generateCodeBlock(f, gc, sc, iff.true_block);
+							code += label + ":\n";
+						}
 					}
 					break;
 				case ParserNodeType.CONDITIONAL_LOOP:

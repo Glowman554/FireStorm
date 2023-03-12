@@ -2,9 +2,10 @@ import { Compare } from "./features/compare.ts";
 import { compare } from "./features/compare.ts";
 import { Datatype, datatypes, NamedDatatype, UnnamedDatatype } from "./features/datatype.ts";
 import { attributes, Function, FunctionAttribute, FunctionCall } from "./features/function.ts";
+import { If } from "./features/if.ts";
 import { LexerToken, LexerTokenType, LexerTokenValue } from "./lexer.ts";
 
-export type ParserNodeValue =  undefined|Function|FunctionCall|ParserNode[]|string|LexerTokenValue|NamedDatatype|Compare;
+export type ParserNodeValue =  undefined|Function|FunctionCall|ParserNode[]|string|LexerTokenValue|NamedDatatype|Compare|If;
 
 export enum ParserNodeType {
     GLOBAL = "global",
@@ -398,7 +399,20 @@ export class Parser {
                             if (expr) {
                                 const code_block = this.code_block();
                                 this.expect(LexerTokenType.RBRACE);
-                                body.push(new ParserNode(ParserNodeType.IF, expr, undefined, code_block));
+								this.advance();
+								if (this.current && this.current.id == LexerTokenType.ID) {
+									if (this.current.value as string == "else") {
+										this.advance_expect(LexerTokenType.LBRACE);
+										const else_code_block = this.code_block();
+										this.expect(LexerTokenType.RBRACE);
+										body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, else_code_block)));
+									} else {
+										this.reverse();
+									}
+								} else {
+									this.reverse();
+                                	body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined)));
+								}
                             } else {
                                 throw new Error("Expected expression");
                             }

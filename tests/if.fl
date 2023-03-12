@@ -1,0 +1,13 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	if 0 {
+		prints("noo");
+	} else {
+		prints("yes");
+	}
+
+	if 1 {
+		prints("yess");
+	}
+}
