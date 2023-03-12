@@ -332,6 +332,12 @@ export class X86_64_Linux {
 							code += `\tmov ${target}, 0\n`;
 							code += `\tcmove ${target}, ${third_reg}\n`;
 							break;
+						case "not_equals":
+							code += `\tcmp ${target}, ${second_reg}\n`;
+							code += `\tmov ${third_reg}, 1\n`;
+							code += `\tmov ${target}, 0\n`;
+							code += `\tcmovne ${target}, ${third_reg}\n`;
+							break;
 						case "less_equals":
 							code += `\tcmp ${target}, ${second_reg}\n`;
 							code += `\tmov ${third_reg}, 1\n`;
@@ -343,6 +349,18 @@ export class X86_64_Linux {
 							code += `\tmov ${third_reg}, 1\n`;
 							code += `\tmov ${target}, 0\n`;
 							code += `\tcmovl ${target}, ${third_reg}\n`;
+							break;
+						case "more":
+							code += `\tcmp ${target}, ${second_reg}\n`;
+							code += `\tmov ${third_reg}, 1\n`;
+							code += `\tmov ${target}, 0\n`;
+							code += `\tcmovg ${target}, ${third_reg}\n`;
+							break;
+						case "more_equals":
+							code += `\tcmp ${target}, ${second_reg}\n`;
+							code += `\tmov ${third_reg}, 1\n`;
+							code += `\tmov ${target}, 0\n`;
+							code += `\tcmovge ${target}, ${third_reg}\n`;
 							break;
 						default:
 							throw new Error("Unsupported " + exp.value);

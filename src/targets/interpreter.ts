@@ -221,12 +221,16 @@ export class Interpreter {
 					switch(expression.value as Compare) {
 						case "more":
 							return a > b ? 1 : 0;
+						case "more_equals":
+							return a >= b ? 1 : 0;
 						case "less":
 							return a < b ? 1 : 0;
 						case "less_equals":
 							return a <= b ? 1 : 0;
 						case "equals":
 							return a == b ? 1 : 0;
+						case "not_equals":
+							return a != b ? 1 : 0;
 						default:
 							throw new Error("Unsupported " + expression.value);
 					}
