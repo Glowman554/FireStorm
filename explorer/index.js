@@ -30,6 +30,11 @@ document.getElementById("example").onclick = () => {
 	input.dispatchEvent(new Event("input"));
 }
 
+document.getElementById("run").onclick = () => {
+	window.open("./run.html#" + encodeURIComponent(input.value), "_blank");
+}
+
+
 window.vfs = {};
 
 const files_to_load = [ 
