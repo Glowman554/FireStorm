@@ -668,7 +668,7 @@ export class X86_64_Linux {
 							code += label2 + ":\n";
 						} else {
 							// skip if rax == 0
-							code += "\t;here\n\tcmp rax, 0\n";
+							code += "\tcmp rax, 0\n";
 							code += `\tjz ${label}\n`;
 							code += this.generateCodeBlock(f, gc, sc, iff.true_block);
 							code += label + ":\n";
