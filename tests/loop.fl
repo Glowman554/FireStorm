@@ -1,13 +1,19 @@
 $include <std.fl>
 
 function spark(int argc, str[] argv) -> int {
-	int idx = 10;
+	int idx = 3;
 	while idx {
 		prints("Hello world!");
 		idx--;
 	}
 
-	idx = 10;
+	idx = 3;
+	do {
+		prints("Hello world 2!");
+		idx--;
+	} while idx;
+
+	idx = 3;
 	loop {
 		printi(idx);
 		if !idx {
@@ -15,4 +21,6 @@ function spark(int argc, str[] argv) -> int {
 		}
 		idx--;
 	}
+
+	return 0;
 }

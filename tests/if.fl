@@ -10,4 +10,6 @@ function spark(int argc, str[] argv) -> int {
 	if 1 {
 		prints("yess");
 	}
+
+	return 0;
 }

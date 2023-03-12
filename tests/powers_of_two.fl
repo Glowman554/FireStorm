@@ -3,10 +3,11 @@ $include <std.fl>
 function spark(int argc, str[] argv) -> int {
 	int idx = 0;
 
-	while idx < 20 {
+	while idx < 5 {
 		printi(pow(2, idx));
 		idx++;
 	}
+	return 0;
 }
 
 function pow(int a, int b) -> int {

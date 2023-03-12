@@ -13,6 +13,7 @@ async function runCommand(command: string) {
 	});
 
 	const status = await proc.status();
+	proc.close();
 	if (!status.success) {
 		throw new Error("Could not execute: " + command);
 	}

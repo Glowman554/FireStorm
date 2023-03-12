@@ -8,4 +8,5 @@ function spark(int argc, str[] argv) -> int {
 	printi(10 & 2);
 	printi(10 ^ 10);
 	printi(~10);
+	return 0;
 }

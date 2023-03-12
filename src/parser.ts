@@ -408,6 +408,7 @@ export class Parser {
 										body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, else_code_block)));
 									} else {
 										this.reverse();
+										body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined)));
 									}
 								} else {
 									this.reverse();

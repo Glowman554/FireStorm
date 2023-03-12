@@ -6,4 +6,6 @@ function spark(int argc, str[] argv) -> void {
 	printi(10 * 20);
 	printi(20 / 10);
 	printi(10 % 20);
+	printi(10 + 20 * 30 + 2 * (10 + 2 * 3));
+	return 0;
 }

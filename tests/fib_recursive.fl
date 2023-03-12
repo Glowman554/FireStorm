@@ -1,7 +1,7 @@
 $include <std.fl>
 
 function spark(int argc, str[] argv) -> int {
-	printi(fib(10));
+	printi(fib(20));
 	return 0;
 }
 

@@ -16,4 +16,6 @@ function spark(int argc, str[] argv) -> int {
 	g3[2] = 20;
 	printi(g3[0]);
 	printi(g3[2]);
+	deallocate(g3);
+	return 0;
 }

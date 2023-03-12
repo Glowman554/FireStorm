@@ -646,7 +646,9 @@ export class X86_64_Linux {
 					}
 					break;
 				case ParserNodeType.RETURN:
-					code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+					if (block[i].a) {
+						code += this.generateExpression(block[i].a as ParserNode, gc, sc);
+					}
 					code += "\tjmp .out\n";
 					break;
 				case ParserNodeType.IF:
@@ -666,7 +668,7 @@ export class X86_64_Linux {
 							code += label2 + ":\n";
 						} else {
 							// skip if rax == 0
-							code += "\tcmp rax, 0\n";
+							code += "\t;here\n\tcmp rax, 0\n";
 							code += `\tjz ${label}\n`;
 							code += this.generateCodeBlock(f, gc, sc, iff.true_block);
 							code += label + ":\n";

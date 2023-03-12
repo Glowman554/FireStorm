@@ -2,6 +2,7 @@
 *.o
 *.elf
 tests/*.json
+tests/*.summary
 explorer/compiler.js
 explorer/res
-*vsix
+*.vsix
