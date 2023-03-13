@@ -1,0 +1,9 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	str res = string_join("hello ", "world");
+	prints(res);
+	string_delete(res);
+
+	return 0;
+}

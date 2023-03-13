@@ -26,10 +26,18 @@
 			}]
 		},
 		"strings": {
-			"name": "string.quoted.double.firestorm",
-			"begin": "\"",
-			"end": "\"",
-			"patterns": []
+			"patterns": [
+				{
+					"name": "string.quoted.double.firestorm",
+					"begin": "\"",
+					"end": "\""
+				},
+				{
+					"name": "string.quoted.single.firestorm",
+					"begin": "'",
+					"end": "'"
+				}
+			]
 		},
 		"comments": {
 			"name": "comment.firestorm",
