@@ -1,0 +1,69 @@
+function string_length(chr[] s) -> int {
+	int ret = 0;
+	
+	while s[ret] {
+		ret++;
+	}
+
+	return ret;
+}
+
+function string_delete(chr[] s) -> void {
+	deallocate(s);
+}
+
+function string_copy(chr[] dest, chr[] src) -> void {
+	int idx = 0;
+	do {
+		dest[idx] = src[idx];
+		idx++;
+	} while src[idx];
+	dest[idx] = 0;
+}
+
+function string_join(chr[] a, chr[] b) -> str {
+	int al = string_length(a);
+	int bl = string_length(b);
+
+	chr[] res = allocate(al + bl + 1);
+
+	string_copy(res, a);
+	string_copy(res + al, b);
+
+	return res;
+}
+
+function string_from_int(int num, int base) -> chr[] {
+	int sign = 0;
+
+	if num < 0 {
+		sign = 1;
+		num = num * (0-1);
+	}
+
+	chr[] digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+	chr[] buf = allocate(65);
+	chr[] p = buf + 64;
+
+	p[0] = 0;
+
+	do {
+		p--;
+		p[0] = digits[num % base];
+		num = num / base;
+	} while num;
+
+	if sign {
+		p--;
+		p[0] = 45; // add negative sign;
+	}
+
+	
+	chr[] final_result = allocate(string_length(p) + 1);
+	string_copy(final_result, p);
+
+	deallocate(buf);
+
+	return final_result;
+}
