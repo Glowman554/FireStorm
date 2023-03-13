@@ -7,6 +7,7 @@ async function main() {
 	let input = undefined;
 	const includes = ["./stdlib/", "/usr/firestorm/include/"];
 	let args: string[] = [];
+	let leak_detector = false;
 
 	let idx = 0;
 	while (idx < Deno.args.length) {
@@ -17,6 +18,8 @@ async function main() {
 			} else {
 				throw new Error("Expected argument after -i");
 			}
+		} else if (Deno.args[idx] == "-l") {
+			leak_detector = true;
 		} else if (Deno.args[idx] == "-a") {
 			if (idx + 1 < Deno.args.length) {
 				idx++;
@@ -50,6 +53,16 @@ async function main() {
     const global = parser.global();
 	const interpreter = new Interpreter(global, args);
     interpreter.execute();
+
+	if (leak_detector) {
+		console.log(interpreter.memory);
+		console.log("=== DETECTED LEAKS ===");
+		for (let i = 0; i < interpreter.memory.allocations.length; i++) {
+			if (!interpreter.memory.strings.find(v => v.ptr ==  interpreter.memory.allocations[i].ptr)) {
+				console.log("Leak at: " + interpreter.memory.allocations[i].ptr + " with size " + interpreter.memory.allocations[i].size);
+			}
+		} 
+	}
 }
 
 await main();

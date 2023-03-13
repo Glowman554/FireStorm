@@ -467,6 +467,8 @@ export class Interpreter {
 			throw new Error("Non zero return code!");
 		}
 
+		this.memory.deallocate(argv.val);
+
 		// for (let i = 0; i < this.memory.memory.length; i++) {
 		// 	if (this.memory.memory[i]) {
 		// 		// console.log(String.fromCharCode(this.memory.memory[i]));

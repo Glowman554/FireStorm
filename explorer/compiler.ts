@@ -27,4 +27,10 @@ export function execute(code: string, args: string[]) {
 	const interpreter = new Interpreter(global, args);
     interpreter.execute();
 	console.log(interpreter.memory);
+	console.log("=== DETECTED LEAKS ===");
+	for (let i = 0; i < interpreter.memory.allocations.length; i++) {
+		if (!interpreter.memory.strings.find(v => v.ptr ==  interpreter.memory.allocations[i].ptr)) {
+			console.log("Leak at: " + interpreter.memory.allocations[i].ptr + " with size " + interpreter.memory.allocations[i].size);
+		}
+	} 
 }

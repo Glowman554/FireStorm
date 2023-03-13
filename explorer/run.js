@@ -34,7 +34,7 @@ for (const f of files_to_load) {
 
 Promise.all(promises).then(() => {
 	try {
-		execute(decodeURIComponent(location.hash.slice(1)), []);
+		execute(decodeURIComponent(location.hash.slice(1)), [ "<hash>" ]);
 	} catch(e) {
 		document.getElementById("error").innerText = "Failed to compile / run: " + e;
 	}
