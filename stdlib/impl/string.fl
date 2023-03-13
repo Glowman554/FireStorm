@@ -1,0 +1,33 @@
+function string_length(chr[] s) -> int {
+	int ret = 0;
+	
+	while s[ret] {
+		ret++;
+	}
+
+	return ret;
+}
+
+function string_delete(chr[] s) -> void {
+	deallocate(s);
+}
+
+function string_copy(chr[] dest, chr[] src) -> void {
+	int idx = 0;
+	do {
+		dest[idx] = src[idx];
+		idx++;
+	} while src[idx];
+}
+
+function string_join(chr[] a, chr[] b) -> str {
+	int al = string_length(a);
+	int bl = string_length(b);
+
+	chr[] res = allocate(al + bl + 1);
+
+	string_copy(res, a);
+	string_copy(res + al, b);
+
+	return res;
+}

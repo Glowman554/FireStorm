@@ -1,5 +1,6 @@
 $include <impl/io.fl>
 $include <impl/mem.fl>
+$include <impl/string.fl>
 
 function(assembly, global, keep) main() -> int {
 "

@@ -19,6 +19,7 @@ const files_to_load = [
 	"stdlib/std.fl",
 	"stdlib/impl/io.fl",
 	"stdlib/impl/mem.fl",
+	"stdlib/impl/string.fl",
 	"example.fl"
 ];
 
