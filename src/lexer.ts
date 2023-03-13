@@ -105,6 +105,18 @@ export class Lexer {
             }
 
             switch (this.current) {
+				case "'":
+					{
+						this.advance();
+						const char = this.current as string;
+						this.advance();
+						if (this.current != "'") {
+							throw new Error("Expected '");
+						} else {
+							tokens.push(new LexerToken(LexerTokenType.NUMBER, char.charCodeAt(0), this.pos));
+						}
+					}
+					break;
                 case "(":
                     tokens.push(new LexerToken(LexerTokenType.LPAREN, undefined, this.pos));
                     break;

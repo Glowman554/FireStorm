@@ -285,7 +285,9 @@ export class Interpreter {
                     break;
 				case ParserNodeType.VARIABLE_DECLARATION:
 					if (context.find((val) => val.datatype.name == (block[i].value as NamedDatatype).name) != undefined) {
-                        throw new Error("Already declared!");
+                        if (block[i].a) {
+							this.contextFind((block[i].value as NamedDatatype).name, context).val = this.interpretExpression(block[i].a as ParserNode, context);
+						}
                     } else {
 						if (block[i].a) {
                         	context.push(new NamedVariable(block[i].value as NamedDatatype, this.interpretExpression(block[i].a as ParserNode, context)));

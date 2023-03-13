@@ -146,7 +146,7 @@ export class GlobalContext {
 		for (let i = 0; i < this.global_labels.length; i++) {
 			switch (this.global_labels[i].name.datatype) {
 				case "str":
-					code += `${this.global_labels[i].name.name}: db "${this.global_labels[i].val || 0}", 0\n`;
+					code += `${this.global_labels[i].name.name}: db "${this.global_labels[i].val?.replaceAll("\n", "\", 10, \"") || 0}", 0\n`;
 					break;
 				case "int":
 					code += `${this.global_labels[i].name.name}: dq ${this.global_labels[i].val || 0}\n`;
