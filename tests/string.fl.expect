@@ -1,5 +1,5 @@
 {
-	"arguments": [],
-	"output": ["hello world"],
+	"arguments": ["a", "b"],
+	"output": ["hello world", "3 arguments provided"],
 	"should_fail": false
 }
