@@ -22,7 +22,7 @@ async function runCommand(command: string) {
 async function main() {
 	let output = undefined;
 	let input = undefined;
-	const includes = ["./stdlib/"];
+	const includes = ["./stdlib/", "/usr/firestorm/include/"];
 
 	let idx = 0;
 	while (idx < Deno.args.length) {

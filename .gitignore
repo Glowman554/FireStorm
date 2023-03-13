@@ -6,3 +6,5 @@ tests/*.summary
 explorer/compiler.js
 explorer/res
 *.vsix
+flr
+flc

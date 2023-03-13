@@ -5,7 +5,7 @@ import { Preprocessor } from "./preprocessor.ts";
 
 async function main() {
 	let input = undefined;
-	const includes = ["./stdlib/"];
+	const includes = ["./stdlib/", "/usr/firestorm/include/"];
 	let args: string[] = [];
 
 	let idx = 0;
