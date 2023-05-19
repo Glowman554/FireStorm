@@ -1,21 +1,19 @@
 // import { Interpreter } from "./interpreter.ts";
 import { Lexer } from "./lexer.ts";
-import { Parser } from "./parser.ts";
+import { Parser, ParserNode } from "./parser.ts";
 import { Preprocessor } from "./preprocessor.ts";
+import { RISCV64_Linux } from "./targets/RISCV64_Linux.ts";
+import { Target } from "./targets/target.ts";
 import { X86_64_Linux } from "./targets/X86_64_Linux.ts";
 
-async function runCommand(command: string) {
-	console.log("cmd: " + command);
-	const proc = Deno.run({
-		cmd: command.split(" "),
-		stderr: "inherit",
-		stdout: "inherit"
-	});
-
-	const status = await proc.status();
-	proc.close();
-	if (!status.success) {
-		throw new Error("Could not execute: " + command);
+function toTarget(target: string, global: ParserNode): Target {
+	switch (target) {
+		case "riscv64-linux-gnu":
+			return new RISCV64_Linux(global);
+		case "x86_64-linux-nasm":
+			return new X86_64_Linux(global);
+		default:
+			throw new Error(`Target ${target} not found!`);
 	}
 }
 
@@ -23,6 +21,7 @@ async function main() {
 	let output = undefined;
 	let input = undefined;
 	const includes = ["./stdlib/", "/usr/firestorm/include/"];
+	let ctarget = "x86_64-linux-nasm";
 
 	let idx = 0;
 	while (idx < Deno.args.length) {
@@ -40,6 +39,13 @@ async function main() {
 			} else {
 				throw new Error("Expected argument after -i");
 			}
+		} else if (Deno.args[idx] == "-t") {
+			if (idx + 1 < Deno.args.length) {
+				idx++;
+				ctarget = Deno.args[idx];
+			} else {
+				throw new Error("Expected argument after -t");
+			}
 		} else {
 			if (input == undefined) {
 				input = Deno.args[idx];
@@ -49,6 +55,11 @@ async function main() {
 		}
 		idx++;
 	}
+
+	includes.push(`./stdlib/${ctarget}/`);
+	includes.push(`/usr/firestorm/include/${ctarget}/`);
+
+	console.log(includes);
 
 	if (output == undefined || input == undefined) {
 		throw new Error("Please specify a output and a input");
@@ -68,26 +79,11 @@ async function main() {
     // const interpreter = new Interpreter(global);
     // interpreter.execute();
 
-	const target = new X86_64_Linux(global);
+	const target = toTarget(ctarget, global);
     const generated = target.generate();
 
-	switch (mode) {
-		case "asm":
-			Deno.writeTextFileSync(output, generated);
-			break;
-		case "o":
-			Deno.writeTextFileSync(output + ".asm", generated);
-			await runCommand(`nasm ${output + ".asm"} -felf64 -o ${output} -g`);
-			break;
-		case "elf":
-			Deno.writeTextFileSync(output + ".asm", generated);
-			await runCommand(`nasm ${output + ".asm"} -felf64 -o ${output + ".o"} -g`);
-			await runCommand(`gcc ${output + ".o"} -o ${output} --static -fno-pie -g`);
-			break;
-		default:
-			throw new Error("Mode " + mode + " not found!");
-	}
 
+	await target.compile(mode, output, generated);
 }
 
 await main();

@@ -1,0 +1,22 @@
+function(assembly, global, keep) main() -> int {
+"
+	addi sp, sp, -8
+	sd ra, (sp)
+
+	mv x5, a0
+	mv x6, a1
+	call spark
+	mv a0, x5
+
+	ld ra, (sp)
+	addi sp, sp, 8
+	ret
+"
+}
+
+function(assembly, noreturn) do_exit(int code) -> void {
+"
+	mv a0, x5
+	j exit
+"
+}

@@ -1,0 +1,7 @@
+function(assembly) printc(chr idk) -> void {
+"
+	mov rdi, rax
+[extern putchar]
+	jmp putchar
+"
+}

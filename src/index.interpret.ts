@@ -37,6 +37,9 @@ async function main() {
 		idx++;
 	}
 
+	includes.push(`./stdlib/x86_64-linux-nasm/`);
+	includes.push(`/usr/firestorm/include/x86_64-linux-nasm/`);
+
 	if (input == undefined) {
 		throw new Error("Please specify a input file");
 	}

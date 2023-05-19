@@ -1,0 +1,21 @@
+function(assembly) allocate(int size) -> int {
+"
+	addi sp, sp, -8
+	sd ra, (sp)
+
+	mv a0, x5
+	call malloc
+	mv x5, a0
+
+	ld ra, (sp)
+	addi sp, sp, 8
+	ret
+"
+}
+
+function(assembly) deallocate(int ptr) -> void {
+"
+	mv a0, x5
+	j free
+"
+}

@@ -44,12 +44,14 @@ export class StackContext {
 	local_labels: string[];
 	used_functions: string[];
 	ptr: number;
+	name: string;
 
-	constructor() {
+	constructor(name: string) {
 		this.variables = [];
 		this.local_labels = [];
 		this.used_functions = [];
 		this.ptr = 8; // allocate 8 bytes for rbp
+		this.name = name;
 	}
 
 	use_function(name: string) {
@@ -68,7 +70,7 @@ export class StackContext {
 	}
 
 	label(): string {
-		const label = `._${this.local_labels.length}`;
+		const label = `${this.name}_${this.local_labels.length}`;
 		this.local_labels.push(label);
 		return label;
 	}
@@ -95,11 +97,11 @@ export class StackContext {
 	generateBegin(): string {
 		this.align();
 		// console.log(this.ptr);
-		return "\tpush rbp\n\tmov rbp, rsp\n\tsub rsp, " + this.ptr + "\n";
+		return "\taddi sp, sp, -" + this.ptr + "\n\tsd ra, (sp)\n";
 	}
 
 	generateEnd(): string {
-		return "\tadd rsp, " + this.ptr + "\n\tpop rbp\n";
+		return "\tld ra, (sp)\n\taddi sp, sp, " + this.ptr + "\n";
 	}
 }
 
@@ -144,14 +146,14 @@ export class GlobalContext {
 
 
 	generate(): string {
-		let code = "[section .data]\n";
+		let code = ".data\n";
 		for (let i = 0; i < this.global_labels.length; i++) {
 			switch (this.global_labels[i].name.datatype) {
 				case "str":
-					code += `${this.global_labels[i].name.name}: db "${this.global_labels[i].val?.replaceAll("\n", "\", 10, \"") || 0}", 0\n`;
+					code += `${this.global_labels[i].name.name}: .string "${this.global_labels[i].val}"\n`;
 					break;
 				case "int":
-					code += `${this.global_labels[i].name.name}: dq ${this.global_labels[i].val || 0}\n`;
+					code += `${this.global_labels[i].name.name}: .quad ${this.global_labels[i].val || 0}\n`;
 					break;
 				default:
 					throw new Error("Unsupported");
@@ -175,19 +177,15 @@ class CompiledFunction {
 	}
 }
 
-export class X86_64_Linux implements Target {
+export class RISCV64_Linux implements Target {
     global: ParserNode;
 
     constructor (global: ParserNode) {
         this.global = global;
 	}
 
-	registers = [ "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" ]; // TODO: complete
-	low_registers = [ "al", "bl", "cl", "dl", "sil", "dil", "r8l", "r9l", "r10l", "r11l", "r12l", "r13l", "r14l", "r15l" ]; // TODO: complete
+	registers = [ "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18" ]; // TODO: complete
 
-	toLowReg(input: string) {
-		return this.low_registers[this.registers.indexOf(input)];
-	}
 
 	lookupContext(name: string, sc: StackContext, gc: GlobalContext): StackContext | GlobalContext {
 		if (sc.get(name)) {
@@ -212,22 +210,22 @@ export class X86_64_Linux implements Target {
 			switch (dt) {
 				case "int":
 					// array needts to be false since we want the size of the elements not of the array ptr
-					return `\tmov [${ptr} + ${dt_to_size(dt, false)} * ${idx}], ${reg}\n`;
+					return `\tli x30, ${dt_to_size(dt, false)}\n\tmul x31, ${idx}, x30\n\tadd x31, x31, ${ptr}\n\tsd ${reg}, (x31)\n`;
 				case "str":
-					return `\tmov [${ptr} + ${dt_to_size(dt, false)} * ${idx}], ${reg}\n`;
+					return `\tli x30, ${dt_to_size(dt, false)}\n\tmul x31, ${idx}, x30\n\tadd x31, x31, ${ptr}\n\tsd ${reg}, (x31)\n`;
 				case "chr":
-					return `\tmov [${ptr} + ${dt_to_size(dt, false)} * ${idx}], ${this.toLowReg(reg)}\n`;
+					return `\tli x30, ${dt_to_size(dt, false)}\n\tmul x31, ${idx}, x30\n\tadd x31, x31, ${ptr}\n\tsb ${reg}, (x31)\n`;
 				default:
 					throw new Error("Not supported!");
 			} 
 		} else {
 			switch (dt) {
 				case "int":
-					return `\tmov ${reg}, [${ptr} + ${dt_to_size(dt, false)} * ${idx}]\n`;
+					return `\tli x30, ${dt_to_size(dt, false)}\n\tmul x31, ${idx}, x30\n\tadd x31, x31, ${ptr}\n\tld ${reg}, (x31)\n`;
 				case "str":
-					return `\tmov ${reg}, [${ptr} + ${dt_to_size(dt, false)} * ${idx}]\n`;
+					return `\tli x30, ${dt_to_size(dt, false)}\n\tmul x31, ${idx}, x30\n\tadd x31, x31, ${ptr}\n\tld ${reg}, (x31)\n`;
 				case "chr":
-					return `\tmov ${this.toLowReg(reg)}, [${ptr} + ${dt_to_size(dt, false)} * ${idx}]\n\tand ${reg}, 0xff\n`;
+					return `\tli x30, ${dt_to_size(dt, false)}\n\tmul x31, ${idx}, x30\n\tadd x31, x31, ${ptr}\n\tlb ${reg}, (x31)\n`;
 				default:
 					throw new Error("Not supported!");
 			} 
@@ -238,14 +236,14 @@ export class X86_64_Linux implements Target {
 		if (write) {
 			switch (dt.datatype) {
 				case "int":
-					return `\tmov [rbp - ${ptr}], ${reg}\n`;
+					return `\tsd ${reg}, ${ptr}(sp)\n`;
 				case "str":
-					return `\tmov [rbp - ${ptr}], ${reg}\n`;
+					return `\tsd ${reg}, ${ptr}(sp)\n`;
 				case "chr":
 					if (dt.array) {
-						return `\tmov [rbp - ${ptr}], ${reg}\n`;
+						return `\tsd ${reg}, ${ptr}(sp)\n`;
 					} else {
-						return `\tmov [rbp - ${ptr}], ${this.toLowReg(reg)}\n`;
+						return `\tsb ${reg}, ${ptr}(sp)\n`;
 					}
 				default:
 					throw new Error("Not supported!");
@@ -253,14 +251,14 @@ export class X86_64_Linux implements Target {
 		} else {
 			switch (dt.datatype) {
 				case "int":
-					return `\tmov ${reg}, [rbp - ${ptr}]\n`;
+					return `\tld ${reg}, ${ptr}(sp)\n`;
 				case "str":
-					return `\tmov ${reg}, [rbp - ${ptr}]\n`;
+					return `\tld ${reg}, ${ptr}(sp)\n`;
 				case "chr":
 					if (dt.array) {
-						return `\tmov ${reg}, [rbp - ${ptr}]\n`;
+						return `\tld ${reg}, ${ptr}(sp)\n`;
 					} else {
-						return `\tmov ${this.toLowReg(reg)}, [rbp - ${ptr}]\n\tand ${reg}, 0xff\n`;
+						return `\tlb ${reg}, ${ptr}(sp)\n`;
 					}
 				default:
 					throw new Error("Not supported!");
@@ -272,12 +270,12 @@ export class X86_64_Linux implements Target {
 		if (write) {
 			switch (dt.datatype) {
 				case "int":
-					return `\tmov [${ptr}], ${reg}\n`;
+					return `\tla x31, ${ptr}\n\tsd ${reg}, (x31)\n`;
 				case "chr":
 					if (dt.array) {
-						return `\tmov [${ptr}], ${reg}\n`;
+						return `\tla x31, ${ptr}\n\tsd ${reg}, (x31)\n`;
 					} else {
-						return `\tmov [${ptr}], ${this.toLowReg(reg)}\n`;
+						return `\tla x31, ${ptr}\n\tsb ${reg}, (x31)\n`;
 					}
 				default:
 					throw new Error("Not supported!");
@@ -285,29 +283,16 @@ export class X86_64_Linux implements Target {
 		} else {
 			switch (dt.datatype) {
 				case "int":
-					return `\tmov ${reg}, [${ptr}]\n`;
+					return `\tla x31, ${ptr}\n\tld ${reg}, (x31)\n`;
 				case "chr":
 					if (dt.array) {
-						return `\tmov ${reg}, [${ptr}]\n`;
+						return `\tla x31, ${ptr}\n\tld ${reg}, (x31)\n`;
 					} else {
-						return `\tmov ${this.toLowReg(reg)}, [${ptr}]\n\tand ${reg}, 0xff\n`;
+						return `\tla x31, ${ptr}\n\tlb ${reg}, (x31)\n`;
 					}
 				default:
 					throw new Error("Not supported!");
 			}
-		}
-	}
-
-	datatypeToNasmSize(dt: Datatype, array: boolean): string {
-		switch (dt) {
-			case "int":
-				return "qword";
-			case "str":
-				return "qword";
-			case "chr":
-				return array ? "qword" : "byte";
-			default:
-				throw new Error("Not supported!");
 		}
 	}
 
@@ -317,52 +302,59 @@ export class X86_64_Linux implements Target {
 		const second_reg = this.registers[this.registers.indexOf(target) + 1];
 		switch (exp.id) {
 			case ParserNodeType.NUMBER:
-				code += `\tmov ${target}, ${exp.value as number}\n`;
+				code += `\tli ${target}, ${exp.value as number}\n`; // TODO maybe addi ..., x0, ...
 				break;
 			case ParserNodeType.STRING:
-				code += `\tmov ${target}, ${gc.label(exp.value as string, "str")}\n`;
+				code += `\tla ${target}, ${gc.label(exp.value as string, "str")}\n`;
 				break;
 			case ParserNodeType.COMPARE:
 				{
 					const third_reg = this.registers[this.registers.indexOf(target) + 2];
 					code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 					code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
+					const label = sc.label();
 					switch (exp.value as Compare) {
 						case "equals":
-							code += `\tcmp ${target}, ${second_reg}\n`;
-							code += `\tmov ${third_reg}, 1\n`;
-							code += `\tmov ${target}, 0\n`;
-							code += `\tcmove ${target}, ${third_reg}\n`;
+							code += `\tli ${third_reg}, 1\n`;
+							code += `\tbeq ${target}, ${second_reg}, ${label}\n`;
+							code += `\tli ${third_reg}, 0\n`;
+							code += `${label}:\n`;
+							code += `\tmv ${target}, ${third_reg}\n`;
 							break;
 						case "not_equals":
-							code += `\tcmp ${target}, ${second_reg}\n`;
-							code += `\tmov ${third_reg}, 1\n`;
-							code += `\tmov ${target}, 0\n`;
-							code += `\tcmovne ${target}, ${third_reg}\n`;
+							code += `\tli ${third_reg}, 1\n`;
+							code += `\tbne ${target}, ${second_reg}, ${label}\n`;
+							code += `\tli ${third_reg}, 0\n`;
+							code += `${label}:\n`;
+							code += `\tmv ${target}, ${third_reg}\n`;
 							break;
 						case "less_equals":
-							code += `\tcmp ${target}, ${second_reg}\n`;
-							code += `\tmov ${third_reg}, 1\n`;
-							code += `\tmov ${target}, 0\n`;
-							code += `\tcmovle ${target}, ${third_reg}\n`;
+							code += `\tli ${third_reg}, 1\n`;
+							code += `\tble ${target}, ${second_reg}, ${label}\n`;
+							code += `\tli ${third_reg}, 0\n`;
+							code += `${label}:\n`;
+							code += `\tmv ${target}, ${third_reg}\n`;
 							break;
 						case "less":
-							code += `\tcmp ${target}, ${second_reg}\n`;
-							code += `\tmov ${third_reg}, 1\n`;
-							code += `\tmov ${target}, 0\n`;
-							code += `\tcmovl ${target}, ${third_reg}\n`;
+							code += `\tli ${third_reg}, 1\n`;
+							code += `\tblt ${target}, ${second_reg}, ${label}\n`;
+							code += `\tli ${third_reg}, 0\n`;
+							code += `${label}:\n`;
+							code += `\tmv ${target}, ${third_reg}\n`;
 							break;
 						case "more":
-							code += `\tcmp ${target}, ${second_reg}\n`;
-							code += `\tmov ${third_reg}, 1\n`;
-							code += `\tmov ${target}, 0\n`;
-							code += `\tcmovg ${target}, ${third_reg}\n`;
+							code += `\tli ${third_reg}, 1\n`;
+							code += `\tbgt ${target}, ${second_reg}, ${label}\n`;
+							code += `\tli ${third_reg}, 0\n`;
+							code += `${label}:\n`;
+							code += `\tmv ${target}, ${third_reg}\n`;
 							break;
 						case "more_equals":
-							code += `\tcmp ${target}, ${second_reg}\n`;
-							code += `\tmov ${third_reg}, 1\n`;
-							code += `\tmov ${target}, 0\n`;
-							code += `\tcmovge ${target}, ${third_reg}\n`;
+							code += `\tli ${third_reg}, 1\n`;
+							code += `\tbge ${target}, ${second_reg}, ${label}\n`;
+							code += `\tli ${third_reg}, 0\n`;
+							code += `${label}:\n`;
+							code += `\tmv ${target}, ${third_reg}\n`;
 							break;
 						default:
 							throw new Error("Unsupported " + exp.value);
@@ -371,119 +363,72 @@ export class X86_64_Linux implements Target {
 				break;
 			case ParserNodeType.NOT:
 				{
+					const label = sc.label();
+
 					code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
-					code += `\tcmp ${target}, 0\n`;
-					code += `\tmov ${second_reg}, 1\n`;
-					code += `\tmov ${target}, 0\n`;
-					code += `\tcmove ${target}, ${second_reg}\n`;
+					code += `\tli ${second_reg}, 1\n`;
+					code += `\tbeqz ${target}, ${label}\n`;
+					code += `\tli ${second_reg}, 0\n`;
+					code += `${label}:\n`;
+					code += `\tmv ${target}, ${second_reg}\n`;
 				}
 				break;
 			case ParserNodeType.ADD:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-				code += `\tadd ${target}, ${second_reg}\n`;
+				code += `\tadd ${target}, ${target}, ${second_reg}\n`;
 				break;
 			case ParserNodeType.SUBSTRACT:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-				code += `\tsub ${target}, ${second_reg}\n`;
+				code += `\tsub ${target}, ${target}, ${second_reg}\n`;
 				break;
 			case ParserNodeType.MULTIPLY:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-				code += `\timul ${target}, ${second_reg}\n`;
+				code += `\tmul ${target}, ${target}, ${second_reg}\n`;
 				break;
 			case ParserNodeType.DIVIDE:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-
-				if (target != "rax") code += "\tpush rax\n";
-				if (target != "rdx") code += "\tpush rdx\n";
-				if (target != "rax") code += `\tmov rax, ${target}\n`;
-				code += "\tcqo\n";
-				code += `\tidiv ${second_reg}\n`;
-				if (target != "rax") code += `\tmov ${target}, rax\n`;
-				if (target != "rdx") code += "\tpop rdx\n";
-				if (target != "rax") code += "\tpop rax\n";
-
+				code += `\tdiv ${target}, ${target}, ${second_reg}\n`;
 				break;
 			case ParserNodeType.MODULO:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-	
-				if (target != "rax") code += "\tpush rax\n";
-				if (target != "rdx") code += "\tpush rdx\n";
-				if (target != "rax") code += `\tmov rax, ${target}\n`;
-				code += "\tcqo\n";
-				code += `\tidiv ${second_reg}\n`;
-				if (target != "rdx") code += `\tmov ${target}, rdx\n`;
-				if (target != "rdx") code += "\tpop rdx\n";
-				if (target != "rax") code += "\tpop rax\n";
-	
+				code += `\trem ${target}, ${target}, ${second_reg}\n`;
 				break;
 			case ParserNodeType.OR:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-				code += `\tor ${target}, ${second_reg}\n`;
+				code += `\tor ${target}, ${target}, ${second_reg}\n`;
 				break;
 			case ParserNodeType.AND:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-				code += `\tand ${target}, ${second_reg}\n`;
+				code += `\tand ${target}, ${target}, ${second_reg}\n`;
 				break;
 			case ParserNodeType.XOR:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 				code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-				code += `\txor ${target}, ${second_reg}\n`;
+				code += `\txor ${target}, ${target}, ${second_reg}\n`;
 				break;
 			case ParserNodeType.BIT_NOT:
 				code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
-				code += `\tnot ${target}\n`;
+				code += `\tnot ${target}, ${target}\n`;
 				break;
 			case ParserNodeType.SHIFT_LEFT:
 				{
 					code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 					code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-					let third_reg = this.registers[this.registers.indexOf(target) + 2];
-					if (third_reg == "rcx") {
-						third_reg = "rdx";
-					}
-					if (target == "rcx") {
-						code += `\tmov ${third_reg}, ${target}\n`;
-						code += "\tpush rcx\n";
-						code += `\tmov rcx, ${second_reg}\n`;
-						code += `\tshl ${third_reg}, cl\n`;
-						code += "\tpop rcx\n";
-						code += `\tmov ${target}, ${third_reg}\n`;
-					} else {
-						code += "\tpush rcx\n";
-						code += `\tmov rcx, ${second_reg}\n`;
-						code += `\tshl ${target}, cl\n`;
-						code += "\tpop rcx\n";
-					}
+					code += `\tsll ${target}, ${target}, ${second_reg}\n`;
 				}
 				break;
 			case ParserNodeType.SHIFT_RIGHT:
 				{
 					code += this.generateExpression(exp.a as ParserNode, gc, sc, target);
 					code += this.generateExpression(exp.b as ParserNode, gc, sc, second_reg);
-					let third_reg = this.registers[this.registers.indexOf(target) + 2];
-					if (third_reg == "rcx") {
-						third_reg = "rdx";
-					}
-					if (target == "rcx") {
-						code += `\tmov ${third_reg}, ${target}\n`;
-						code += "\tpush rcx\n";
-						code += `\tmov rcx, ${second_reg}\n`;
-						code += `\tshr ${third_reg}, cl\n`;
-						code += "\tpop rcx\n";
-						code += `\tmov ${target}, ${third_reg}\n`;
-					} else {
-						code += "\tpush rcx\n";
-						code += `\tmov rcx, ${second_reg}\n`;
-						code += `\tshr ${target}, cl\n`;
-						code += "\tpop rcx\n";
-					}
+					code += `\srl ${target}, ${target}, ${second_reg}\n`;
 				}
 				break;
 			case ParserNodeType.FUNCTION_CALL:
@@ -491,8 +436,10 @@ export class X86_64_Linux implements Target {
 					const fc = exp.value as FunctionCall;
 					sc.use_function(fc.name);
 
+					code += `\taddi x31, sp, -${this.registers.indexOf(target) * 8}\n`;
+
 					for (let i = 0; i < this.registers.indexOf(target); i++) {
-						code += `\tpush ${this.registers[i]}\n`;
+						code += `\tsd ${this.registers[i]}, ${i * 8}(x31)\n`;
 					}
 
 					for (let i = 0; i < fc._arguments.length; i++) {
@@ -508,12 +455,15 @@ export class X86_64_Linux implements Target {
 						throw new Error("Function " + fc.name + " not found!");
 					}
 
+					code += `\taddi sp, sp, -${this.registers.indexOf(target) * 8}\n`;
 					code += `\tcall ${fc.name}\n`;
-					code += `\tmov ${target}, rax\n`;
+					code += `\tmv ${target}, x5\n`;
 
 					for (let i = 0; i < this.registers.indexOf(target); i++) {
-						code += `\tpop ${this.registers[this.registers.indexOf(target) - i - 1]}\n`;
+						code += `\tld ${this.registers[i]}, ${i * 8}(sp)\n`;
 					}
+
+					code += `\taddi sp, sp, ${this.registers.indexOf(target) * 8}\n`;
 				}
 				break;
 			case ParserNodeType.VARIABLE_LOOKUP:
@@ -522,7 +472,7 @@ export class X86_64_Linux implements Target {
 						code += this.generateStackVariableAccess(false, sc.getPtr(exp.value as string) as number, target, (sc.get(exp.value as string) as NamedVariable).datatype);
 					} else {
 						if (gc.getDatatype(exp.value as string) == "str") {
-							code += `\tmov ${target}, ${gc.getPtr(exp.value as string)}\n`;
+							code += `\tla ${target}, ${gc.getPtr(exp.value as string)}\n`;
 						} else {
 							// console.log(exp);
 							code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value as string) as string, target, (gc.get(exp.value as string) as NamedVariable).datatype);
@@ -534,25 +484,21 @@ export class X86_64_Linux implements Target {
 				{
 					code += this.generateExpression(exp.a as ParserNode, gc, sc, second_reg);
 					if (this.lookupContext(exp.value as string, sc, gc) == sc) {
-						code += `\tmov ${target}, [rbp - ${sc.getPtr(exp.value as string)}]\n`;
+						code += `\tld ${target}, ${sc.getPtr(exp.value as string)}(sp)\n`;
 						const nv = sc.get(exp.value as string) as NamedVariable;
 						if (!nv.datatype.array) {
-							let third_reg = this.registers[this.registers.indexOf(target) + 2];
-							if (third_reg == "rcx") {
-								third_reg = "rdx";
-							}
+							const third_reg = this.registers[this.registers.indexOf(target) + 2];
+	
 							// index the bits!
-							code += `\tmov ${third_reg}, 1\n`;
-							code += "\tpush rcx\n";
-							code += `\tmov rcx, ${second_reg}\n`;
-							code += `\tshl ${third_reg}, cl\n`;
-							code += "\tpop rcx\n";
-							code += `\tand ${target}, ${third_reg}\n`;
+							code += `\tli ${third_reg}, 1\n`;
+							code += `\tsll ${third_reg}, ${third_reg}, ${second_reg}\n`;
+							code += `\tand ${target}, ${target}, ${third_reg}\n`;
+
 						} else {
 							code += this.generateArrayAccess(false, target, second_reg, target, sc.getDatatype(exp.value as string) as Datatype);
 						}
 					} else {
-						code += `\tmov ${target}, [${gc.getPtr(exp.value as string)}]\n`;
+						code += `\tla x31, ${gc.getPtr(exp.value as string)}\n\tld ${target}, (x31)\n`;
 						const nv = gc.get(exp.value as string) as NamedVariable;
 						if (!nv.datatype.array) {
 							throw new Error("Bit indexing not supported here!");
@@ -579,7 +525,7 @@ export class X86_64_Linux implements Target {
 
 						if (block[i].a) {
 							code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-							code += this.generateStackVariableAccess(true, sc.getPtr(d.name) as number, "rax", d);
+							code += this.generateStackVariableAccess(true, sc.getPtr(d.name) as number, "x5", d);
 						}
 					}
 					break;
@@ -590,9 +536,9 @@ export class X86_64_Linux implements Target {
 							code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 
 							if (ctx == sc) {
-								code += this.generateStackVariableAccess(true, sc.getPtr(block[i].value as string) as number, "rax", (sc.get(block[i].value as string) as NamedVariable).datatype);
+								code += this.generateStackVariableAccess(true, sc.getPtr(block[i].value as string) as number, "x5", (sc.get(block[i].value as string) as NamedVariable).datatype);
 							} else {
-								code += this.generateGlobalVariableAccess(true, gc.getPtr(block[i].value as string) as string, "rax", (gc.get(block[i].value as string) as NamedVariable).datatype);
+								code += this.generateGlobalVariableAccess(true, gc.getPtr(block[i].value as string) as string, "x5", (gc.get(block[i].value as string) as NamedVariable).datatype);
 							}
 						}
 					}
@@ -602,9 +548,11 @@ export class X86_64_Linux implements Target {
 						const ctx = this.lookupContext(block[i].value as string, sc, gc);
 
 						if (ctx == sc) {
-							code += `\tinc ${this.datatypeToNasmSize(sc.getDatatype(block[i].value as string) as Datatype, (sc.get(block[i].value as string) as NamedVariable).datatype.array)} [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
+							code += `\tld x31, ${sc.getPtr(block[i].value as string)}(sp)\n`;
+							code += `\taddi x31, x31, 1\n`;
+							code += `\tsd x31, ${sc.getPtr(block[i].value as string)}(sp)\n`;
 						} else {
-							code += `\tinc ${this.datatypeToNasmSize(gc.getDatatype(block[i].value as string) as Datatype, (gc.get(block[i].value as string) as NamedVariable).datatype.array)} [${gc.getPtr(block[i].value as string)}]\n`;
+							throw new Error("No");
 						}
 					}
 					break;
@@ -613,16 +561,18 @@ export class X86_64_Linux implements Target {
 						const ctx = this.lookupContext(block[i].value as string, sc, gc);
 	
 						if (ctx == sc) {
-							code += `\tdec ${this.datatypeToNasmSize(sc.getDatatype(block[i].value as string) as Datatype, (sc.get(block[i].value as string) as NamedVariable).datatype.array)} [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
+							code += `\tld x31, ${sc.getPtr(block[i].value as string)}(sp)\n`;
+							code += `\taddi x31, x31, -1\n`;
+							code += `\tsd x31, ${sc.getPtr(block[i].value as string)}(sp)\n`;
 						} else {
-							code += `\tdec ${this.datatypeToNasmSize(gc.getDatatype(block[i].value as string) as Datatype, (gc.get(block[i].value as string) as NamedVariable).datatype.array)} [${gc.getPtr(block[i].value as string)}]\n`;
+							throw new Error("No");
 						}
 					}
 					break;
 				case ParserNodeType.VARIABLE_ASSIGN_ARRAY:
 					{
-						code += this.generateExpression(block[i].a as ParserNode, gc, sc, "rbx");
-						code += this.generateExpression(block[i].b as ParserNode, gc, sc, "rcx");
+						code += this.generateExpression(block[i].a as ParserNode, gc, sc, "x6");
+						code += this.generateExpression(block[i].b as ParserNode, gc, sc, "x7");
 
 						if (this.lookupContext(block[i].value as string, sc, gc) == sc) {
 							const nv = sc.get(block[i].value as string) as NamedVariable;
@@ -630,16 +580,16 @@ export class X86_64_Linux implements Target {
 								throw new Error("Bit assignment not supported");
 							}
 
-							code += `\tmov rax, [rbp - ${sc.getPtr(block[i].value as string)}]\n`;
-							code += this.generateArrayAccess(true, "rax", "rbx", "rcx", sc.getDatatype(block[i].value as string) as Datatype);
+							code += `\tld x5, ${sc.getPtr(block[i].value as string)}(sp)\n`;
+							code += this.generateArrayAccess(true, "x5", "x6", "x7", sc.getDatatype(block[i].value as string) as Datatype);
 						} else {
 							const nv = gc.get(block[i].value as string);
 							if (!nv.datatype.array) {
 								throw new Error("Bit assignment not supported");
 							}
 
-							code += `\tmov rax, [${gc.getPtr(block[i].value as string)}]\n`;
-							code += this.generateArrayAccess(true, "rax", "rbx", "rcx", gc.getDatatype(block[i].value as string) as Datatype);
+							code += `\tla x31, ${gc.getPtr(block[i].value as string)}\nld x5, (x31)\n`;
+							code += this.generateArrayAccess(true, "x5", "x6", "x7", gc.getDatatype(block[i].value as string) as Datatype);
 						}
 
 					}
@@ -669,7 +619,7 @@ export class X86_64_Linux implements Target {
 					if (block[i].a) {
 						code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 					}
-					code += "\tjmp .out\n";
+					code += "\tj " + sc.name + "_out\n";
 					break;
 				case ParserNodeType.IF:
 					{
@@ -679,17 +629,15 @@ export class X86_64_Linux implements Target {
 						if (iff.false_block) {
 							const label2 = sc.label();
 							// skip if rax == 0
-							code += "\tcmp rax, 0\n";
-							code += `\tjz ${label}\n`;
+							code += `\tbeqz x5, ${label}\n`;
 							code += this.generateCodeBlock(f, gc, sc, iff.true_block);
-							code += `\tjmp ${label2}\n`;
+							code += `\tj ${label2}\n`;
 							code += label + ":\n";
 							code += this.generateCodeBlock(f, gc, sc, iff.false_block);
 							code += label2 + ":\n";
 						} else {
 							// skip if rax == 0
-							code += "\tcmp rax, 0\n";
-							code += `\tjz ${label}\n`;
+							code += `\tbeqz x5, ${label}\n`;
 							code += this.generateCodeBlock(f, gc, sc, iff.true_block);
 							code += label + ":\n";
 						}
@@ -701,10 +649,9 @@ export class X86_64_Linux implements Target {
 						code += loop_back_label + ":\n";
 						code += this.generateExpression(block[i].a as ParserNode, gc, sc);
 						const loop_exit_label = sc.label();
-						code += "\tcmp rax, 0\n";
-						code += `\tjz ${loop_exit_label}\n`;
+						code += `\tbeqz x5, ${loop_exit_label}\n`;
 						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
-						code += `\tjmp ${loop_back_label}\n`;
+						code += `\tj ${loop_back_label}\n`;
 						code += loop_exit_label + ":\n";
 					}
 					break;
@@ -714,8 +661,7 @@ export class X86_64_Linux implements Target {
 						code += loop_back_label + ":\n";
 						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
 						code += this.generateExpression(block[i].a as ParserNode, gc, sc);
-						code += "\tcmp rax, 0\n";
-						code += `\tjnz ${loop_back_label}\n`;
+						code += `\tbnez x5, ${loop_back_label}\n`;
 					}
 					break;
 				case ParserNodeType.LOOP:
@@ -723,7 +669,7 @@ export class X86_64_Linux implements Target {
 						const label = sc.label();
 						code += label + ":\n";
 						code += this.generateCodeBlock(f, gc, sc, block[i].value as ParserNode[]);
-						code += `\tjmp ${label}\n`;
+						code += `\tj ${label}\n`;
 					}
 					break;
 				default:
@@ -735,13 +681,13 @@ export class X86_64_Linux implements Target {
 	}
 
 	generateFunction(f: Function, gc: GlobalContext) {
-		const sc = new StackContext();
+		const sc = new StackContext(f.name);
 		let code = "";
 		let precode = "";
 		let aftercode = "";
 
 		if (f.attributes.includes("global")) {
-			precode += `[global ${f.name}]\n`;
+			precode += `.global ${f.name}\n`;
 		}
 
 		if (f.attributes.includes("assembly")) {
@@ -754,7 +700,7 @@ export class X86_64_Linux implements Target {
 			}
 			for (let i = 0; i < f._arguments.length; i++) {
 				sc.register(new NamedVariable(f._arguments[i]));
-				code += `\tmov [rbp - ${sc.getPtr(f._arguments[i].name)}], ${this.registers[i]}\n`;
+				code += `\tsd ${this.registers[i]}, ${sc.getPtr(f._arguments[i].name)}(sp)\n`;
 			}
 
 			code += this.generateCodeBlock(f, gc, sc, f.body);
@@ -762,7 +708,7 @@ export class X86_64_Linux implements Target {
 
 		// console.log(sc);
 
-		return { code: precode + f.name + ":\n" + sc.generateBegin() + code + ".out:\n" + sc.generateEnd() + aftercode, sc };
+		return { code: precode + f.name + ":\n" + sc.generateBegin() + code + f.name + "_out:\n" + sc.generateEnd() + aftercode, sc };
 	}
 
 	keepFunction(functions: CompiledFunction[], name: string) {
@@ -783,8 +729,7 @@ export class X86_64_Linux implements Target {
 		
 		const gc = new GlobalContext();
 
-		let code = "[bits 64]\n";
-		code += "[section .text]\n";
+		let code = ".text\n";
 
 		let functions: CompiledFunction[] = [];
 
@@ -845,19 +790,19 @@ export class X86_64_Linux implements Target {
 		return code;
 	}
 
-	async compile(mode: string, output: string, generated: string): Promise<void> {
+	async compile(mode: string, output: string, generated: string): Promise<void> {	
 		switch (mode) {
 			case "asm":
 				Deno.writeTextFileSync(output, generated);
 				break;
 			case "o":
-				Deno.writeTextFileSync(output + ".asm", generated);
-				await runCommand(`nasm ${output + ".asm"} -felf64 -o ${output} -g`);
+				Deno.writeTextFileSync(output + ".S", generated);
+				await runCommand(`riscv64-linux-gnu-as ${output + ".S"} -o ${output} -g`);
 				break;
 			case "elf":
-				Deno.writeTextFileSync(output + ".asm", generated);
-				await runCommand(`nasm ${output + ".asm"} -felf64 -o ${output + ".o"} -g`);
-				await runCommand(`gcc ${output + ".o"} -o ${output} --static -fno-pie -g`);
+				Deno.writeTextFileSync(output + ".S", generated);
+				await runCommand(`riscv64-linux-gnu-as ${output + ".S"} -o ${output + ".o"} -g`);
+				await runCommand(`riscv64-linux-gnu-gcc ${output + ".o"} -o ${output} --static -fno-pie -g`);
 				break;
 			default:
 				throw new Error("Mode " + mode + " not found!");

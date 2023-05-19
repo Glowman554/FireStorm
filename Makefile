@@ -8,4 +8,4 @@ test:
 all: $(patsubst %.fl,%.elf,$(wildcard tests/*.fl))
 
 clean:
-	rm tests/*.elf tests/*.o tests/*.asm tests/*.json tests/*.summary
+	rm tests/*.elf tests/*.o tests/*.asm tests/*.S tests/*.json tests/*.summary

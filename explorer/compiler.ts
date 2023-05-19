@@ -1,24 +1,37 @@
 import { Lexer } from "../src/lexer.ts";
-import { Parser } from "../src/parser.ts";
+import { Parser, ParserNode } from "../src/parser.ts";
 import { Preprocessor } from "../src/preprocessor.ts";
 import { Interpreter } from "../src/targets/interpreter.ts";
+import { RISCV64_Linux } from "../src/targets/RISCV64_Linux.ts";
+import { Target } from "../src/targets/target.ts";
 import { X86_64_Linux } from "../src/targets/X86_64_Linux.ts";
 
-export function compile(code: string): string {
-	const preprocessor = new Preprocessor(["stdlib/"]);
+function toTarget(target: string, global: ParserNode): Target {
+	switch (target) {
+		case "riscv64-linux-gnu":
+			return new RISCV64_Linux(global);
+		case "x86_64-linux-nasm":
+			return new X86_64_Linux(global);
+		default:
+			throw new Error(`Target ${target} not found!`);
+	}
+}
+
+export function compile(code: string, ctarget: string): string {
+	const preprocessor = new Preprocessor(["stdlib/", "stdlib/" + ctarget + "/"]);
 	code = preprocessor.preprocess(code);
     const lexer = new Lexer(code);
     const tokens = lexer.tokenize();
     const parser = new Parser(tokens);
     const global = parser.global();
-	const target = new X86_64_Linux(global);
+	const target = toTarget(ctarget, global);
     const generated = target.generate();
 	return generated;
 }
 
 
 export function execute(code: string, args: string[]) {
-	const preprocessor = new Preprocessor(["stdlib/"]);
+	const preprocessor = new Preprocessor(["stdlib/", "stdlib/x86_64-linux-nasm/"]);
 	code = preprocessor.preprocess(code);
     const lexer = new Lexer(code);
     const tokens = lexer.tokenize();

@@ -1,22 +1,7 @@
 $include <impl/io.fl>
-$include <impl/mem.fl>
+$include <arch/mem.fl>
+$include <arch/entry.fl>
 $include <impl/string.fl>
-
-function(assembly, global, keep) main() -> int {
-"
-	mov rax, rdi
-	mov rbx, rsi
-	jmp spark
-"
-}
-
-function(assembly, noreturn) do_exit(int code) -> void {
-"
-	mov rdi, rax
-[extern exit]
-	jmp exit
-"
-}
 
 function(noreturn, keep) unreachable() -> void {
 	prints("Reached unreachable code!");

@@ -10,12 +10,18 @@ window.Deno.readTextFileSync = (path) => {
 
 input.addEventListener('input',  () => {
 	try {
-		document.getElementById("output").value = compile(input.value);
+		document.getElementById("output").value = compile(input.value, document.getElementById("target").options[document.getElementById("target").selectedIndex].value);
 		document.getElementById("error").innerText = "";
 	} catch (e) {
 		document.getElementById("error").innerText = "Failed to compile: " + e;
 	}
 });
+
+document.getElementById("target").onchange = (self) => {
+	const event = new Event('input');
+	input.dispatchEvent(event);
+}
+
 
 input.addEventListener('keydown',  (e) => {
 	if (e.keyCode === 9) {
@@ -40,8 +46,13 @@ window.vfs = {};
 const files_to_load = [ 
 	"stdlib/std.fl",
 	"stdlib/impl/io.fl",
-	"stdlib/impl/mem.fl",
 	"stdlib/impl/string.fl",
+	"stdlib/x86_64-linux-nasm/arch/io.fl",
+	"stdlib/x86_64-linux-nasm/arch/mem.fl",
+	"stdlib/x86_64-linux-nasm/arch/entry.fl",
+	"stdlib/riscv64-linux-gnu/arch/io.fl",
+	"stdlib/riscv64-linux-gnu/arch/mem.fl",
+	"stdlib/riscv64-linux-gnu/arch/entry.fl",
 	"example.fl"
 ];
 for (const f of files_to_load) {
