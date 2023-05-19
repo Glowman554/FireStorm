@@ -1,10 +1,4 @@
-// function(assembly) prints(str idk) -> void {
-// "
-//	mov rdi, rax
-//[extern puts]
-//	jmp puts
-// "
-// }
+$include <arch/io.fl>
 
 function prints(chr[] in) -> void {
 	while in[0] {
@@ -13,26 +7,6 @@ function prints(chr[] in) -> void {
 	}
 	printc(10);
 }
-
-function(assembly) printc(chr idk) -> void {
-"
-	mov rdi, rax
-[extern putchar]
-	jmp putchar
-"
-}
-
-// function(assembly) printi(int idk) -> void {
-// "
-// 	mov rdi, .fstr
-// 	mov rsi, rax
-// 	mov rax, 0
-// [extern printf]
-// 	jmp printf
-// 
-// .fstr: db '%d', 10, 0
-// "
-// }
 
 function printi_base(int num, int base) -> void {
 	int sign = 0;

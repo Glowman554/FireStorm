@@ -1,0 +1,6 @@
+function(assembly) printc(chr idk) -> void {
+"
+	mv a0, x5
+	j putchar
+"
+}

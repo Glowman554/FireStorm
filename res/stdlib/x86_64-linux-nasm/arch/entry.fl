@@ -1,0 +1,15 @@
+function(assembly, global, keep) main() -> int {
+"
+	mov rax, rdi
+	mov rbx, rsi
+	jmp spark
+"
+}
+
+function(assembly, noreturn) do_exit(int code) -> void {
+"
+	mov rdi, rax
+[extern exit]
+	jmp exit
+"
+}

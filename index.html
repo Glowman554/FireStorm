@@ -28,8 +28,15 @@
 </head>
 <body>
 	<h1>FireStorm Compiler Explorer</h1>
+	
+	<select id="target">
+		<option>x86_64-linux-nasm</option>
+		<option>riscv64-linux-gnu</option>
+	</select>
+
 	<button id="example">Load Example</button>
 	<button id="run">Run</button><br>
+
 	<textarea id="input" placeholder="Code" spellcheck="false"></textarea>
 
 	<textarea id="output" placeholder="Generated output" spellcheck="false" disabled></textarea>
