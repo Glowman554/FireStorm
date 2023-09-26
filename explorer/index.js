@@ -53,6 +53,9 @@ const files_to_load = [
 	"stdlib/riscv64-linux-gnu/arch/io.fl",
 	"stdlib/riscv64-linux-gnu/arch/mem.fl",
 	"stdlib/riscv64-linux-gnu/arch/entry.fl",
+	"stdlib/bytecode/arch/io.fl",
+	"stdlib/bytecode/arch/mem.fl",
+	"stdlib/bytecode/arch/entry.fl",
 	"example.fl"
 ];
 for (const f of files_to_load) {
