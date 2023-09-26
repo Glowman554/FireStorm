@@ -2,6 +2,7 @@
 import { Lexer } from "./lexer.ts";
 import { Parser, ParserNode } from "./parser.ts";
 import { Preprocessor } from "./preprocessor.ts";
+import { BYTECODE } from "./targets/BYTECODE.ts";
 import { RISCV64_Linux } from "./targets/RISCV64_Linux.ts";
 import { Target } from "./targets/target.ts";
 import { X86_64_Linux } from "./targets/X86_64_Linux.ts";
@@ -12,6 +13,8 @@ function toTarget(target: string, global: ParserNode): Target {
 			return new RISCV64_Linux(global);
 		case "x86_64-linux-nasm":
 			return new X86_64_Linux(global);
+		case "bytecode":
+			return new BYTECODE(global);
 		default:
 			throw new Error(`Target ${target} not found!`);
 	}

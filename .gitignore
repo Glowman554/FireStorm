@@ -2,6 +2,7 @@
 *.S
 *.o
 *.elf
+*.flb
 tests/*.json
 tests/*.summary
 explorer/compiler.js
@@ -9,4 +10,5 @@ explorer/res
 *.vsix
 flr
 flc
+flbr
 upload.sh
