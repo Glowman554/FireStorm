@@ -1,0 +1,9 @@
+function(assembly, global, keep) main() -> int {
+"
+"
+}
+
+function(assembly, noreturn) do_exit(int code) -> void {
+"
+"
+}

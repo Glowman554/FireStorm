@@ -3,6 +3,7 @@ import { Parser, ParserNode } from "../src/parser.ts";
 import { Preprocessor } from "../src/preprocessor.ts";
 import { Interpreter } from "../src/targets/interpreter.ts";
 import { RISCV64_Linux } from "../src/targets/RISCV64_Linux.ts";
+import { BYTECODE } from "../src/targets/BYTECODE.ts";
 import { Target } from "../src/targets/target.ts";
 import { X86_64_Linux } from "../src/targets/X86_64_Linux.ts";
 
@@ -12,6 +13,8 @@ function toTarget(target: string, global: ParserNode): Target {
 			return new RISCV64_Linux(global);
 		case "x86_64-linux-nasm":
 			return new X86_64_Linux(global);
+		case "bytecode":
+			return new BYTECODE(global);
 		default:
 			throw new Error(`Target ${target} not found!`);
 	}

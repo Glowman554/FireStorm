@@ -2014,6 +2014,311 @@ class RISCV64_Linux {
         }
     }
 }
+class BYTECODE {
+    global;
+    constructor(global){
+        this.global = global;
+    }
+    resolveFunction(name) {
+        for (const i of this.global.value){
+            if (i.value.name == name) {
+                return i;
+            }
+        }
+    }
+    clabel = 0;
+    label() {
+        return String(this.clabel++);
+    }
+    generateExpression(exp) {
+        let code = "";
+        switch(exp.id){
+            case ParserNodeType.NUMBER:
+                code += `\tnumber ${exp.value}\n`;
+                break;
+            case ParserNodeType.STRING:
+                code += `\tstring "${exp.value}"\n`;
+                break;
+            case ParserNodeType.COMPARE:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\t${exp.value}\n`;
+                break;
+            case ParserNodeType.NOT:
+                code += this.generateExpression(exp.a);
+                code += `\tinvert\n`;
+                break;
+            case ParserNodeType.ADD:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\tadd\n`;
+                break;
+            case ParserNodeType.SUBSTRACT:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\tsub\n`;
+                break;
+            case ParserNodeType.MULTIPLY:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\tmul\n`;
+                break;
+            case ParserNodeType.DIVIDE:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\tdiv\n`;
+                break;
+            case ParserNodeType.MODULO:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\tmod\n`;
+                break;
+            case ParserNodeType.OR:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\tor\n`;
+                break;
+            case ParserNodeType.AND:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\tand\n`;
+                break;
+            case ParserNodeType.XOR:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\txor\n`;
+                break;
+            case ParserNodeType.BIT_NOT:
+                code += this.generateExpression(exp.a);
+                code += `\tnot\n`;
+                break;
+            case ParserNodeType.SHIFT_LEFT:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\tshift_left\n`;
+                break;
+            case ParserNodeType.SHIFT_RIGHT:
+                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.b);
+                code += `\tshift_right\n`;
+                break;
+            case ParserNodeType.FUNCTION_CALL:
+                {
+                    const fc = exp.value;
+                    for(let i = 0; i < fc._arguments.length; i++){
+                        code += this.generateExpression(fc._arguments[i]);
+                    }
+                    const f = this.resolveFunction(fc.name)?.value;
+                    if (f) {
+                        if (f._arguments.length != fc._arguments.length) {
+                            throw new Error("To manny or not enough arguments!");
+                        }
+                    } else {
+                        throw new Error("Function " + fc.name + " not found!");
+                    }
+                    if (f.attributes.includes("assembly")) {
+                        code += `\tinvoke_native ${fc.name}\n`;
+                    } else {
+                        code += `\tinvoke ${fc.name}\n`;
+                    }
+                }
+                break;
+            case ParserNodeType.VARIABLE_LOOKUP:
+                code += `\tload ${exp.value}\n`;
+                break;
+            case ParserNodeType.VARIABLE_LOOKUP_ARRAY:
+                code += this.generateExpression(exp.a);
+                code += `\tload_indexed ${exp.value}\n`;
+                break;
+            default:
+                throw new Error("Unsupported " + exp.id);
+        }
+        return code;
+    }
+    generateCodeBlock(f, block) {
+        let code = "";
+        for(let i = 0; i < block.length; i++){
+            switch(block[i].id){
+                case ParserNodeType.VARIABLE_DECLARATION:
+                    {
+                        const d = block[i].value;
+                        code += `\tvariable ${d.name} ${d.datatype} ${d.array}\n`;
+                        if (block[i].a) {
+                            code += this.generateExpression(block[i].a);
+                            code += `\tassign ${d.name}\n`;
+                        }
+                    }
+                    break;
+                case ParserNodeType.VARIABLE_ASSIGN:
+                    if (block[i].a) {
+                        code += this.generateExpression(block[i].a);
+                        code += `\tassign ${block[i].value}\n`;
+                    }
+                    break;
+                case ParserNodeType.VARIABLE_INCREASE:
+                    code += `\tincrease ${block[i].value}\n`;
+                    break;
+                case ParserNodeType.VARIABLE_DECREASE:
+                    code += `\tdecrease ${block[i].value}\n`;
+                    break;
+                case ParserNodeType.VARIABLE_ASSIGN_ARRAY:
+                    code += this.generateExpression(block[i].a);
+                    code += this.generateExpression(block[i].b);
+                    code += `\tassign_indexed ${block[i].value}\n`;
+                    break;
+                case ParserNodeType.FUNCTION_CALL:
+                    {
+                        const fc = block[i].value;
+                        for(let i = 0; i < fc._arguments.length; i++){
+                            code += this.generateExpression(fc._arguments[i]);
+                        }
+                        const f = this.resolveFunction(fc.name)?.value;
+                        if (f) {
+                            if (f._arguments.length != fc._arguments.length) {
+                                throw new Error("To manny or not enough arguments!");
+                            }
+                        } else {
+                            throw new Error("Function " + fc.name + " not found!");
+                        }
+                        if (f.attributes.includes("assembly")) {
+                            code += `\tinvoke_native ${fc.name}\n`;
+                        } else {
+                            code += `\tinvoke ${fc.name}\n`;
+                        }
+                        code += "\tdelete\n";
+                    }
+                    break;
+                case ParserNodeType.RETURN:
+                    if (block[i].a) {
+                        code += this.generateExpression(block[i].a);
+                    } else {
+                        code += "\tnumber 0\n";
+                    }
+                    code += "\treturn\n";
+                    break;
+                case ParserNodeType.IF:
+                    {
+                        code += this.generateExpression(block[i].a);
+                        const iff = block[i].value;
+                        const label = this.label();
+                        if (iff.false_block) {
+                            const label2 = this.label();
+                            code += `\tgoto_false ${label}\n`;
+                            code += this.generateCodeBlock(f, iff.true_block);
+                            code += `\tgoto ${label2}\n`;
+                            code += label + ":\n";
+                            code += this.generateCodeBlock(f, iff.false_block);
+                            code += label2 + ":\n";
+                        } else {
+                            code += `\tgoto_false ${label}\n`;
+                            code += this.generateCodeBlock(f, iff.true_block);
+                            code += label + ":\n";
+                        }
+                    }
+                    break;
+                case ParserNodeType.CONDITIONAL_LOOP:
+                    {
+                        const loop_back_label = this.label();
+                        code += loop_back_label + ":\n";
+                        code += this.generateExpression(block[i].a);
+                        const loop_exit_label = this.label();
+                        code += `\tgoto_false ${loop_exit_label}\n`;
+                        code += this.generateCodeBlock(f, block[i].value);
+                        code += `\tgoto ${loop_back_label}\n`;
+                        code += loop_exit_label + ":\n";
+                    }
+                    break;
+                case ParserNodeType.POST_CONDITIONAL_LOOP:
+                    {
+                        const loop_back_label = this.label();
+                        code += loop_back_label + ":\n";
+                        code += this.generateCodeBlock(f, block[i].value);
+                        code += this.generateExpression(block[i].a);
+                        code += `\tgoto_true ${loop_back_label}\n`;
+                    }
+                    break;
+                case ParserNodeType.LOOP:
+                    {
+                        const label = this.label();
+                        code += label + ":\n";
+                        code += this.generateCodeBlock(f, block[i].value);
+                        code += `\tgoto ${label}\n`;
+                    }
+                    break;
+                default:
+                    throw new Error("Unsupported " + block[i].id);
+            }
+        }
+        return code;
+    }
+    generateFunction(f) {
+        let code = "";
+        let aftercode = "";
+        let precode = "";
+        if (f.attributes.includes("assembly")) {
+            return "";
+        } else {
+            for(let i = f._arguments.length - 1; i >= 0; i--){
+                const a = f._arguments[i];
+                code += `\tvariable ${a.name} ${a.datatype} ${a.array}\n`;
+                code += `\tassign ${a.name}\n`;
+            }
+            if (f.attributes.includes("noreturn")) {
+                precode += "\tnoreturn\n";
+            }
+            aftercode += "\tnumber 0\n";
+            aftercode += "\treturn\n";
+            code += this.generateCodeBlock(f, f.body);
+        }
+        return `@begin function ${f.name}\n` + f.name + ":\n" + precode + code + aftercode + "@end function\n";
+    }
+    generate() {
+        const tmp = this.global.value;
+        let code = "";
+        for(let i = 0; i < tmp.length; i++){
+            switch(tmp[i].id){
+                case ParserNodeType.FUNCTION:
+                    code += this.generateFunction(tmp[i].value);
+                    break;
+                case ParserNodeType.VARIABLE_DECLARATION:
+                    if (tmp[i].a) {
+                        if (tmp[i].value.array) {
+                            throw new Error("Global array inizializers not supported!");
+                        }
+                        if (tmp[i].a?.id == ParserNodeType.STRING || tmp[i].a?.id == ParserNodeType.NUMBER) {
+                            const dt = tmp[i].value;
+                            switch(dt.datatype){
+                                case "str":
+                                    code += `global ${dt.name} ${dt.datatype} "${tmp[i].a?.value}"\n`;
+                                    break;
+                                case "int":
+                                    code += `global ${dt.name} ${dt.datatype} ${tmp[i].a?.value}\n`;
+                                    break;
+                            }
+                        } else {
+                            throw new Error("Only string and number are supported for globals!");
+                        }
+                    } else {
+                        const dt = tmp[i].value;
+                        code += `global_reserve ${dt.name} ${dt.datatype} ${dt.array}\n`;
+                    }
+                    break;
+                default:
+                    throw new Error("Unsupported " + tmp[i].id);
+            }
+        }
+        return code;
+    }
+    async compile(mode, output, generated) {
+        switch(mode){
+            case "flb":
+                Deno.writeTextFileSync(output, generated);
+                break;
+            default:
+                throw new Error("Mode " + mode + " not found!");
+        }
+    }
+}
 function dt_to_size1(dt, array) {
     switch(dt){
         case "int":
@@ -2824,6 +3129,8 @@ function toTarget(target, global) {
             return new RISCV64_Linux(global);
         case "x86_64-linux-nasm":
             return new X86_64_Linux(global);
+        case "bytecode":
+            return new BYTECODE(global);
         default:
             throw new Error(`Target ${target} not found!`);
     }

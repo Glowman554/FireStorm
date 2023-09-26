@@ -1,0 +1,9 @@
+function(assembly) allocate(int size) -> int {
+"
+"
+}
+
+function(assembly) deallocate(int ptr) -> void {
+"
+"
+}
