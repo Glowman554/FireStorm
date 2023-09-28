@@ -22,6 +22,7 @@ const files_to_load = [
 	"stdlib/x86_64-linux-nasm/arch/io.fl",
 	"stdlib/x86_64-linux-nasm/arch/mem.fl",
 	"stdlib/x86_64-linux-nasm/arch/entry.fl",
+	"stdlib/x86_64-linux-nasm/arch/file.fl",
 	"example.fl"
 ];
 

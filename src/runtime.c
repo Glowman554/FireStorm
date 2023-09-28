@@ -104,11 +104,53 @@ void nativeDoExit() {
     exit(stack_pop());
 }
 
+void nativeFileOpen() {
+    stack_push((int64_t) fopen((const char*) stack_pop(), (const char*) stack_pop()));
+}
+
+void nativeFileWrite() {
+    int64_t offset = stack_pop();
+    int64_t size = stack_pop();
+    const char* buffer = (const char*) stack_pop();
+    FILE* f = (FILE*) stack_pop();
+
+    fseek(f, offset, SEEK_SET);
+    fwrite(buffer, size, 1, f);
+    stack_push(0);
+}
+
+void nativeFileRead() {
+    int64_t offset = stack_pop();
+    int64_t size = stack_pop();
+    char* buffer = (char*) stack_pop();
+    FILE* f = (FILE*) stack_pop();
+
+    fseek(f, offset, SEEK_SET);
+    fread(buffer, size, 1, f);
+    stack_push(0);
+}
+
+void nativeFileClose() {
+    fclose((FILE*) stack_pop());
+    stack_push(0);
+}
+
+void nativeFileSize() {
+    FILE* f = (FILE*) stack_pop();
+    fseek(f, 0, SEEK_END);
+    stack_push(ftell(f));
+}
+
 NativeFunction nativeFunctions[] = {
     nativePrintc,
     nativeAllocate,
     nativeDeallocate,
-    nativeDoExit
+    nativeDoExit,
+    nativeFileOpen,
+    nativeFileWrite,
+    nativeFileRead,
+    nativeFileClose,
+    nativeFileSize
 };
 
 int64_t* global_variables = NULL;

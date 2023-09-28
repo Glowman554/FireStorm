@@ -1,0 +1,40 @@
+$include <std.fl>
+
+function testFileWrite() -> void {
+    int file = file_open("/tmp/test.txt", "w");
+    if !file {
+        prints("Could not open file for write!");
+        do_exit(1);
+    }
+    
+    str toFile = "Hello World! This is a file written from FL!";
+    file_write(file, toFile, string_length(toFile), 0);
+    file_close(file);
+}
+
+function testFileRead() -> void {
+    int file = file_open("/tmp/test.txt", "r");
+    if !file {
+        prints("Could not open file for read!");
+        do_exit(1);
+    }
+
+    int size = file_size(file);
+
+    chr[] buffer = allocate(size);
+    file_read(file, buffer, size, 0);
+    file_close(file);
+
+    int idx = 0;
+    while idx < size {
+        printc(buffer[idx]);
+        idx++;
+    }
+
+    deallocate(buffer);
+}
+
+function spark(int argc, str[] argv) -> int {
+    testFileWrite();
+    testFileRead();
+}

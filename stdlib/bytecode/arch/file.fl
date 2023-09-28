@@ -1,0 +1,24 @@
+function(assembly) file_open(str path, str mode) -> int {
+"
+"
+}
+
+function(assembly) file_write(int file, chr[] buffer, int len, int offset) -> void {
+"
+"
+}
+
+function(assembly) file_read(int file, chr[] buffer, int len, int offset) -> void {
+"
+"
+}
+
+function(assembly) file_close(int file) -> void {
+"
+"
+}
+
+function(assembly) file_size(int file) -> int {
+"
+"
+}
