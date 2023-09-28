@@ -1,0 +1,67 @@
+function(assembly) file_open(str path, str mode) -> int {
+"
+	mov rdi, rax
+    mov rsi, rbx
+[extern fopen]
+	jmp fopen
+"
+}
+
+function(assembly) file_write(int file, chr[] buffer, int len, int offset) -> void {
+"
+    mov r12, rax
+    mov r13, rcx
+    mov rdi, rax
+    mov rsi, rdx
+    mov rdx, 0
+[extern fseek]
+    call fseek
+    mov rdi, rbx
+    mov rsi, r13
+    mov rdx, 1
+    mov rcx, r12
+[extern fwrite]
+    jmp fwrite
+
+"
+}
+
+function(assembly) file_read(int file, chr[] buffer, int len, int offset) -> void {
+"
+    mov r12, rax
+    mov r13, rcx
+    mov rdi, rax
+    mov rsi, rdx
+    mov rdx, 0
+[extern fseek]
+    call fseek
+    mov rdi, rbx
+    mov rsi, r13
+    mov rdx, 1
+    mov rcx, r12
+[extern fread]
+    jmp fread
+"
+}
+
+function(assembly) file_close(int file) -> void {
+"
+    mov rdi, rax
+[extern fclose]
+    jmp fclose
+"
+}
+
+function(assembly) file_size(int file) -> int {
+"
+    mov r12, rax
+    mov rdi, rax
+    mov rsi, 0 
+    mov rdx, 2
+[extern fseek]
+    call fseek
+    mov rdi, r12
+[extern ftell]
+    jmp ftell
+"
+}

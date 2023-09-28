@@ -1,6 +1,7 @@
 $include <impl/io.fl>
 $include <arch/mem.fl>
 $include <arch/entry.fl>
+$include <arch/file.fl>
 $include <impl/string.fl>
 
 function(noreturn, keep) unreachable() -> void {

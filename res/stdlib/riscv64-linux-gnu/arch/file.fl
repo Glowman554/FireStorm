@@ -1,0 +1,24 @@
+function file_open(str path, str mode) -> int {
+    file_not_supported();
+}
+
+function file_write(int file, chr[] buffer, int len, int offset) -> void {
+    file_not_supported();
+}
+
+function file_read(int file, chr[] buffer, int len, int offset) -> void {
+    file_not_supported();
+}
+
+function file_close(int file) -> void {
+    file_not_supported();
+}
+
+function file_size(int file) -> int {
+    file_not_supported();
+}
+
+function(noreturn) file_not_supported() -> void {
+    prints("The file interface is not supported on this platform!");
+    do_exit(1);
+}

@@ -2014,6 +2014,328 @@ class RISCV64_Linux {
         }
     }
 }
+class BYTECODE_Writer {
+    output;
+    constructor(file){
+        this.output = Deno.openSync(file, {
+            create: true,
+            write: true,
+            truncate: true
+        });
+    }
+    symbols = [];
+    linlocs = [];
+    write(linesStr) {
+        const lines = linesStr.split("\n").map((l)=>l.trim());
+        let byteIdx = 0;
+        for (let i of lines){
+            if (i == "") {
+                continue;
+            }
+            if (i.includes(";")) {
+                i = i.substring(0, i.indexOf(";")).trim();
+            }
+            if (i.startsWith("[")) {} else if (i.endsWith(":")) {
+                this.symbols.push({
+                    name: i.substring(0, i.length - 1),
+                    byteIdx: byteIdx
+                });
+            } else if (i.startsWith("db ")) {
+                const values = i.substring(3).split(",");
+                for (let val of values){
+                    if (val.startsWith("\"") && val.endsWith("\"")) {
+                        val = val.substring(1, val.length - 1);
+                        for (const c of val){
+                            this.output.writeSync(new Uint8Array([
+                                c.charCodeAt(0)
+                            ]));
+                            byteIdx++;
+                        }
+                    } else {
+                        this.output.writeSync(new Uint8Array([
+                            parseInt(val)
+                        ]));
+                        byteIdx++;
+                    }
+                }
+            } else if (i.startsWith("dq ")) {
+                const values = i.substring(3).split(",");
+                for (const val of values){
+                    const parsed = parseInt(val);
+                    if (isNaN(parsed)) {
+                        this.linlocs.push({
+                            name: val,
+                            byteIdx: byteIdx
+                        });
+                        this.output.writeSync(new Uint8Array(new BigUint64Array([
+                            BigInt(0)
+                        ]).buffer));
+                    } else {
+                        this.output.writeSync(new Uint8Array(new BigUint64Array([
+                            BigInt(parsed)
+                        ]).buffer));
+                    }
+                    byteIdx += 8;
+                }
+            } else {
+                throw new Error("Invalid line " + i);
+            }
+        }
+        console.log(this.symbols);
+        for (const loc of this.linlocs){
+            const symbol = this.symbols.find((s)=>s.name == loc.name);
+            if (symbol) {
+                this.output.seekSync(loc.byteIdx, Deno.SeekMode.Start);
+                this.output.writeSync(new Uint8Array(new BigUint64Array([
+                    BigInt(symbol.byteIdx)
+                ]).buffer));
+            } else {
+                throw new Error("Symbol " + loc.name + " not found!");
+            }
+        }
+        this.output.close();
+    }
+}
+class BYTECODE_Encoder {
+    instructions = [
+        "global_reserve",
+        "assign",
+        "assign_indexed",
+        "load",
+        "load_indexed",
+        "number",
+        "string",
+        "goto",
+        "goto_true",
+        "goto_false",
+        "invoke",
+        "invoke_native",
+        "return",
+        "variable",
+        "increase",
+        "decrease",
+        "add",
+        "sub",
+        "mul",
+        "div",
+        "mod",
+        "less",
+        "less_equals",
+        "more",
+        "more_equals",
+        "equals",
+        "not_equals",
+        "invert",
+        "shift_left",
+        "shift_right",
+        "or",
+        "and",
+        "xor",
+        "not",
+        "noreturn",
+        "delete"
+    ];
+    datatypes = [
+        "int",
+        "chr",
+        "str"
+    ];
+    natives = [
+        "printc",
+        "allocate",
+        "deallocate",
+        "do_exit",
+        "file_open",
+        "file_write",
+        "file_read",
+        "file_close",
+        "file_size"
+    ];
+    globals = [];
+    parseCode(lines) {
+        const sections = [];
+        let currentSection = null;
+        for (const line of lines){
+            if (line.startsWith("@")) {
+                const pis = line.split(" ");
+                switch(pis[0]){
+                    case "@begin":
+                        currentSection = {
+                            name: pis[2],
+                            body: [],
+                            type: pis[1]
+                        };
+                        break;
+                    case "@end":
+                        sections.push(currentSection);
+                        currentSection = null;
+                        break;
+                }
+            } else if (currentSection) {
+                currentSection.body.push(line);
+            }
+        }
+        return sections;
+    }
+    translateFunction(f) {
+        let bin = "";
+        const locales = [];
+        const varID = (name)=>{
+            if (locales.includes(name)) {
+                return locales.indexOf(name);
+            } else if (this.globals.includes(name)) {
+                return this.globals.indexOf(name) + 256;
+            } else {
+                throw new Error(name + " not found!");
+            }
+        };
+        for (const is of f.body){
+            if (is == "") {
+                continue;
+            }
+            const instruction = is.split(" ");
+            if (is.endsWith(":")) {
+                bin += `_${is}\n`;
+                continue;
+            }
+            bin += `\tdb ${this.instructions.indexOf(instruction[0])} ; ${is}\n`;
+            switch(instruction[0]){
+                case "global_reserve":
+                case "variable":
+                    if (instruction[0] == "variable") {
+                        locales.push(instruction[1]);
+                    }
+                    bin += `\t\tdq ${varID(instruction[1])}\n\t\tdb ${this.datatypes.indexOf(instruction[2])}, ${instruction[3] == "true" ? 1 : 0}\n`;
+                    break;
+                case "load":
+                case "load_indexed":
+                case "assign":
+                case "assign_indexed":
+                case "increase":
+                case "decrease":
+                    bin += `\t\tdq ${varID(instruction[1])}\n`;
+                    break;
+                case "number":
+                    bin += `\t\tdq ${instruction[1]}\n`;
+                    break;
+                case "invoke":
+                case "goto":
+                case "goto_false":
+                case "goto_true":
+                    bin += `\t\tdq _${instruction[1]}\n`;
+                    break;
+                case "invoke_native":
+                    if (!this.natives.includes(instruction[1])) {
+                        throw new Error("Native " + instruction[1] + " not found!");
+                    }
+                    bin += `\t\tdq ${this.natives.indexOf(instruction[1])}\n`;
+                    break;
+                case "string":
+                    {
+                        const s = is.substring(is.indexOf("\"") + 1, is.lastIndexOf("\""));
+                        bin += `\t\tdq ${s.length}\n`;
+                        bin += `\t\tdb "${s}", 0\n`;
+                    }
+                    break;
+                default:
+                    if (!this.instructions.includes(instruction[0]) || instruction.length != 1) {
+                        throw new Error("Invalid instruction " + instruction[0]);
+                    }
+            }
+        }
+        return bin;
+    }
+    mergeGlobals(s) {
+        const finalGlobal = {
+            name: "global",
+            body: [],
+            type: "global"
+        };
+        const otherSections = [];
+        for (const i of s){
+            if (i.type == "global") {
+                for (const j of i.body){
+                    finalGlobal.body.push(j);
+                }
+            } else {
+                otherSections.push(i);
+            }
+        }
+        return [
+            finalGlobal,
+            ...otherSections
+        ];
+    }
+    translateGlobal(f) {
+        const globalInitSection = {
+            name: "global",
+            body: [],
+            type: "function"
+        };
+        globalInitSection.body.push("global:");
+        for (const is of f.body){
+            if (is == "") {
+                continue;
+            }
+            const instruction = is.split(" ");
+            switch(instruction[0]){
+                case "global":
+                    this.globals.push(instruction[1]);
+                    globalInitSection.body.push(`global_reserve ${instruction[1]} ${instruction[2]} false`);
+                    if (instruction[2] == "int" || instruction[2] == "chr") {
+                        globalInitSection.body.push(`number ${instruction[3]}`);
+                    } else if (instruction[2] == "str") {
+                        globalInitSection.body.push(`string "${is.substring(is.indexOf("\"") + 1, is.lastIndexOf("\""))}"`);
+                    } else {
+                        throw new Error("Invalid instruction!");
+                    }
+                    globalInitSection.body.push(`assign ${instruction[1]}`);
+                    break;
+                case "global_reserve":
+                    this.globals.push(instruction[1]);
+                    globalInitSection.body.push(is);
+                    break;
+                default:
+                    if (!this.instructions.includes(instruction[0]) || instruction.length != 1) {
+                        throw new Error("Invalid instruction " + instruction[0]);
+                    }
+            }
+        }
+        globalInitSection.body.push("number 0");
+        globalInitSection.body.push("return");
+        return this.translateFunction(globalInitSection);
+    }
+    encode(code) {
+        const codeEnc = code.split("\n").map((l)=>l.trim());
+        let __final = "[org 0]\ndq _spark\ndq _global\ndq _unreachable\n";
+        const sections = this.mergeGlobals(this.parseCode(codeEnc));
+        for (const s of sections){
+            if (s.type == "function") {
+                __final += this.translateFunction(s);
+            } else {
+                __final += this.translateGlobal(s);
+            }
+        }
+        return __final;
+    }
+}
+class CompiledFunction1 {
+    code;
+    name;
+    used_functions;
+    keep;
+    constructor(name){
+        this.code = "";
+        this.name = name;
+        this.used_functions = [];
+        this.keep = false;
+    }
+    use(name) {
+        if (!this.used_functions.includes(name)) {
+            this.used_functions.push(name);
+        }
+    }
+}
 class BYTECODE {
     global;
     constructor(global){
@@ -2030,7 +2352,7 @@ class BYTECODE {
     label() {
         return String(this.clabel++);
     }
-    generateExpression(exp) {
+    generateExpression(exp, cf) {
         let code = "";
         switch(exp.id){
             case ParserNodeType.NUMBER:
@@ -2040,73 +2362,74 @@ class BYTECODE {
                 code += `\tstring "${exp.value}"\n`;
                 break;
             case ParserNodeType.COMPARE:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\t${exp.value}\n`;
                 break;
             case ParserNodeType.NOT:
-                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.a, cf);
                 code += `\tinvert\n`;
                 break;
             case ParserNodeType.ADD:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\tadd\n`;
                 break;
             case ParserNodeType.SUBSTRACT:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\tsub\n`;
                 break;
             case ParserNodeType.MULTIPLY:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\tmul\n`;
                 break;
             case ParserNodeType.DIVIDE:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\tdiv\n`;
                 break;
             case ParserNodeType.MODULO:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\tmod\n`;
                 break;
             case ParserNodeType.OR:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\tor\n`;
                 break;
             case ParserNodeType.AND:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\tand\n`;
                 break;
             case ParserNodeType.XOR:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\txor\n`;
                 break;
             case ParserNodeType.BIT_NOT:
-                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.a, cf);
                 code += `\tnot\n`;
                 break;
             case ParserNodeType.SHIFT_LEFT:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\tshift_left\n`;
                 break;
             case ParserNodeType.SHIFT_RIGHT:
-                code += this.generateExpression(exp.a);
-                code += this.generateExpression(exp.b);
+                code += this.generateExpression(exp.a, cf);
+                code += this.generateExpression(exp.b, cf);
                 code += `\tshift_right\n`;
                 break;
             case ParserNodeType.FUNCTION_CALL:
                 {
                     const fc = exp.value;
+                    cf.use(fc.name);
                     for(let i = 0; i < fc._arguments.length; i++){
-                        code += this.generateExpression(fc._arguments[i]);
+                        code += this.generateExpression(fc._arguments[i], cf);
                     }
                     const f = this.resolveFunction(fc.name)?.value;
                     if (f) {
@@ -2127,7 +2450,7 @@ class BYTECODE {
                 code += `\tload ${exp.value}\n`;
                 break;
             case ParserNodeType.VARIABLE_LOOKUP_ARRAY:
-                code += this.generateExpression(exp.a);
+                code += this.generateExpression(exp.a, cf);
                 code += `\tload_indexed ${exp.value}\n`;
                 break;
             default:
@@ -2135,7 +2458,7 @@ class BYTECODE {
         }
         return code;
     }
-    generateCodeBlock(f, block) {
+    generateCodeBlock(f, block, cf) {
         let code = "";
         for(let i = 0; i < block.length; i++){
             switch(block[i].id){
@@ -2144,14 +2467,14 @@ class BYTECODE {
                         const d = block[i].value;
                         code += `\tvariable ${d.name} ${d.datatype} ${d.array}\n`;
                         if (block[i].a) {
-                            code += this.generateExpression(block[i].a);
+                            code += this.generateExpression(block[i].a, cf);
                             code += `\tassign ${d.name}\n`;
                         }
                     }
                     break;
                 case ParserNodeType.VARIABLE_ASSIGN:
                     if (block[i].a) {
-                        code += this.generateExpression(block[i].a);
+                        code += this.generateExpression(block[i].a, cf);
                         code += `\tassign ${block[i].value}\n`;
                     }
                     break;
@@ -2162,15 +2485,16 @@ class BYTECODE {
                     code += `\tdecrease ${block[i].value}\n`;
                     break;
                 case ParserNodeType.VARIABLE_ASSIGN_ARRAY:
-                    code += this.generateExpression(block[i].a);
-                    code += this.generateExpression(block[i].b);
+                    code += this.generateExpression(block[i].a, cf);
+                    code += this.generateExpression(block[i].b, cf);
                     code += `\tassign_indexed ${block[i].value}\n`;
                     break;
                 case ParserNodeType.FUNCTION_CALL:
                     {
                         const fc = block[i].value;
+                        cf.use(fc.name);
                         for(let i = 0; i < fc._arguments.length; i++){
-                            code += this.generateExpression(fc._arguments[i]);
+                            code += this.generateExpression(fc._arguments[i], cf);
                         }
                         const f = this.resolveFunction(fc.name)?.value;
                         if (f) {
@@ -2190,7 +2514,7 @@ class BYTECODE {
                     break;
                 case ParserNodeType.RETURN:
                     if (block[i].a) {
-                        code += this.generateExpression(block[i].a);
+                        code += this.generateExpression(block[i].a, cf);
                     } else {
                         code += "\tnumber 0\n";
                     }
@@ -2198,20 +2522,20 @@ class BYTECODE {
                     break;
                 case ParserNodeType.IF:
                     {
-                        code += this.generateExpression(block[i].a);
+                        code += this.generateExpression(block[i].a, cf);
                         const iff = block[i].value;
                         const label = this.label();
                         if (iff.false_block) {
                             const label2 = this.label();
                             code += `\tgoto_false ${label}\n`;
-                            code += this.generateCodeBlock(f, iff.true_block);
+                            code += this.generateCodeBlock(f, iff.true_block, cf);
                             code += `\tgoto ${label2}\n`;
                             code += label + ":\n";
-                            code += this.generateCodeBlock(f, iff.false_block);
+                            code += this.generateCodeBlock(f, iff.false_block, cf);
                             code += label2 + ":\n";
                         } else {
                             code += `\tgoto_false ${label}\n`;
-                            code += this.generateCodeBlock(f, iff.true_block);
+                            code += this.generateCodeBlock(f, iff.true_block, cf);
                             code += label + ":\n";
                         }
                     }
@@ -2220,10 +2544,10 @@ class BYTECODE {
                     {
                         const loop_back_label = this.label();
                         code += loop_back_label + ":\n";
-                        code += this.generateExpression(block[i].a);
+                        code += this.generateExpression(block[i].a, cf);
                         const loop_exit_label = this.label();
                         code += `\tgoto_false ${loop_exit_label}\n`;
-                        code += this.generateCodeBlock(f, block[i].value);
+                        code += this.generateCodeBlock(f, block[i].value, cf);
                         code += `\tgoto ${loop_back_label}\n`;
                         code += loop_exit_label + ":\n";
                     }
@@ -2232,8 +2556,8 @@ class BYTECODE {
                     {
                         const loop_back_label = this.label();
                         code += loop_back_label + ":\n";
-                        code += this.generateCodeBlock(f, block[i].value);
-                        code += this.generateExpression(block[i].a);
+                        code += this.generateCodeBlock(f, block[i].value, cf);
+                        code += this.generateExpression(block[i].a, cf);
                         code += `\tgoto_true ${loop_back_label}\n`;
                     }
                     break;
@@ -2241,7 +2565,7 @@ class BYTECODE {
                     {
                         const label = this.label();
                         code += label + ":\n";
-                        code += this.generateCodeBlock(f, block[i].value);
+                        code += this.generateCodeBlock(f, block[i].value, cf);
                         code += `\tgoto ${label}\n`;
                     }
                     break;
@@ -2252,11 +2576,12 @@ class BYTECODE {
         return code;
     }
     generateFunction(f) {
+        const cf = new CompiledFunction1(f.name);
         let code = "";
         let aftercode = "";
         let precode = "";
         if (f.attributes.includes("assembly")) {
-            return "";
+            return undefined;
         } else {
             for(let i = f._arguments.length - 1; i >= 0; i--){
                 const a = f._arguments[i];
@@ -2268,17 +2593,29 @@ class BYTECODE {
             }
             aftercode += "\tnumber 0\n";
             aftercode += "\treturn\n";
-            code += this.generateCodeBlock(f, f.body);
+            code += this.generateCodeBlock(f, f.body, cf);
         }
-        return `@begin function ${f.name}\n` + f.name + ":\n" + precode + code + aftercode + "@end function\n";
+        cf.code = `@begin function ${f.name}\n` + f.name + ":\n" + precode + code + aftercode + "@end function\n";
+        return cf;
+    }
+    compiledFunctions = [];
+    keepFunction(name) {
+        const f = this.compiledFunctions.find((v)=>v.name == name);
+        if (f == undefined || f.keep) {
+            return;
+        }
+        f.keep = true;
+        for(let i = 0; i < f.used_functions.length; i++){
+            this.keepFunction(f.used_functions[i]);
+        }
     }
     generate() {
         const tmp = this.global.value;
         let code = "";
+        code += "@begin global\n";
         for(let i = 0; i < tmp.length; i++){
             switch(tmp[i].id){
                 case ParserNodeType.FUNCTION:
-                    code += this.generateFunction(tmp[i].value);
                     break;
                 case ParserNodeType.VARIABLE_DECLARATION:
                     if (tmp[i].a) {
@@ -2307,12 +2644,56 @@ class BYTECODE {
                     throw new Error("Unsupported " + tmp[i].id);
             }
         }
+        code += "@end global\n";
+        for(let i = 0; i < tmp.length; i++){
+            switch(tmp[i].id){
+                case ParserNodeType.FUNCTION:
+                    {
+                        const f = this.generateFunction(tmp[i].value);
+                        if (f) {
+                            this.compiledFunctions.push(f);
+                        }
+                    }
+                    break;
+                case ParserNodeType.VARIABLE_DECLARATION:
+                    break;
+                default:
+                    throw new Error("Unsupported " + tmp[i].id);
+            }
+        }
+        for(let i = 0; i < tmp.length; i++){
+            switch(tmp[i].id){
+                case ParserNodeType.FUNCTION:
+                    {
+                        if (tmp[i].value.attributes.includes("keep")) {
+                            this.keepFunction(tmp[i].value.name);
+                        }
+                    }
+                    break;
+            }
+        }
+        if (this.compiledFunctions.find((v)=>v.name == "spark")) {
+            this.keepFunction("spark");
+        }
+        for(let i = 0; i < this.compiledFunctions.length; i++){
+            if (this.compiledFunctions[i].keep) {
+                code += this.compiledFunctions[i].code;
+            } else {
+                console.log("Removing unused function " + this.compiledFunctions[i].name);
+            }
+        }
         return code;
     }
     async compile(mode, output, generated) {
         switch(mode){
             case "flb":
                 Deno.writeTextFileSync(output, generated);
+                break;
+            case "flenc":
+                Deno.writeTextFileSync(output, new BYTECODE_Encoder().encode(generated));
+                break;
+            case "flbb":
+                new BYTECODE_Writer(output).write(new BYTECODE_Encoder().encode(generated));
                 break;
             default:
                 throw new Error("Mode " + mode + " not found!");
@@ -2446,7 +2827,7 @@ class GlobalContext1 {
         return code;
     }
 }
-class CompiledFunction1 {
+class CompiledFunction2 {
     code;
     name;
     used_functions;
@@ -3059,7 +3440,7 @@ class X86_64_Linux {
                 case ParserNodeType.FUNCTION:
                     {
                         const { code , sc  } = this.generateFunction(tmp[i].value, gc);
-                        functions.push(new CompiledFunction1(code, tmp[i].value.name, sc.used_functions));
+                        functions.push(new CompiledFunction2(code, tmp[i].value.name, sc.used_functions));
                     }
                     break;
                 case ParserNodeType.VARIABLE_DECLARATION:
