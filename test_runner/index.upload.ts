@@ -42,7 +42,7 @@ async function runTest(file: string) {
 		console.log(`${GREEN}TEST PASSED:${COLOR_RESET} ${file}`);
 
 
-		Deno.writeTextFileSync(file + ".summary", summary);
+		Deno.writeTextFileSync(file + ".upload.summary", summary);
 
 		upload += "put " + file + ".elf\n";
 		upload += "put " + file + ".expect\n";
