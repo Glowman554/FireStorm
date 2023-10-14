@@ -2225,10 +2225,17 @@ class BYTECODE_Encoder {
                     bin += `\t\tdq _${instruction[1]}\n`;
                     break;
                 case "invoke_native":
-                    if (!this.natives.includes(instruction[1])) {
-                        throw new Error("Native " + instruction[1] + " not found!");
+                    {
+                        const maybeId = parseInt(instruction[1]);
+                        if (isNaN(maybeId)) {
+                            if (!this.natives.includes(instruction[1])) {
+                                throw new Error("Native " + instruction[1] + " not found!");
+                            }
+                            bin += `\t\tdq ${this.natives.indexOf(instruction[1])}\n`;
+                        } else {
+                            bin += `\t\tdq ${maybeId}\n`;
+                        }
                     }
-                    bin += `\t\tdq ${this.natives.indexOf(instruction[1])}\n`;
                     break;
                 case "string":
                     {
@@ -2352,6 +2359,14 @@ class BYTECODE {
     label() {
         return String(this.clabel++);
     }
+    emitNativeCall(fc, f) {
+        const maybeId = parseInt(f.body[0].value);
+        if (isNaN(maybeId)) {
+            return `\tinvoke_native ${fc.name}\n`;
+        } else {
+            return `\tinvoke_native ${maybeId} ; ${f.name}\n`;
+        }
+    }
     generateExpression(exp, cf) {
         let code = "";
         switch(exp.id){
@@ -2440,7 +2455,7 @@ class BYTECODE {
                         throw new Error("Function " + fc.name + " not found!");
                     }
                     if (f.attributes.includes("assembly")) {
-                        code += `\tinvoke_native ${fc.name}\n`;
+                        code += this.emitNativeCall(fc, f);
                     } else {
                         code += `\tinvoke ${fc.name}\n`;
                     }
@@ -2505,7 +2520,7 @@ class BYTECODE {
                             throw new Error("Function " + fc.name + " not found!");
                         }
                         if (f.attributes.includes("assembly")) {
-                            code += `\tinvoke_native ${fc.name}\n`;
+                            code += this.emitNativeCall(fc, f);
                         } else {
                             code += `\tinvoke ${fc.name}\n`;
                         }
