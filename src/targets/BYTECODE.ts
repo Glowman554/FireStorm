@@ -239,10 +239,17 @@ class BYTECODE_Encoder {
 					break;
 	
 				case "invoke_native":
-					if (!this.natives.includes(instruction[1])) {
-						throw new Error("Native " + instruction[1] + " not found!");
+					{
+						const maybeId = parseInt(instruction[1]);
+						if (isNaN(maybeId)) {
+							if (!this.natives.includes(instruction[1])) {
+								throw new Error("Native " + instruction[1] + " not found!");
+							}
+							bin += `\t\tdq ${this.natives.indexOf(instruction[1])}\n`;
+						} else {
+							bin += `\t\tdq ${maybeId}\n`;
+						}
 					}
-					bin += `\t\tdq ${this.natives.indexOf(instruction[1])}\n`;
 					break;
 	
 				case "string":
@@ -396,6 +403,16 @@ export class BYTECODE implements Target {
 		return String(this.clabel++);
 	}
 
+	emitNativeCall(fc: FunctionCall, f: Function) {
+		const maybeId = parseInt(f.body[0].value as string);
+		if (isNaN(maybeId)) {
+			return `\tinvoke_native ${fc.name}\n`;
+		} else {
+			return `\tinvoke_native ${maybeId} ; ${f.name}\n`;
+		}
+	}
+	
+
 	// generate expression and store result in target
 	generateExpression(exp: ParserNode, cf: CompiledFunction): string {
 		let code = "";
@@ -487,7 +504,7 @@ export class BYTECODE implements Target {
 						throw new Error("Function " + fc.name + " not found!");
 					}
 					if (f.attributes.includes("assembly")) {
-						code += `\tinvoke_native ${fc.name}\n`;
+						code += this.emitNativeCall(fc, f);
 					} else {
 						code += `\tinvoke ${fc.name}\n`;
 					}
@@ -557,7 +574,7 @@ export class BYTECODE implements Target {
 						}
 		
 						if (f.attributes.includes("assembly")) {
-							code += `\tinvoke_native ${fc.name}\n`;
+							code += this.emitNativeCall(fc, f);
 						} else {
 							code += `\tinvoke ${fc.name}\n`;
 						}
