@@ -73,6 +73,7 @@ async function main() {
     let code = Deno.readTextFileSync(input);
 	const preprocessor = new Preprocessor(includes);
 	code = preprocessor.preprocess(code);
+    // Deno.writeTextFileSync(output + ".pp", code);
     const lexer = new Lexer(code);
     const tokens = lexer.tokenize();
     Deno.writeTextFileSync(output + ".tokens.json", JSON.stringify(tokens, undefined, 4));

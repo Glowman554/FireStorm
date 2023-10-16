@@ -1,0 +1,12 @@
+$include <std.fl>
+
+$define STRING_TEST "Hello world!"
+$define INT_TEST 1234
+$define OTHER_TEST printi
+
+function spark(int argc, str[] argv) -> int {
+	prints(STRING_TEST);
+    printi(INT_TEST);
+    OTHER_TEST(INT_TEST);
+	return 0;
+}
