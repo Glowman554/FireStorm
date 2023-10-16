@@ -839,7 +839,7 @@ class Preprocessor {
             return undefined;
         }
     }
-    preprocess(code) {
+    preprocessIncludes(code) {
         const matches = code.match(/\$include ?<[\w/\.]*.\w*>/g);
         if (matches) {
             for(let i = 0; i < matches.length; i++){
@@ -857,10 +857,36 @@ class Preprocessor {
                 }
                 if (!this.included_files.includes(inc)) {
                     this.included_files.push(inc);
-                    code += "\n" + this.preprocess(ncode);
+                    code += "\n" + this.preprocessIncludes(ncode);
                 }
             }
         }
+        return code;
+    }
+    preprocessDefines(code) {
+        const matches = code.match(/\$define ([^ ]*) (.*)/g);
+        const defines = [];
+        if (matches) {
+            for(let i = 0; i < matches.length; i++){
+                code = code.replace(matches[i], "");
+                const defineSplit = matches[i].split(" ");
+                defineSplit.shift();
+                const defineName = defineSplit.shift();
+                const defineValue = defineSplit.join(" ");
+                defines.push({
+                    name: defineName,
+                    value: defineValue
+                });
+            }
+        }
+        for (const define of defines){
+            code = code.replaceAll(define.name, define.value);
+        }
+        return code;
+    }
+    preprocess(code) {
+        code = this.preprocessIncludes(code);
+        code = this.preprocessDefines(code);
         return code;
     }
 }
