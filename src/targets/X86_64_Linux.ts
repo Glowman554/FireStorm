@@ -64,7 +64,7 @@ export class StackContext {
 		}
 
 		this.variables.push(new NamedVariablePtr(v.datatype, this.ptr));
-		this.ptr += v.size();
+		this.ptr += 8;
 	}
 
 	label(): string {
