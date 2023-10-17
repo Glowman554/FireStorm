@@ -1,0 +1,33 @@
+function memory_area_set_8(chr[] buffer, chr value, int ammount) -> void {
+    while ammount {
+        ammount--;
+        buffer[ammount] = value;
+    }
+    buffer[ammount] = value;
+}
+
+function memory_area_set_64(int[] buffer, int value, int ammount) -> void {
+    ammount = ammount / 8;
+    while ammount {
+        ammount--;
+        buffer[ammount] = value;
+    }
+    buffer[ammount] = value;
+}
+
+function memory_area_copy_8(chr[] dest, chr[] src, int ammount) -> void {
+    while ammount {
+        ammount--;
+        dest[ammount] = src[ammount];
+    }
+    dest[ammount] = src[ammount];
+}
+
+function memory_area_copy_64(int[] dest, int[] src, int ammount) -> void {
+    ammount = ammount / 8;
+    while ammount {
+        ammount--;
+        dest[ammount] = src[ammount];
+    }
+    dest[ammount] = src[ammount];
+}

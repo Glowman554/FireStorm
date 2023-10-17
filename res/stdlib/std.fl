@@ -3,6 +3,7 @@ $include <arch/mem.fl>
 $include <arch/entry.fl>
 $include <arch/file.fl>
 $include <impl/string.fl>
+$include <impl/memory.fl>
 
 function(noreturn, keep) unreachable() -> void {
 	prints("Reached unreachable code!");

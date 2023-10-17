@@ -1357,7 +1357,7 @@ class StackContext {
             throw new Error("Already exists");
         }
         this.variables.push(new NamedVariablePtr(v.datatype, this.ptr));
-        this.ptr += v.size();
+        this.ptr += 8;
     }
     label() {
         const label = `${this.name}_${this.local_labels.length}`;
@@ -2790,7 +2790,7 @@ class StackContext1 {
             throw new Error("Already exists");
         }
         this.variables.push(new NamedVariablePtr1(v.datatype, this.ptr));
-        this.ptr += v.size();
+        this.ptr += 8;
     }
     label() {
         const label = `._${this.local_labels.length}`;
