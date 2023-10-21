@@ -11,5 +11,10 @@ function spark(int argc, str[] argv) -> int {
 	string_delete(argc_s);
 	string_delete(res2);
 
+	chr[] dup = string_duplicate("Hello world.");
+	dup[11] = '!';
+	prints(dup);
+	string_delete(dup);
+
 	return 0;
 }
