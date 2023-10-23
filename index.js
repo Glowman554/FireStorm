@@ -8,12 +8,20 @@ window.Deno.readTextFileSync = (path) => {
 	return window.vfs[path];
 }
 
+let stdout = "";
+window.Deno.stdout = {};
+window.Deno.stdout.writeSync = (arr) => {
+	stdout += new TextDecoder().decode(arr);
+}
+
 input.addEventListener('input',  () => {
 	try {
 		document.getElementById("output").value = compile(input.value, document.getElementById("target").options[document.getElementById("target").selectedIndex].value);
 		document.getElementById("error").innerText = "";
 	} catch (e) {
 		document.getElementById("error").innerText = "Failed to compile: " + e;
+		document.getElementById("output").value = stdout;
+		stdout = "";
 	}
 });
 
@@ -35,11 +43,6 @@ document.getElementById("example").onclick = () => {
 	input.value = Deno.readTextFileSync("example.fl");
 	input.dispatchEvent(new Event("input"));
 }
-
-document.getElementById("run").onclick = () => {
-	window.open("./run.html#" + encodeURIComponent(input.value), "_blank");
-}
-
 
 window.vfs = {};
 
