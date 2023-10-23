@@ -76,10 +76,10 @@ async function main() {
     // Deno.writeTextFileSync(output + ".pp", code);
     const lexer = new Lexer(code);
     const tokens = lexer.tokenize();
-    Deno.writeTextFileSync(output + ".tokens.json", JSON.stringify(tokens, undefined, 4));
-    const parser = new Parser(tokens);
+    // Deno.writeTextFileSync(output + ".tokens.json", JSON.stringify(tokens, undefined, 4));
+    const parser = new Parser(tokens, code, input);
     const global = parser.global();
-    Deno.writeTextFileSync(output + ".global.json", JSON.stringify(global, undefined, 4));
+    // Deno.writeTextFileSync(output + ".global.json", JSON.stringify(global, undefined, 4));
     // const interpreter = new Interpreter(global);
     // interpreter.execute();
 

@@ -1,6 +1,7 @@
 import { Compare } from "./features/compare.ts";
 import { compare } from "./features/compare.ts";
 import { Datatype, datatypes, NamedDatatype, UnnamedDatatype } from "./features/datatype.ts";
+import { findErrorLineFile } from "./features/error.ts";
 import { attributes, Function, FunctionAttribute, FunctionCall } from "./features/function.ts";
 import { If } from "./features/if.ts";
 import { LexerToken, LexerTokenType, LexerTokenValue } from "./lexer.ts";
@@ -73,9 +74,14 @@ export class Parser {
     current: LexerToken | undefined;
     pos: number;
 
-    constructor (tokens: LexerToken[]) {
+    code: string;
+    codeFile: string;
+
+    constructor (tokens: LexerToken[], code: string, codeFile: string) {
         this.tokens = tokens;
         this.pos = -1;
+        this.code = code;
+        this.codeFile = codeFile;
         this.advance();
     }
 
@@ -94,9 +100,35 @@ export class Parser {
         this.current = this.tokens[this.pos];
     }
 
+    error(message: string, pos: number | undefined, suppressErrorMessages = false): never {
+        if (!suppressErrorMessages) {
+            if (pos) {
+                const line = findErrorLineFile(this.code, pos);
+                if (line.file == undefined) {
+                    line.file = this.codeFile;
+                }
+                const encoder = new TextEncoder();
+
+                Deno.stdout.writeSync(encoder.encode(`error: ${message} (at ${line.file}:${line.line}:${line.char})\n`));
+
+                
+                Deno.stdout.writeSync(encoder.encode(line.lineStr.replaceAll("\t", " ") + "\n"));
+                for (let j = 0; j < line.char; j++) {
+                    Deno.stdout.writeSync(encoder.encode(" "));
+                }
+                Deno.stdout.writeSync(encoder.encode("^"));
+                Deno.stdout.writeSync(encoder.encode("\n"));
+            } else {
+                console.log("error: " + message);
+            }
+        }
+
+        throw new Error("Compilation failed!");
+    }
+
     expect(type: LexerTokenType) {
         if (!(this.current && this.current.id == type)) {
-            throw new Error("Expected " + type + " but was " + (this.current ? this.current.id : "EOF" ));
+            this.error("Expected " + type + " but was " + (this.current ? this.current.id : "EOF" ), this.current?.pos);
         }
     }
 
@@ -113,11 +145,11 @@ export class Parser {
             this.advance();
             return true;
         } else {
-            throw new Error("Unexpected " + (this.current ? this.current.id : "EOF" ));
+            this.error("Unexpected " + (this.current ? this.current.id : "EOF" ), this.current?.pos);
         }
     }
 
-    datatype(named: boolean): NamedDatatype | UnnamedDatatype {
+    datatype(named: boolean, try_datatype = false): NamedDatatype | UnnamedDatatype {
         if (named) {
             if (this.current && this.current.id as LexerTokenType == LexerTokenType.ID && datatypes.includes(this.current.value as Datatype)) {
                 const datatype = this.current.value as Datatype;
@@ -135,7 +167,7 @@ export class Parser {
                     return tmp;
                 }
             } else {
-                throw new Error("Expected datatype");
+                this.error("Expected datatype", this.current?.pos, try_datatype);
             }
         } else {
             if (this.current && this.current.id as LexerTokenType == LexerTokenType.ID && datatypes.includes(this.current.value as Datatype)) {
@@ -149,7 +181,7 @@ export class Parser {
                     return new UnnamedDatatype(datatype, false);
                 }
             } else {
-                throw new Error("Expected datatype");
+                this.error("Expected datatype", this.current?.pos, try_datatype);
             }
         }
     }
@@ -157,7 +189,7 @@ export class Parser {
     try_datatype(named: boolean): NamedDatatype | UnnamedDatatype | undefined {
         const begin = this.pos;
         try {
-            return this.datatype(named);
+            return this.datatype(named, true);
         } catch(_) {
             this.pos = begin;
             return undefined;
@@ -209,14 +241,14 @@ export class Parser {
                     while (this.current) {
                         const expr = this.expression();
                         if (!expr) {
-                            throw new Error("Expected expression");
+                            this.error("Expected expression", this.current.pos);
                         }
                         args.push(expr);
                         if (this.comma_or_rparen()) {
                             return new ParserNode(ParserNodeType.FUNCTION_CALL, undefined, undefined, new FunctionCall(token.value as string, args));
                         }
                     }
-                    throw new Error("Not implemented");
+                    this.error("Not implemented", undefined);
                 }
             } else {
 				if (this.current && this.current.id == LexerTokenType.LBRACKET) {
@@ -233,9 +265,7 @@ export class Parser {
             return undefined;
         }
 
-        console.log(this.current);
-        console.log(token);
-        throw new Error("Invalid factor");
+        this.error("Invalid factor", this.current?.pos);
     }
 
     bit_logic(): ParserNode | undefined {
@@ -258,7 +288,7 @@ export class Parser {
 				this.advance();
                 result = new ParserNode(ParserNodeType.SHIFT_RIGHT, result, this.factor(), undefined);
             } else {
-                throw new Error("Invalid power");
+                this.error("Invalid power", this.current?.pos);
             }
         }
 
@@ -279,7 +309,7 @@ export class Parser {
 				this.advance();
                 result = new ParserNode(ParserNodeType.MODULO, result, this.bit_logic(), undefined);
             } else {
-                throw new Error("Invalid term");
+                this.error("Invalid term", this.current.pos);
             }
         }
 
@@ -295,7 +325,7 @@ export class Parser {
                 this.advance();
                 result = new ParserNode(ParserNodeType.COMPARE, result, this.term(), com);
             } else {
-                throw new Error("Invalid compare");
+                this.error("Invalid compare", this.current.pos);
             }
         }
         
@@ -314,7 +344,7 @@ export class Parser {
                 this.advance();
                 result = new ParserNode(ParserNodeType.ADD, result, this.term(), undefined);
             } else {
-                throw new Error("Invalid expression");
+                this.error("Invalid expression", this.current.pos);
             }
         }
 
@@ -334,10 +364,10 @@ export class Parser {
                         return attr;
                     }
                 } else {
-                    throw new Error("Unexpected attribute " + this.current.value);
+                    this.error("Unexpected attribute " + this.current.value, this.current.pos);
                 }
             }
-            throw new Error("Unexpected EOF");
+            this.error("Unexpected EOF", undefined);
         } else {
             return attr;
         }
@@ -357,7 +387,7 @@ export class Parser {
                 return args;
             }
         }
-        throw new Error("Unexpected EOF");
+        this.error("Unexpected EOF", undefined);
     }
 
     parse_if(): ParserNode {
@@ -377,7 +407,7 @@ export class Parser {
                             this.expect(LexerTokenType.RBRACE);
                             return new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, [else_code_block]));
                         } else {
-                            throw new Error("Expected IF");
+                            this.error("Expected if", this.current.pos);
                         }
                     } else {
                         this.expect(LexerTokenType.LBRACE);
@@ -394,19 +424,23 @@ export class Parser {
                 return new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined));
 		    }
         } else {
-            throw new Error("Expected expression");
+            this.error("Expected expressions", this.current?.pos);
         }
     }
 
     keyword(): ParserNode[] | undefined {
         if (!this.current) {
-            throw new Error("what");
+            this.error("Unexpected EOF", undefined);
         }
 
         switch (this.current.value as string) {
             case "return":
-                this.advance();
-                return [ new ParserNode(ParserNodeType.RETURN, this.expression(), undefined, undefined) ];
+                {
+                    this.advance();
+                    const ret = [ new ParserNode(ParserNodeType.RETURN, this.expression(), undefined, undefined) ];
+                    this.expect(LexerTokenType.END_OF_LINE);
+                    return ret;
+                }
 
             case "for":
                 {
@@ -426,7 +460,8 @@ export class Parser {
                         this.expect(LexerTokenType.RBRACE);
                         return for_body;
                     } else {
-                        throw new Error("Expected expression");
+                        this.error("Expected expressions", this.current?.pos);
+                        break; // why mister linter? telling me unreachable code but if i don't put it there complaining about fall-trough?
                     }
                 }
 
@@ -444,7 +479,8 @@ export class Parser {
                         this.expect(LexerTokenType.RBRACE);
                         return [ new ParserNode(ParserNodeType.CONDITIONAL_LOOP, expr, undefined, code_block) ];
                     } else {
-                        throw new Error("Expected expression");
+                        this.error("Expected expressions", this.current?.pos);
+                        break; // why mister linter? telling me unreachable code but if i don't put it there complaining about fall-trough?
                     }
                 }
 
@@ -461,10 +497,12 @@ export class Parser {
                         if (expr) {
                             return [ new ParserNode(ParserNodeType.POST_CONDITIONAL_LOOP, expr, undefined, code_block) ];
                         } else {
-                            throw new Error("Expected expression");
+                            this.error("Expected expressions", this.current?.pos);
+                            break;
                         }
                     } else {
-                        throw new Error("Expected while");
+                        this.error("Expected while", this.current?.pos);
+                        break;
                     }
                 }
 
@@ -484,7 +522,7 @@ export class Parser {
 
     code_line(): ParserNode {
         if (!this.current) {
-            throw new Error("what");
+            this.error("Unexpected EOF", undefined);
         }
         const dt = this.try_datatype(true) as NamedDatatype;
         // console.log(dt);
@@ -508,7 +546,7 @@ export class Parser {
                 if (expr) {
                     return new ParserNode(ParserNodeType.VARIABLE_ASSIGN, expr, undefined, possible_variable_name);
                 } else {
-                    throw new Error("Expected expression");
+                    this.error("Expected expressions", this.current.pos);
                 }
             } else if (this.current && this.current.id as LexerTokenType == LexerTokenType.INCREASE) {
                 this.advance();
@@ -527,10 +565,10 @@ export class Parser {
                     if (expr) {
                         return new ParserNode(ParserNodeType.VARIABLE_ASSIGN_ARRAY, idx_expr, expr, possible_variable_name);
                     } else {
-                        throw new Error("Expected expression");
+                        this.error("Expected expressions", this.current.pos);
                     }
                 } else {
-                    throw new Error("Expected expression");
+                    this.error("Expected expressions", this.current.pos);
                 }
             } else {
                 this.reverse();
@@ -538,12 +576,11 @@ export class Parser {
                 if (expr) {
                     return expr;
                 } else {
-                    throw new Error("Expected expression");
+                    this.error("Expected expressions", this.current.pos);
                 }
             }
         } else {
-            console.log(this.current);
-            throw new Error("Expected ID");
+            this.error("Expected ID", this.current.pos);
         }
     }
 
@@ -565,7 +602,7 @@ export class Parser {
             }
             this.advance();
         }
-        throw new Error("Unexpected EOF");
+        this.error("Unexpected EOF", undefined);
     }
 
     global(): ParserNode {
@@ -613,13 +650,13 @@ export class Parser {
                                     }
                                     break;
                                 default:
-                                    throw new Error("Unexpected " + this.current.value);
+                                    this.error("Unexpected " + this.current.value, this.current?.pos);
                             }
                         }
                     }
                     break;
                 default:
-                    throw new Error("Did not expect: " + this.current.id);
+                    this.error("Unexpected " + this.current.id, this.current?.pos);
             }
 
             this.advance();

@@ -44,7 +44,9 @@ export class Preprocessor {
 
 				if (!this.included_files.includes(inc)) {
 					this.included_files.push(inc);
+					code += "\n//@file " + inc;
 					code += "\n" + this.preprocessIncludes(ncode);
+					code += "\n//@endfile";
 				}
 			}
 		}

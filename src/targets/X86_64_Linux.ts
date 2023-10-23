@@ -138,8 +138,13 @@ export class GlobalContext {
 		return this.global_labels.find((vr) => vr.name.name == name)?.name.datatype;
 	} 
 
-	get(name: string): NamedVariable {
-		return new NamedVariable(this.global_labels.find((vr) => vr.name.name == name)?.name as NamedDatatype);
+	get(name: string): NamedVariable | undefined {
+		const dt = this.global_labels.find((vr) => vr.name.name == name)?.name as NamedDatatype;
+		if (dt) {
+			return new NamedVariable(dt);
+		} else {
+			return undefined;
+		}
 	} 
 
 
@@ -196,7 +201,7 @@ export class X86_64_Linux implements Target {
 		} else if (gc.get(name)) {
 			return gc;
 		} else {
-			throw new Error(name + "not found!");
+			throw new Error(name + " not found!");
 		}
 	}
 
@@ -635,6 +640,9 @@ export class X86_64_Linux implements Target {
 							code += this.generateArrayAccess(true, "rax", "rbx", "rcx", sc.getDatatype(block[i].value as string) as Datatype);
 						} else {
 							const nv = gc.get(block[i].value as string);
+							if (!nv) {
+								throw new Error("Could not find " + block[i].value);
+							}
 							if (!nv.datatype.array) {
 								throw new Error("Bit assignment not supported");
 							}
