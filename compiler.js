@@ -1443,6 +1443,7 @@ class GlobalContext {
                     code += `${this.global_labels[i].name.name}: .string "${this.global_labels[i].val}"\n`;
                     break;
                 case "int":
+                case "chr":
                     code += `${this.global_labels[i].name.name}: .quad ${this.global_labels[i].val || 0}\n`;
                     break;
                 default:
@@ -2687,6 +2688,7 @@ class BYTECODE {
                                     code += `global ${dt.name} ${dt.datatype} "${tmp[i].a?.value}"\n`;
                                     break;
                                 case "int":
+                                case "chr":
                                     code += `global ${dt.name} ${dt.datatype} ${tmp[i].a?.value}\n`;
                                     break;
                             }
@@ -2876,6 +2878,7 @@ class GlobalContext1 {
                     code += `${this.global_labels[i].name.name}: db "${this.global_labels[i].val?.replaceAll("\n", "\", 10, \"") || 0}", 0\n`;
                     break;
                 case "int":
+                case "chr":
                     code += `${this.global_labels[i].name.name}: dq ${this.global_labels[i].val || 0}\n`;
                     break;
                 default:
