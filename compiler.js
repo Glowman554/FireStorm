@@ -616,8 +616,45 @@ class Parser {
         }
         throw new Error("Unexpected EOF");
     }
+    parse_if() {
+        const if_body = [];
+        this.advance();
+        const expr = this.expression();
+        this.expect(LexerTokenType.LBRACE);
+        if (expr) {
+            const code_block = this.code_block();
+            this.expect(LexerTokenType.RBRACE);
+            this.advance();
+            if (this.current && this.current.id == LexerTokenType.ID) {
+                if (this.current.value == "else") {
+                    this.advance();
+                    if (this.current.id == LexerTokenType.ID) {
+                        if (this.current.value == "if") {
+                            const else_code_block = this.parse_if();
+                            this.expect(LexerTokenType.RBRACE);
+                            if_body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, else_code_block)));
+                        }
+                    } else {
+                        this.expect(LexerTokenType.LBRACE);
+                        const else_code_block = this.code_block();
+                        this.expect(LexerTokenType.RBRACE);
+                        if_body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, else_code_block)));
+                    }
+                } else {
+                    this.reverse();
+                    if_body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined)));
+                }
+            } else {
+                this.reverse();
+                if_body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined)));
+            }
+        } else {
+            throw new Error("Expected expression");
+        }
+        return if_body;
+    }
     code_block() {
-        const body = [];
+        let body = [];
         this.expect(LexerTokenType.LBRACE);
         this.advance();
         while(this.current){
@@ -641,30 +678,10 @@ class Parser {
                         break;
                     case "if":
                         {
-                            this.advance();
-                            const expr = this.expression();
-                            this.expect(LexerTokenType.LBRACE);
-                            if (expr) {
-                                const code_block = this.code_block();
-                                this.expect(LexerTokenType.RBRACE);
-                                this.advance();
-                                if (this.current && this.current.id == LexerTokenType.ID) {
-                                    if (this.current.value == "else") {
-                                        this.advance_expect(LexerTokenType.LBRACE);
-                                        const else_code_block = this.code_block();
-                                        this.expect(LexerTokenType.RBRACE);
-                                        body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, else_code_block)));
-                                    } else {
-                                        this.reverse();
-                                        body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined)));
-                                    }
-                                } else {
-                                    this.reverse();
-                                    body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined)));
-                                }
-                            } else {
-                                throw new Error("Expected expression");
-                            }
+                            body = [
+                                ...body,
+                                ...this.parse_if()
+                            ];
                         }
                         break;
                     case "while":
