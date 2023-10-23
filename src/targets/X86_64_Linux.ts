@@ -151,6 +151,7 @@ export class GlobalContext {
 					code += `${this.global_labels[i].name.name}: db "${this.global_labels[i].val?.replaceAll("\n", "\", 10, \"") || 0}", 0\n`;
 					break;
 				case "int":
+				case "chr":
 					code += `${this.global_labels[i].name.name}: dq ${this.global_labels[i].val || 0}\n`;
 					break;
 				default:

@@ -153,6 +153,7 @@ export class GlobalContext {
 					code += `${this.global_labels[i].name.name}: .string "${this.global_labels[i].val}"\n`;
 					break;
 				case "int":
+				case "chr":
 					code += `${this.global_labels[i].name.name}: .quad ${this.global_labels[i].val || 0}\n`;
 					break;
 				default:

@@ -715,6 +715,7 @@ export class BYTECODE implements Target {
 									code += `global ${dt.name} ${dt.datatype} "${tmp[i].a?.value}"\n`;
 									break;
 								case "int":
+								case "chr":
 									code += `global ${dt.name} ${dt.datatype} ${tmp[i].a?.value}\n`;
 									break;
 							}

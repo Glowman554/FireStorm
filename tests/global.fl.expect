@@ -1,5 +1,5 @@
 {
 	"arguments": [],
-	"output": ["10", "20", "hello", "10", "20"],
+	"output": ["10", "20", "hello", "10", "20", "X"],
 	"should_fail": false
 }
