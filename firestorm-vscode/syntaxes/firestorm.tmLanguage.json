@@ -22,7 +22,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.firestorm",
-				"match": "\\b(if|else|while|loop|return|do|function)\\b"
+				"match": "\\b(if|else|while|loop|for|return|do|function)\\b"
 			}]
 		},
 		"strings": {

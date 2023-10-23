@@ -13,6 +13,11 @@ function spark(int argc, str[] argv) -> int {
 		idx--;
 	} while idx;
 
+	
+	for int i = 0; i < 3; i++ {
+		printi(i);
+	}
+
 	idx = 3;
 	loop {
 		printi(idx);
