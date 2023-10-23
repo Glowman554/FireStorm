@@ -617,7 +617,6 @@ class Parser {
         throw new Error("Unexpected EOF");
     }
     parse_if() {
-        const if_body = [];
         this.advance();
         const expr = this.expression();
         this.expect(LexerTokenType.LBRACE);
@@ -632,154 +631,194 @@ class Parser {
                         if (this.current.value == "if") {
                             const else_code_block = this.parse_if();
                             this.expect(LexerTokenType.RBRACE);
-                            if_body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, else_code_block)));
+                            return new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, [
+                                else_code_block
+                            ]));
+                        } else {
+                            throw new Error("Expected IF");
                         }
                     } else {
                         this.expect(LexerTokenType.LBRACE);
                         const else_code_block = this.code_block();
                         this.expect(LexerTokenType.RBRACE);
-                        if_body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, else_code_block)));
+                        return new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, else_code_block));
                     }
                 } else {
                     this.reverse();
-                    if_body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined)));
+                    return new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined));
                 }
             } else {
                 this.reverse();
-                if_body.push(new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined)));
+                return new ParserNode(ParserNodeType.IF, expr, undefined, new If(code_block, undefined));
             }
         } else {
             throw new Error("Expected expression");
         }
-        return if_body;
+    }
+    keyword() {
+        if (!this.current) {
+            throw new Error("what");
+        }
+        switch(this.current.value){
+            case "return":
+                this.advance();
+                return [
+                    new ParserNode(ParserNodeType.RETURN, this.expression(), undefined, undefined)
+                ];
+            case "for":
+                {
+                    const for_body = [];
+                    this.advance();
+                    for_body.push(this.code_line());
+                    this.expect(LexerTokenType.END_OF_LINE);
+                    this.advance();
+                    const expr = this.expression();
+                    this.expect(LexerTokenType.END_OF_LINE);
+                    this.advance();
+                    if (expr) {
+                        const update = this.code_line();
+                        for_body.push(new ParserNode(ParserNodeType.CONDITIONAL_LOOP, expr, undefined, [
+                            ...this.code_block(),
+                            update
+                        ]));
+                        this.expect(LexerTokenType.RBRACE);
+                        return for_body;
+                    } else {
+                        throw new Error("Expected expression");
+                    }
+                }
+            case "if":
+                return [
+                    this.parse_if()
+                ];
+            case "while":
+                {
+                    this.advance();
+                    const expr = this.expression();
+                    this.expect(LexerTokenType.LBRACE);
+                    if (expr) {
+                        const code_block = this.code_block();
+                        this.expect(LexerTokenType.RBRACE);
+                        return [
+                            new ParserNode(ParserNodeType.CONDITIONAL_LOOP, expr, undefined, code_block)
+                        ];
+                    } else {
+                        throw new Error("Expected expression");
+                    }
+                }
+            case "do":
+                {
+                    this.advance_expect(LexerTokenType.LBRACE);
+                    const code_block = this.code_block();
+                    this.expect(LexerTokenType.RBRACE);
+                    this.advance_expect(LexerTokenType.ID);
+                    if (this.current && this.current.value == "while") {
+                        this.advance();
+                        const expr = this.expression();
+                        this.expect(LexerTokenType.END_OF_LINE);
+                        if (expr) {
+                            return [
+                                new ParserNode(ParserNodeType.POST_CONDITIONAL_LOOP, expr, undefined, code_block)
+                            ];
+                        } else {
+                            throw new Error("Expected expression");
+                        }
+                    } else {
+                        throw new Error("Expected while");
+                    }
+                }
+            case "loop":
+                {
+                    this.advance();
+                    this.expect(LexerTokenType.LBRACE);
+                    const code_block = this.code_block();
+                    this.expect(LexerTokenType.RBRACE);
+                    return [
+                        new ParserNode(ParserNodeType.LOOP, undefined, undefined, code_block)
+                    ];
+                }
+            default:
+                return undefined;
+        }
+    }
+    code_line() {
+        if (!this.current) {
+            throw new Error("what");
+        }
+        const dt = this.try_datatype(true);
+        if (dt) {
+            if (this.current && this.current.id == LexerTokenType.END_OF_LINE) {
+                return new ParserNode(ParserNodeType.VARIABLE_DECLARATION, undefined, undefined, dt);
+            } else {
+                this.expect(LexerTokenType.ASSIGN);
+                this.advance();
+                return new ParserNode(ParserNodeType.VARIABLE_DECLARATION, this.expression(), undefined, dt);
+            }
+        } else if (this.current.id == LexerTokenType.ID) {
+            const possible_variable_name = this.current.value;
+            this.advance();
+            if (this.current && this.current.id == LexerTokenType.ASSIGN) {
+                this.advance();
+                const expr = this.expression();
+                if (expr) {
+                    return new ParserNode(ParserNodeType.VARIABLE_ASSIGN, expr, undefined, possible_variable_name);
+                } else {
+                    throw new Error("Expected expression");
+                }
+            } else if (this.current && this.current.id == LexerTokenType.INCREASE) {
+                this.advance();
+                return new ParserNode(ParserNodeType.VARIABLE_INCREASE, undefined, undefined, possible_variable_name);
+            } else if (this.current && this.current.id == LexerTokenType.DECREASE) {
+                this.advance();
+                return new ParserNode(ParserNodeType.VARIABLE_DECREASE, undefined, undefined, possible_variable_name);
+            } else if (this.current && this.current.id == LexerTokenType.LBRACKET) {
+                this.advance();
+                const idx_expr = this.expression();
+                this.expect(LexerTokenType.RBRACKET);
+                this.advance_expect(LexerTokenType.ASSIGN);
+                if (idx_expr) {
+                    this.advance();
+                    const expr = this.expression();
+                    if (expr) {
+                        return new ParserNode(ParserNodeType.VARIABLE_ASSIGN_ARRAY, idx_expr, expr, possible_variable_name);
+                    } else {
+                        throw new Error("Expected expression");
+                    }
+                } else {
+                    throw new Error("Expected expression");
+                }
+            } else {
+                this.reverse();
+                const expr = this.expression();
+                if (expr) {
+                    return expr;
+                } else {
+                    throw new Error("Expected expression");
+                }
+            }
+        } else {
+            console.log(this.current);
+            throw new Error("Expected ID");
+        }
     }
     code_block() {
         let body = [];
         this.expect(LexerTokenType.LBRACE);
         this.advance();
         while(this.current){
-            const dt = this.try_datatype(true);
-            if (dt) {
-                if (this.current && this.current.id == LexerTokenType.END_OF_LINE) {
-                    body.push(new ParserNode(ParserNodeType.VARIABLE_DECLARATION, undefined, undefined, dt));
+            if (this.current.id == LexerTokenType.RBRACE) {
+                return body;
+            } else {
+                const keyword = this.keyword();
+                if (keyword) {
+                    body = [
+                        ...body,
+                        ...keyword
+                    ];
                 } else {
-                    this.expect(LexerTokenType.ASSIGN);
-                    this.advance();
-                    body.push(new ParserNode(ParserNodeType.VARIABLE_DECLARATION, this.expression(), undefined, dt));
+                    body.push(this.code_line());
                     this.expect(LexerTokenType.END_OF_LINE);
                 }
-            } else if (this.current.id == LexerTokenType.RBRACE) {
-                return body;
-            } else if (this.current.id == LexerTokenType.ID) {
-                switch(this.current.value){
-                    case "return":
-                        this.advance();
-                        body.push(new ParserNode(ParserNodeType.RETURN, this.expression(), undefined, undefined));
-                        break;
-                    case "if":
-                        {
-                            body = [
-                                ...body,
-                                ...this.parse_if()
-                            ];
-                        }
-                        break;
-                    case "while":
-                        {
-                            this.advance();
-                            const expr = this.expression();
-                            this.expect(LexerTokenType.LBRACE);
-                            if (expr) {
-                                const code_block = this.code_block();
-                                this.expect(LexerTokenType.RBRACE);
-                                body.push(new ParserNode(ParserNodeType.CONDITIONAL_LOOP, expr, undefined, code_block));
-                            } else {
-                                throw new Error("Expected expression");
-                            }
-                        }
-                        break;
-                    case "do":
-                        {
-                            this.advance_expect(LexerTokenType.LBRACE);
-                            const code_block = this.code_block();
-                            this.expect(LexerTokenType.RBRACE);
-                            this.advance_expect(LexerTokenType.ID);
-                            if (this.current && this.current.value == "while") {
-                                this.advance();
-                                const expr = this.expression();
-                                this.expect(LexerTokenType.END_OF_LINE);
-                                if (expr) {
-                                    body.push(new ParserNode(ParserNodeType.POST_CONDITIONAL_LOOP, expr, undefined, code_block));
-                                } else {
-                                    throw new Error("Expected expression");
-                                }
-                            } else {
-                                throw new Error("Expected while");
-                            }
-                        }
-                        break;
-                    case "loop":
-                        {
-                            this.advance();
-                            this.expect(LexerTokenType.LBRACE);
-                            const code_block = this.code_block();
-                            this.expect(LexerTokenType.RBRACE);
-                            body.push(new ParserNode(ParserNodeType.LOOP, undefined, undefined, code_block));
-                        }
-                        break;
-                    default:
-                        {
-                            const possible_variable_name = this.current.value;
-                            this.advance();
-                            if (this.current && this.current.id == LexerTokenType.ASSIGN) {
-                                this.advance();
-                                const expr = this.expression();
-                                this.expect(LexerTokenType.END_OF_LINE);
-                                if (expr) {
-                                    body.push(new ParserNode(ParserNodeType.VARIABLE_ASSIGN, expr, undefined, possible_variable_name));
-                                } else {
-                                    throw new Error("Expected expression");
-                                }
-                            } else if (this.current && this.current.id == LexerTokenType.INCREASE) {
-                                this.advance_expect(LexerTokenType.END_OF_LINE);
-                                body.push(new ParserNode(ParserNodeType.VARIABLE_INCREASE, undefined, undefined, possible_variable_name));
-                            } else if (this.current && this.current.id == LexerTokenType.DECREASE) {
-                                this.advance_expect(LexerTokenType.END_OF_LINE);
-                                body.push(new ParserNode(ParserNodeType.VARIABLE_DECREASE, undefined, undefined, possible_variable_name));
-                            } else if (this.current && this.current.id == LexerTokenType.LBRACKET) {
-                                this.advance();
-                                const idx_expr = this.expression();
-                                this.expect(LexerTokenType.RBRACKET);
-                                this.advance_expect(LexerTokenType.ASSIGN);
-                                if (idx_expr) {
-                                    this.advance();
-                                    const expr = this.expression();
-                                    this.expect(LexerTokenType.END_OF_LINE);
-                                    if (expr) {
-                                        body.push(new ParserNode(ParserNodeType.VARIABLE_ASSIGN_ARRAY, idx_expr, expr, possible_variable_name));
-                                    } else {
-                                        throw new Error("Expected expression");
-                                    }
-                                } else {
-                                    throw new Error("Expected expression");
-                                }
-                            } else {
-                                this.reverse();
-                                const expr = this.expression();
-                                this.expect(LexerTokenType.END_OF_LINE);
-                                if (expr) {
-                                    body.push(expr);
-                                } else {
-                                    throw new Error("Expected expression");
-                                }
-                            }
-                        }
-                        break;
-                }
-            } else {
-                console.log(this.current);
-                console.log(body);
-                throw new Error("Expected ID");
             }
             this.advance();
         }
