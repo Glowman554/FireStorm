@@ -78,7 +78,7 @@ class BYTECODE_Writer {
 			}
 		}
 
-		console.log(this.symbols);
+		// console.log(this.symbols);
 		// console.log(this.linlocs);
 
 		for (const loc of this.linlocs) {
@@ -769,9 +769,10 @@ export class BYTECODE implements Target {
 		for (let i = 0; i < this.compiledFunctions.length; i++) {
 			if (this.compiledFunctions[i].keep) {
 				code += this.compiledFunctions[i].code;
-			} else {
-				console.log("Removing unused function " + this.compiledFunctions[i].name);
 			}
+			// else {
+			// 	console.log("Removing unused function " + this.compiledFunctions[i].name);
+			// }
 		}
 
 		return code;

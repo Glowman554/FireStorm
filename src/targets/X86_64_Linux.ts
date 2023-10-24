@@ -844,9 +844,10 @@ export class X86_64_Linux implements Target {
 		for (let i = 0; i < functions.length; i++) {
 			if (functions[i].keep) {
 				code += functions[i].code;
-			} else {
-				console.log("Removing unused function " + functions[i].name);
 			}
+			// else {
+			// 	console.log("Removing unused function " + functions[i].name);
+			// }
 		}
 
 		code += gc.generate();

@@ -62,7 +62,7 @@ async function main() {
 	includes.push(`./stdlib/${ctarget}/`);
 	includes.push(`/usr/firestorm/include/${ctarget}/`);
 
-	console.log(includes);
+	// console.log(includes);
 
 	if (output == undefined || input == undefined) {
 		throw new Error("Please specify a output and a input");
@@ -88,6 +88,8 @@ async function main() {
 
 
 	await target.compile(mode, output, generated);
+
+	console.log(`Successfully compiled '${input}'`);
 }
 
 await main();
