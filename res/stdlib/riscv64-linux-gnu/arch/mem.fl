@@ -19,3 +19,31 @@ function(assembly) deallocate(int ptr) -> void {
 	j free
 "
 }
+
+function(assembly) memory_write_16(int ptr, int value) -> void {
+"
+	sh x6, 0(x5)
+	ret
+"
+}
+
+function(assembly) memory_read_16(int ptr) -> int {
+"
+	lhu x5, 0(x5)
+	ret
+"
+}
+
+function(assembly) memory_write_32(int ptr, int value) -> void {
+"
+	sw x6, 0(x5)
+	ret
+"
+}
+
+function(assembly) memory_read_32(int ptr) -> int {
+"
+	lwu x5, 0(x5)
+	ret
+"
+}

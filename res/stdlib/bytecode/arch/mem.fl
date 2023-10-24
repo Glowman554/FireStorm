@@ -7,3 +7,23 @@ function(assembly) deallocate(int ptr) -> void {
 "
 "
 }
+
+function(assembly) memory_write_16(int ptr, int value) -> void {
+"
+"
+}
+
+function(assembly) memory_read_16(int ptr) -> int {
+"
+"
+}
+
+function(assembly) memory_write_32(int ptr, int value) -> void {
+"
+"
+}
+
+function(assembly) memory_read_32(int ptr) -> int {
+"
+"
+}

@@ -1752,8 +1752,6 @@ class RISCV64_Linux {
         for(let i = 0; i < functions.length; i++){
             if (functions[i].keep) {
                 code += functions[i].code;
-            } else {
-                console.log("Removing unused function " + functions[i].name);
             }
         }
         code += gc.generate();
@@ -1845,7 +1843,6 @@ class BYTECODE_Writer {
                 throw new Error("Invalid line " + i);
             }
         }
-        console.log(this.symbols);
         for (const loc of this.linlocs){
             const symbol = this.symbols.find((s)=>s.name == loc.name);
             if (symbol) {
@@ -1913,7 +1910,11 @@ class BYTECODE_Encoder {
         "file_write",
         "file_read",
         "file_close",
-        "file_size"
+        "file_size",
+        "memory_write_16",
+        "memory_read_16",
+        "memory_write_32",
+        "memory_read_32"
     ];
     globals = [];
     parseCode(lines) {
@@ -2458,8 +2459,6 @@ class BYTECODE {
         for(let i = 0; i < this.compiledFunctions.length; i++){
             if (this.compiledFunctions[i].keep) {
                 code += this.compiledFunctions[i].code;
-            } else {
-                console.log("Removing unused function " + this.compiledFunctions[i].name);
             }
         }
         return code;
@@ -3267,8 +3266,6 @@ class X86_64_Linux {
         for(let i = 0; i < functions.length; i++){
             if (functions[i].keep) {
                 code += functions[i].code;
-            } else {
-                console.log("Removing unused function " + functions[i].name);
             }
         }
         code += gc.generate();
