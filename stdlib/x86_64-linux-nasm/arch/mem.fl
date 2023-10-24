@@ -13,3 +13,34 @@ function(assembly) deallocate(int ptr) -> void {
 	jmp free
 "
 }
+
+function(assembly) memory_write_16(int ptr, int value) -> void {
+"
+	mov [rax], bx
+	ret
+"
+}
+
+function(assembly) memory_read_16(int ptr) -> int {
+"
+	mov ax, [rax]
+	and rax, 0xffff
+	ret
+"
+}
+
+function(assembly) memory_write_32(int ptr, int value) -> void {
+"
+	mov [rax], ebx
+	ret
+"
+}
+
+function(assembly) memory_read_32(int ptr) -> int {
+"
+	mov eax, [rax]
+	mov rbx, 0xffffffff
+	and rax, rbx
+	ret
+"
+}

@@ -29,6 +29,21 @@ function spark(int argc, str[] argv) -> int {
         return 0;
     }
 
+
+    int ptr = allocate(8);
+
+    memory_write_16(ptr, 65535);
+    if memory_read_16(ptr) != 65535 {
+        prints("Nooo 5");
+        return 0;
+    }
+
+    memory_write_32(ptr, 4294967295);
+    if memory_read_32(ptr) != 4294967295 {
+        prints("Nooo 6");
+        return 0;
+    }
+
     prints("Yay");
 
 	return 0;

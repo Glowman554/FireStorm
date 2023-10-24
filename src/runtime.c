@@ -141,6 +141,28 @@ void nativeFileSize() {
     stack_push(ftell(f));
 }
 
+void nativeMemoryWrite16() {
+    int64_t value = stack_pop();
+    int64_t ptr = stack_pop();
+    *(uint16_t*) ptr = value;
+    stack_push(0);
+}
+
+void nativeMemoryRead16() {
+    stack_push(*(uint16_t*) stack_pop());
+}
+
+void nativeMemoryWrite32() {
+    int64_t value = stack_pop();
+    int64_t ptr = stack_pop();
+    *(uint32_t*) ptr = value;
+    stack_push(0);
+}
+
+void nativeMemoryRead32() {
+    stack_push(*(uint32_t*) stack_pop());
+}
+
 NativeFunction nativeFunctions[] = {
     nativePrintc,
     nativeAllocate,
@@ -150,7 +172,11 @@ NativeFunction nativeFunctions[] = {
     nativeFileWrite,
     nativeFileRead,
     nativeFileClose,
-    nativeFileSize
+    nativeFileSize,
+    nativeMemoryWrite16,
+    nativeMemoryRead16,
+    nativeMemoryWrite32,
+    nativeMemoryRead32
 };
 
 int64_t* global_variables = NULL;

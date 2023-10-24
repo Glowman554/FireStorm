@@ -151,7 +151,13 @@ class BYTECODE_Encoder {
 	];
 	
 	datatypes = [ "int", "chr", "str" ]; 
-	natives = ["printc", "allocate", "deallocate", "do_exit", "file_open", "file_write", "file_read", "file_close", "file_size"];
+	natives = [
+		"printc",
+		"allocate", "deallocate",
+		"do_exit",
+		"file_open", "file_write", "file_read", "file_close", "file_size",
+		"memory_write_16", "memory_read_16", "memory_write_32", "memory_read_32",
+	];
 
 	globals: string[] = [];
 
