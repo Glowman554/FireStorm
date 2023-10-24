@@ -1,0 +1,11 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+    printi(123);
+    printi(0x123);
+    printi(0b101010);
+
+    printi(0xc0ffebabe);
+
+	return 0;
+}

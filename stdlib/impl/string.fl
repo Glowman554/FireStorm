@@ -73,3 +73,22 @@ function string_from_int(int num, int base) -> chr[] {
 
 	return final_result;
 }
+
+function parse_int(chr[] input) -> int {
+    int nummer = 0;
+    int sign = 1;
+
+    if (input[0] == '-') {
+        sign = 0 - 1;
+        input++;
+    } else if (input[0] == '+') {
+        input++;
+    }
+
+    while (input[0] >= '0') & (input[0] <= '9') {
+        nummer = nummer * 10 + (input[0] - '0');
+        input++;
+    }
+
+    return nummer * sign;
+}

@@ -82,11 +82,24 @@ export class Lexer {
             if (this.current.match(/\d/)) {
                 const start_pos = this.pos;
                 let num = "";
-                while (this.current.match(/\d/)) {
+                let base = 10;
+                if (this.current == "0") {
+                    this.advance();
+                    if (this.current as string == "x") {
+                        base = 16;
+                        this.advance();
+                    } else if(this.current as string == "b") {
+                        base = 2;
+                        this.advance();
+                    } else {
+                        this.reverse();
+                    }
+                }
+                while (this.current.match(/\d/) || (base == 16 ? this.current.match(/[a-fA-F]/) : false)) {
                     num += this.current;
                     this.advance();
                 }
-                tokens.push(new LexerToken(LexerTokenType.NUMBER, parseInt(num), start_pos));
+                tokens.push(new LexerToken(LexerTokenType.NUMBER, parseInt(num, base), start_pos));
             }
 
             if (this.current.match(/\w/)) {
