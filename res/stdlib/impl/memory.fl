@@ -31,3 +31,23 @@ function memory_area_copy_64(int[] dest, int[] src, int ammount) -> void {
     }
     dest[ammount] = src[ammount];
 }
+
+function memory_write_8(int ptr, int value) -> void {
+    chr[] tmp = ptr;
+    tmp[0] = value;
+}
+
+function memory_read_8(int ptr) -> int {
+    chr[] tmp = ptr;
+    return tmp[0];
+}
+
+function memory_write_64(int ptr, int value) -> void {
+    int[] tmp = ptr;
+    tmp[0] = value;
+}
+
+function memory_read_64(int ptr) -> int {
+    int[] tmp = ptr;
+    return tmp[0];
+}
