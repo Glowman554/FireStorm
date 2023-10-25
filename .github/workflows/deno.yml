@@ -40,12 +40,12 @@ jobs:
       
       - name: Build explorer
         run: |
-         cd explorer
+         cd src/explorer
          bash build.sh
      
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./explorer
+          publish_dir: ./src/explorer
           publish_branch: gh-pages

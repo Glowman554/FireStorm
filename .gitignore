@@ -7,10 +7,7 @@
 *.flenc
 tests/*.json
 tests/*.summary
-explorer/compiler.js
-explorer/res
+src/explorer/compiler.js
+src/explorer/res
 *.vsix
-flr
-flc
-flvm
 upload.sh
