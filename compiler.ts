@@ -1,10 +1,10 @@
-import { Lexer } from "../src/lexer.ts";
-import { Parser, ParserNode } from "../src/parser.ts";
-import { Preprocessor } from "../src/preprocessor.ts";
-import { RISCV64_Linux } from "../src/targets/RISCV64_Linux.ts";
-import { BYTECODE } from "../src/targets/BYTECODE.ts";
-import { Target } from "../src/targets/target.ts";
-import { X86_64_Linux } from "../src/targets/X86_64_Linux.ts";
+import { Lexer } from "../flc/lexer.ts";
+import { Parser, ParserNode } from "../flc/parser.ts";
+import { Preprocessor } from "../flc/preprocessor.ts";
+import { RISCV64_Linux } from "../flc/targets/RISCV64_Linux.ts";
+import { BYTECODE } from "../flc/targets/BYTECODE.ts";
+import { Target } from "../flc/targets/target.ts";
+import { X86_64_Linux } from "../flc/targets/X86_64_Linux.ts";
 
 function toTarget(target: string, global: ParserNode): Target {
 	switch (target) {
