@@ -31,7 +31,7 @@ let upload = "";
 async function runTest(file: string) {
 	try {
 		// console.log("COMPILE: " + file);
-		const compile_output = await runCommand(`deno run -A src/index.ts ${file} -o ${file}.elf -t riscv64-linux-gnu`);
+		const compile_output = await runCommand(`deno run -A src/flc/index.ts ${file} -o ${file}.elf -t riscv64-linux-gnu`);
 
 		let summary = "";
 

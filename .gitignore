@@ -11,3 +11,4 @@ src/explorer/compiler.js
 src/explorer/res
 *.vsix
 upload.sh
+/flvm
