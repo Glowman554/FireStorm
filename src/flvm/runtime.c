@@ -105,7 +105,9 @@ void nativeDoExit() {
 }
 
 void nativeFileOpen() {
-    stack_push((int64_t) fopen((const char*) stack_pop(), (const char*) stack_pop()));
+    const char* mode = (const char*) stack_pop();
+    const char* file = (const char*) stack_pop();
+    stack_push((int64_t) fopen(file, mode));
 }
 
 void nativeFileWrite() {
