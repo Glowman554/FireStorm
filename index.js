@@ -40,7 +40,7 @@ input.addEventListener('keydown',  (e) => {
 });
 
 document.getElementById("example").onclick = () => {
-	input.value = Deno.readTextFileSync("example.fl");
+	input.value = Deno.readTextFileSync("example/example.fl");
 	input.dispatchEvent(new Event("input"));
 }
 
@@ -58,10 +58,11 @@ function importLibrary(nameAndVersion) {
 		for (const f in res) {
 			fetch(`${host}/remote/get?id=` + res[f]).then(e => e.text().then(e => {
 				console.log("Fetched " + f);
-				window.vfs["stdlib/" + f] = e;
+				window.vfs[name + "/" + f] = e;
 			}))
 		}
 	}));
 }
 
 importLibrary("std@1.0.2");
+importLibrary("example@1.0.0");

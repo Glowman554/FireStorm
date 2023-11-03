@@ -3317,8 +3317,8 @@ function toTarget(target, global) {
 }
 function compile(code, ctarget) {
     const preprocessor = new Preprocessor([
-        "stdlib/",
-        "stdlib/" + ctarget + "/"
+        "std/",
+        "std/" + ctarget + "/"
     ]);
     code = preprocessor.preprocess(code);
     const lexer = new Lexer(code);
