@@ -1,4 +1,0 @@
-function(assembly) printc(chr idk) -> void {
-"
-"
-}

@@ -44,30 +44,24 @@ document.getElementById("example").onclick = () => {
 	input.dispatchEvent(new Event("input"));
 }
 
+// document.getElementById("import").onclick = () => {
+// 	importLibrary(prompt("Library?"));
+// }
+
 window.vfs = {};
 
-const files_to_load = [ 
-	"stdlib/std.fl",
-	"stdlib/impl/io.fl",
-	"stdlib/impl/string.fl",
-	"stdlib/impl/memory.fl",
-	"stdlib/x86_64-linux-nasm/arch/io.fl",
-	"stdlib/x86_64-linux-nasm/arch/mem.fl",
-	"stdlib/x86_64-linux-nasm/arch/entry.fl",
-	"stdlib/x86_64-linux-nasm/arch/file.fl",
-	"stdlib/riscv64-linux-gnu/arch/io.fl",
-	"stdlib/riscv64-linux-gnu/arch/mem.fl",
-	"stdlib/riscv64-linux-gnu/arch/entry.fl",
-	"stdlib/riscv64-linux-gnu/arch/file.fl",
-	"stdlib/bytecode/arch/io.fl",
-	"stdlib/bytecode/arch/mem.fl",
-	"stdlib/bytecode/arch/entry.fl",
-	"stdlib/bytecode/arch/file.fl",
-	"example.fl"
-];
-for (const f of files_to_load) {
-	fetch("res/" + f).then(e => e.text().then(e => {
-		console.log("Fetched " + f);
-		window.vfs[f] = e;
-	}))
+const host = "https://cloud.glowman554.de:3877";
+function importLibrary(nameAndVersion) {
+	const [ name, version ] = nameAndVersion.split("@");
+
+	fetch(`${host}/remote/info?name=${name}&version=${version}`).then(res => res.json().then(res => {
+		for (const f in res) {
+			fetch(`${host}/remote/get?id=` + res[f]).then(e => e.text().then(e => {
+				console.log("Fetched " + f);
+				window.vfs["stdlib/" + f] = e;
+			}))
+		}
+	}));
 }
+
+importLibrary("std@1.0.2");
