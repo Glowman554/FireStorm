@@ -1,0 +1,22 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	int idx = 0;
+
+	while idx < 5 {
+		printi(pow(2, idx));
+		idx++;
+	}
+	return 0;
+}
+
+function pow(int a, int b) -> int {
+	int res = 1;
+
+	while b {
+		b--;
+		res = res * a;
+	}
+
+	return res;
+}

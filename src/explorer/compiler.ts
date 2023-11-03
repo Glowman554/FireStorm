@@ -20,7 +20,7 @@ function toTarget(target: string, global: ParserNode): Target {
 }
 
 export function compile(code: string, ctarget: string): string {
-	const preprocessor = new Preprocessor(["stdlib/", "stdlib/" + ctarget + "/"]);
+	const preprocessor = new Preprocessor(["std/", "std/" + ctarget + "/"]);
 	code = preprocessor.preprocess(code);
     const lexer = new Lexer(code);
     const tokens = lexer.tokenize();
