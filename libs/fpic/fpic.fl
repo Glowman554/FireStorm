@@ -1,0 +1,79 @@
+$include <std.fl>
+
+$define fpic_image_t_offset_magic 0
+$define fpic_image_t_offset_width 8
+$define fpic_image_t_offset_height 16
+$define fpic_image_t_offset_pixels 24
+$define fpic_image_t_size 24
+
+function write_fpic(int[] c, int width, int height, str output) -> int {
+    int size = fpic_image_t_size + (width * height * 4);
+    chr[] buffer = allocate(size);
+
+    memory_write_64(buffer + fpic_image_t_offset_magic, 0xc0ffebabe);
+    memory_write_64(buffer + fpic_image_t_offset_width, width);
+    memory_write_64(buffer + fpic_image_t_offset_height, height);
+
+    for int x = 0; x < width; x++ {
+        for int y = 0; y < height; y++ {
+            int pixel_index = x + y * width;
+            memory_write_32(buffer + fpic_image_t_size + (pixel_index * 4), c[pixel_index]);
+        }
+    }
+
+
+    int file = file_open(output, "wb");
+    if !file {
+        deallocate(buffer);
+        return 0;
+    }
+
+    file_write(file, buffer, size, 0);
+    file_close(file);
+    deallocate(buffer);
+
+    return 1;
+}
+
+function read_fpic(str input) -> int {
+    int file = file_open(input, "rb");
+    if !file {
+        return 0;
+    }
+
+    chr[] buffer = allocate(file_size(file));
+    file_read(file, buffer, file_size(file), 0);
+
+    file_close(file);
+
+    if memory_read_64(buffer + fpic_image_t_offset_magic) != 0xc0ffebabe {
+        deallocate(buffer);
+        return 0;
+    }
+
+    return buffer;
+}
+
+function width_fpic(chr[] fpic) -> int[] {
+    return memory_read_64(fpic + fpic_image_t_offset_width);
+}
+
+function height_fpic(chr[] fpic) -> int[] {
+    return memory_read_64(fpic + fpic_image_t_offset_height);
+}
+
+function canvas_from_fpic(chr[] fpic) -> int[] {
+    int width = width_fpic(fpic);
+    int height = height_fpic(fpic);
+
+    int[] c = allocate(width * height * 8);
+
+    for int x = 0; x < width; x++ {
+        for int y = 0; y < height; y++ {
+            int pixel_index = x + y * width;
+            c[pixel_index] = memory_read_32(fpic + fpic_image_t_size + (pixel_index * 4));
+        }
+    }
+
+    return c;
+}

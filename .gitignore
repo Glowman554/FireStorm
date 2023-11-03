@@ -12,3 +12,5 @@ src/explorer/res
 *.vsix
 upload.sh
 /flvm
+modules
+src/backend/config

@@ -1,0 +1,32 @@
+$include <std.fl>
+
+int random_next = 0;
+
+function random_seed(int seed) -> void {
+    random_next = seed;
+}
+
+function random_seed_dev_random() -> void {
+    int[] seed = allocate(8);
+    
+    int file = file_open("/dev/random", "rb");
+    if !file {
+        prints("Failed to open /dev/random!");
+        do_exit(1);
+    }
+
+    file_read(file, seed, 8, 0);
+    file_close(file);
+
+    random_next = seed[0];
+    deallocate(seed);
+}
+
+function random() -> int {
+	if random_next == 0 {
+        prints("No random seed provided!");
+        do_exit(1);
+	}
+    random_next = random_next * 1103515245 + 12345;
+    return (random_next / 65536) % 32767 + 1; 
+}
