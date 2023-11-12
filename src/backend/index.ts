@@ -38,6 +38,14 @@ async function main() {
 
 	const { router, reqHandler } = create(ErrorMode.ERROR_JSON);
 
+    add(router, {
+        path: "/",
+        method: "GET",
+        handler: async (req) => {
+            return new Response("Hello World!");
+        }
+    });
+
     add(router, createUserRoute(connection));
     add(router, loginUserRoute(connection));
     add(router, logoutUserRoute(connection));
