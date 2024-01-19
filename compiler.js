@@ -1227,7 +1227,7 @@ class RISCV64_Linux {
     }
     resolveFunction(name) {
         for (const i of this.global.value){
-            if (i.value.name == name) {
+            if (i.id == "function" && i.value.name == name) {
                 return i;
             }
         }
@@ -1482,13 +1482,18 @@ class RISCV64_Linux {
                 break;
             case ParserNodeType.VARIABLE_LOOKUP:
                 {
-                    if (this.lookupContext(exp.value, sc, gc) == sc) {
-                        code += this.generateStackVariableAccess(false, sc.getPtr(exp.value), target, sc.get(exp.value).datatype);
+                    const func = this.resolveFunction(exp.value);
+                    if (func) {
+                        code += `\tla ${target}, ${exp.value}\n`;
                     } else {
-                        if (gc.getDatatype(exp.value) == "str") {
-                            code += `\tla ${target}, ${gc.getPtr(exp.value)}\n`;
+                        if (this.lookupContext(exp.value, sc, gc) == sc) {
+                            code += this.generateStackVariableAccess(false, sc.getPtr(exp.value), target, sc.get(exp.value).datatype);
                         } else {
-                            code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value), target, gc.get(exp.value).datatype);
+                            if (gc.getDatatype(exp.value) == "str") {
+                                code += `\tla ${target}, ${gc.getPtr(exp.value)}\n`;
+                            } else {
+                                code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value), target, gc.get(exp.value).datatype);
+                            }
                         }
                     }
                 }
@@ -1930,6 +1935,7 @@ class BYTECODE_Encoder {
         "memory_read_32"
     ];
     globals = [];
+    functions = [];
     parseCode(lines) {
         const sections = [];
         let currentSection = null;
@@ -1976,7 +1982,11 @@ class BYTECODE_Encoder {
                 bin += `_${is}\n`;
                 continue;
             }
-            bin += `\tdb ${this.instructions.indexOf(instruction[0])} ; ${is}\n`;
+            if (instruction[0] == "load" && this.functions.includes(instruction[1])) {
+                bin += `\tdb ${this.instructions.indexOf("number")} ; ${is} (function pointer)\n`;
+            } else {
+                bin += `\tdb ${this.instructions.indexOf(instruction[0])} ; ${is}\n`;
+            }
             switch(instruction[0]){
                 case "global_reserve":
                 case "variable":
@@ -1986,6 +1996,12 @@ class BYTECODE_Encoder {
                     bin += `\t\tdq ${varID(instruction[1])}\n\t\tdb ${this.datatypes.indexOf(instruction[2])}, ${instruction[3] == "true" ? 1 : 0}\n`;
                     break;
                 case "load":
+                    if (this.functions.includes(instruction[1])) {
+                        bin += `\t\tdq ${"_" + instruction[1]}\n`;
+                    } else {
+                        bin += `\t\tdq ${varID(instruction[1])}\n`;
+                    }
+                    break;
                 case "load_indexed":
                 case "assign":
                 case "assign_indexed":
@@ -2094,6 +2110,13 @@ class BYTECODE_Encoder {
         const codeEnc = code.split("\n").map((l)=>l.trim());
         let __final = "[org 0]\ndq _spark\ndq _global\ndq _unreachable\n";
         const sections = this.mergeGlobals(this.parseCode(codeEnc));
+        for (const s of sections){
+            if (s.type == "function") {
+                if (s.name) {
+                    this.functions.push(s.name);
+                }
+            }
+        }
         for (const s of sections){
             if (s.type == "function") {
                 __final += this.translateFunction(s);
@@ -2688,7 +2711,7 @@ class X86_64_Linux {
     }
     resolveFunction(name) {
         for (const i of this.global.value){
-            if (i.value.name == name) {
+            if (i.id == "function" && i.value.name == name) {
                 return i;
             }
         }
@@ -2989,13 +3012,18 @@ class X86_64_Linux {
                 break;
             case ParserNodeType.VARIABLE_LOOKUP:
                 {
-                    if (this.lookupContext(exp.value, sc, gc) == sc) {
-                        code += this.generateStackVariableAccess(false, sc.getPtr(exp.value), target, sc.get(exp.value).datatype);
+                    const func = this.resolveFunction(exp.value);
+                    if (func) {
+                        code += `\tmov ${target}, ${exp.value}\n`;
                     } else {
-                        if (gc.getDatatype(exp.value) == "str") {
-                            code += `\tmov ${target}, ${gc.getPtr(exp.value)}\n`;
+                        if (this.lookupContext(exp.value, sc, gc) == sc) {
+                            code += this.generateStackVariableAccess(false, sc.getPtr(exp.value), target, sc.get(exp.value).datatype);
                         } else {
-                            code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value), target, gc.get(exp.value).datatype);
+                            if (gc.getDatatype(exp.value) == "str") {
+                                code += `\tmov ${target}, ${gc.getPtr(exp.value)}\n`;
+                            } else {
+                                code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value), target, gc.get(exp.value).datatype);
+                            }
                         }
                     }
                 }
