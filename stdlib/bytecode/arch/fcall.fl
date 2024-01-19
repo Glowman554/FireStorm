@@ -1,0 +1,24 @@
+function(assembly) call0(int ptr) -> int {
+"
+"
+}
+
+function(assembly) call1(int ptr, int arg1) -> int {
+"
+"
+}
+
+function(assembly) call2(int ptr, int arg1, int arg2) -> int {
+"
+"
+}
+
+function(assembly) call3(int ptr, int arg1, int arg2, int arg3) -> int {
+"
+"
+}
+
+function(assembly) call4(int ptr, int arg1, int arg2, int arg3, int arg4) -> int {
+"
+"
+}

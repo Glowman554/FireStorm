@@ -7,9 +7,20 @@ function spark(int argc, str[] argv) -> int {
 	int othervar = other;
 	printi(othervar);
 
+	call0(othervar);
+	printi(call4(other2, "a", "b", "c", "d"));
+
 	return 0;
 }
 
 function(keep) other() -> void {
     prints("hello");
+}
+
+function(keep) other2(str a, str b, str c, str d) -> int {
+	prints(a);
+	prints(b);
+	prints(c);
+	prints(d);
+	return 11;
 }

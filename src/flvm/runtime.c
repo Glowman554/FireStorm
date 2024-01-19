@@ -84,6 +84,7 @@ enum Datatypes {
 };
 
 typedef void (*NativeFunction)();
+void invoke(uint64_t location);
 
 void nativePrintc() {
     char c = stack_pop();
@@ -165,6 +166,52 @@ void nativeMemoryRead32() {
     stack_push(*(uint32_t*) stack_pop());
 }
 
+void nativeCall0() {
+    int64_t ptr = stack_pop();
+    invoke(ptr);
+}
+
+void nativeCall1() {
+    int64_t arg1 = stack_pop();
+    int64_t ptr = stack_pop();
+    stack_push(arg1);
+    invoke(ptr);
+}
+
+void nativeCall2() {
+    int64_t arg2 = stack_pop();
+    int64_t arg1 = stack_pop();
+    int64_t ptr = stack_pop();
+    stack_push(arg1);
+    stack_push(arg2);
+    invoke(ptr);
+}
+
+void nativeCall3() {
+    int64_t arg3 = stack_pop();
+    int64_t arg2 = stack_pop();
+    int64_t arg1 = stack_pop();
+    int64_t ptr = stack_pop();
+    stack_push(arg1);
+    stack_push(arg2);
+    stack_push(arg3);
+    invoke(ptr);
+}
+
+void nativeCall4() {
+    int64_t arg4 = stack_pop();
+    int64_t arg3 = stack_pop();
+    int64_t arg2 = stack_pop();
+    int64_t arg1 = stack_pop();
+    int64_t ptr = stack_pop();
+    stack_push(arg1);
+    stack_push(arg2);
+    stack_push(arg3);
+    stack_push(arg4);
+    invoke(ptr);
+}
+
+
 NativeFunction nativeFunctions[] = {
     nativePrintc,
     nativeAllocate,
@@ -178,7 +225,12 @@ NativeFunction nativeFunctions[] = {
     nativeMemoryWrite16,
     nativeMemoryRead16,
     nativeMemoryWrite32,
-    nativeMemoryRead32
+    nativeMemoryRead32,
+    nativeCall0,
+    nativeCall1,
+    nativeCall2,
+    nativeCall3,
+    nativeCall4
 };
 
 int64_t* global_variables = NULL;

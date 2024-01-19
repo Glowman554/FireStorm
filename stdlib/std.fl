@@ -5,6 +5,8 @@ $include <arch/file.fl>
 $include <impl/string.fl>
 $include <impl/memory.fl>
 
+$include <arch/fcall.fl>
+
 function(noreturn, keep) unreachable() -> void {
 	prints("Reached unreachable code!");
 	do_exit(1);

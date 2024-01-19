@@ -1,0 +1,24 @@
+function call0(int ptr) -> int {
+    fcall_not_supported();
+}
+
+function call1(int ptr, int arg1) -> int {
+    fcall_not_supported();
+}
+
+function call2(int ptr, int arg1, int arg2) -> int {
+    fcall_not_supported();
+}
+
+function call3(int ptr, int arg1, int arg2, int arg3) -> int {
+    fcall_not_supported();
+}
+
+function call4(int ptr, int arg1, int arg2, int arg3, int arg4) -> int {
+    fcall_not_supported();
+}
+
+function(noreturn) fcall_not_supported() -> void {
+    prints("The call interface is not supported on this platform!");
+    do_exit(1);
+}

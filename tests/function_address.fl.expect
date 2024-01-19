@@ -1,5 +1,5 @@
 {
 	"arguments": [],
-	"output": ["*", "*"],
+	"output": ["*", "*", "hello", "a", "b", "c", "d", "11"],
 	"should_fail": false
 }

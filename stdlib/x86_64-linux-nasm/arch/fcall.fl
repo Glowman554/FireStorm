@@ -1,0 +1,44 @@
+function(assembly) call0(int ptr) -> int {
+"
+    mov r15, rax
+    jmp r15
+"
+}
+
+function(assembly) call1(int ptr, int arg1) -> int {
+"
+    mov r15, rax
+    mov rax, rbx
+    jmp r15
+"
+}
+
+function(assembly) call2(int ptr, int arg1, int arg2) -> int {
+"
+    mov r15, rax
+    mov rax, rbx
+    mov rbx, rcx
+    jmp r15
+"
+}
+
+function(assembly) call3(int ptr, int arg1, int arg2, int arg3) -> int {
+"
+    mov r15, rax
+    mov rax, rbx
+    mov rbx, rcx
+    mov rcx, rdx
+    jmp r15
+"
+}
+
+function(assembly) call4(int ptr, int arg1, int arg2, int arg3, int arg4) -> int {
+"
+    mov r15, rax
+    mov rax, rbx
+    mov rbx, rcx
+    mov rcx, rdx
+    mov rdx, rsi
+    jmp r15
+"
+}
