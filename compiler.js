@@ -1932,7 +1932,12 @@ class BYTECODE_Encoder {
         "memory_write_16",
         "memory_read_16",
         "memory_write_32",
-        "memory_read_32"
+        "memory_read_32",
+        "call0",
+        "call1",
+        "call2",
+        "call3",
+        "call4"
     ];
     globals = [];
     functions = [];
