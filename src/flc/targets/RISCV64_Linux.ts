@@ -205,7 +205,7 @@ export class RISCV64_Linux implements Target {
 
 	resolveFunction(name: string): ParserNode | undefined {
         for (const i of this.global.value as ParserNode[]) {
-            if ((i.value as Function).name == name) {
+            if (i.id == "function" && (i.value as Function).name == name) {
                 return i;
             }
         }
@@ -474,14 +474,19 @@ export class RISCV64_Linux implements Target {
 				break;
 			case ParserNodeType.VARIABLE_LOOKUP:
 				{
-					if (this.lookupContext(exp.value as string, sc, gc) == sc) {
-						code += this.generateStackVariableAccess(false, sc.getPtr(exp.value as string) as number, target, (sc.get(exp.value as string) as NamedVariable).datatype);
+					const func = this.resolveFunction(exp.value as string);
+					if (func) {
+						code += `\tla ${target}, ${exp.value}\n`;
 					} else {
-						if (gc.getDatatype(exp.value as string) == "str") {
-							code += `\tla ${target}, ${gc.getPtr(exp.value as string)}\n`;
+						if (this.lookupContext(exp.value as string, sc, gc) == sc) {
+							code += this.generateStackVariableAccess(false, sc.getPtr(exp.value as string) as number, target, (sc.get(exp.value as string) as NamedVariable).datatype);
 						} else {
-							// console.log(exp);
-							code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value as string) as string, target, (gc.get(exp.value as string) as NamedVariable).datatype);
+							if (gc.getDatatype(exp.value as string) == "str") {
+								code += `\tla ${target}, ${gc.getPtr(exp.value as string)}\n`;
+							} else {
+								// console.log(exp);
+								code += this.generateGlobalVariableAccess(false, gc.getPtr(exp.value as string) as string, target, (gc.get(exp.value as string) as NamedVariable).datatype);
+							}
 						}
 					}
 				}

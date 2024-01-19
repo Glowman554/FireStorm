@@ -1,0 +1,15 @@
+$include <std.fl>
+
+
+function spark(int argc, str[] argv) -> int {
+	printi(other);
+
+	int othervar = other;
+	printi(othervar);
+
+	return 0;
+}
+
+function(keep) other() -> void {
+    prints("hello");
+}

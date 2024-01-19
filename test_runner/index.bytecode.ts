@@ -31,7 +31,11 @@ async function runTest(file: string) {
 		const expected = JSON.parse(Deno.readTextFileSync(file + ".expect")) as Expected;
 
 		// console.log("COMPILE: " + file);
-		const compile_output = await runCommand(`deno run -A src/flc/index.ts -t bytecode ${file} -o ${file}.flbb`);
+		let compile_output = await runCommand(`deno run -A src/flc/index.ts -t bytecode ${file} -o ${file}.flb`);
+		compile_output += `\n`;
+		compile_output += await runCommand(`deno run -A src/flc/index.ts -t bytecode ${file} -o ${file}.flenc`);
+		compile_output += `\n`;
+		compile_output += await runCommand(`deno run -A src/flc/index.ts -t bytecode ${file} -o ${file}.flbb`);
 
 		// console.log("RUN: " + file + ".elf");
 		let output = undefined;

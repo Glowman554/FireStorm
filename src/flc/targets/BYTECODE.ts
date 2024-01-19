@@ -160,7 +160,7 @@ class BYTECODE_Encoder {
 	];
 
 	globals: string[] = [];
-
+	functions: string[] = [];
 
 
 	parseCode(lines: string[]): SectionInfo[] {
@@ -212,8 +212,12 @@ class BYTECODE_Encoder {
 				bin += `_${is}\n`;
 				continue;
 			} 
-	
-			bin += `\tdb ${this.instructions.indexOf(instruction[0])} ; ${is}\n`;
+
+			if (instruction[0] == "load" && this.functions.includes(instruction[1])) {
+				bin += `\tdb ${this.instructions.indexOf("number")} ; ${is} (function pointer)\n`;
+			} else {
+				bin += `\tdb ${this.instructions.indexOf(instruction[0])} ; ${is}\n`;
+			}
 	
 			switch (instruction[0]) {
 				case "global_reserve":
@@ -225,6 +229,13 @@ class BYTECODE_Encoder {
 					break;
 	
 				case "load":
+					if (this.functions.includes(instruction[1])) {
+						bin += `\t\tdq ${"_" + instruction[1]}\n`;
+					} else {
+						bin += `\t\tdq ${varID(instruction[1])}\n`;
+					}
+					break;
+
 				case "load_indexed":
 				case "assign":
 				case "assign_indexed":
@@ -356,6 +367,14 @@ class BYTECODE_Encoder {
 
 		let final = "[org 0]\ndq _spark\ndq _global\ndq _unreachable\n";
 		const sections = this.mergeGlobals(this.parseCode(codeEnc));
+		for (const s of sections) {
+			if (s.type == "function") {
+				if (s.name) {
+					this.functions.push(s.name);
+				}
+			}
+		}
+
 		for (const s of sections) {
 			if (s.type == "function") {
 				final += this.translateFunction(s);
