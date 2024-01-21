@@ -1,0 +1,12 @@
+function(assembly) tinf_init() -> void {
+    "35269"
+}
+function(assembly) tinf_uncompress(int dest, int[] destLen, int source, int sourceLen) -> int {
+    "35270"
+}
+function(assembly) tinf_gzip_uncompress(int dest, int[] destLen, int source, int sourceLen) -> int {
+    "35271"
+}
+function(assembly) tinf_zlib_uncompress(int dest, int[] destLen, int source, int sourceLen) -> int {
+    "35272"
+}

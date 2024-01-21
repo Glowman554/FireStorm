@@ -1,0 +1,23 @@
+{
+    "name": "gunzip",
+    "version": "1.0.1",
+    "main": "main.fl",
+    "type": "executable",
+    "compiler": [
+        {
+            "target": "bytecode",
+            "mode": "flbb"
+        },
+        {
+            "target": "bytecode",
+            "mode": "flenc"
+        },
+        {
+            "target": "bytecode",
+            "mode": "flb"
+        }
+    ],
+    "dependencies": [
+        "tinf@1.0.0-x64"
+    ]
+}
