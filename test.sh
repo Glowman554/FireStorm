@@ -1,5 +1,7 @@
 set -ex 
 
+gcc src/flvm/*.c -o flvm
+
 deno run -A test_runner/index.ts
 # deno run -A test_runner/index.interpret.ts
 deno run -A test_runner/index.upload.ts

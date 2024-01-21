@@ -83,8 +83,6 @@ async function runTest(file: string) {
 	}
 }
 async function main() {
-	await runCommand("gcc src/flvm/runtime.c -o flvm");
-
 	const promises: Promise<void>[] = [];
 	for await (const dirEntry of Deno.readDir('tests')) {
 		if (dirEntry.name.endsWith(".fl")) {
