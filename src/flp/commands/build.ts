@@ -1,5 +1,5 @@
 import { BaseCommand } from "../command.ts";
-import { loadProject, runCommand } from "../project.ts";
+import { loadProject, runCommand, CompilerOptions } from "../project.ts";
 import { downloadIfNecessary, readIncludes } from "../package.ts";
 
 export class BuildCommand extends BaseCommand {
@@ -18,22 +18,33 @@ export class BuildCommand extends BaseCommand {
 
         console.log(`Building ${project.name}@${project.version}`);
 
-        let command = "flc ";
-        command += "-t " + project.compiler.target + " ";
-        command += "-o " + project.main + "." + project.compiler.mode + " ";
-        for (const i of project.dependencies || []) {
-            await downloadIfNecessary(i);
-            // command += "-i modules/" + i + "/ ";
+        let options: CompilerOptions[] = [];
+        if (Array.isArray(project.compiler)) {
+            options = project.compiler;
+        } else {
+            options.push(project.compiler);
         }
-        for (const i of readIncludes()) {
-            command += "-i \"modules/" + i + "/\" ";
-        }
-        for (const i of project.compiler.other || []) {
-            command += i + " ";
-        }
-        command += project.main;
 
-        await runCommand(command);
+        console.log("Building for " + options.length + " targets");
+
+        for (const option of options) {
+            let command = "flc ";
+            command += "-t " + option.target + " ";
+            command += "-o " + project.main + "." + option.target + "." + option.mode + " ";
+            for (const i of project.dependencies || []) {
+                await downloadIfNecessary(i);
+                // command += "-i modules/" + i + "/ ";
+            }
+            for (const i of readIncludes()) {
+                command += "-i \"modules/" + i + "/\" ";
+            }
+            for (const i of option.other || []) {
+                command += i + " ";
+            }
+            command += project.main;
+
+            await runCommand(command);
+        }
 
         console.log("Done.");
     }

@@ -1,3 +1,9 @@
+export interface CompilerOptions {
+	target: string;
+	mode: string;
+	other: string[] | undefined;
+};
+
 export interface ProjectFile {
     name: string;
     version: string;
@@ -6,11 +12,7 @@ export interface ProjectFile {
 
 	type: "executable" | "module";
 
-    compiler: {
-        target: string;
-        mode: string;
-        other: string[] | undefined;
-    },
+    compiler: CompilerOptions | CompilerOptions[];
 
 	dependencies: string[] | undefined;
 }

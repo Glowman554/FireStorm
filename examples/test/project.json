@@ -3,10 +3,20 @@
     "version": "1.0.0",
     "main": "main.fl",
     "type": "executable",
-    "compiler": {
-        "target": "bytecode",
-        "mode": "flbb"
-    },
+    "compiler": [
+        {
+            "target": "bytecode",
+            "mode": "flbb"
+        },
+        {
+            "target": "x86_64-linux-nasm",
+            "mode": "elf"
+        },
+        {
+            "target": "riscv64-linux-gnu",
+            "mode": "elf"
+        }
+    ],
     "dependencies": [
         "fpic@1.0.4",
         "random@1.0.2"
