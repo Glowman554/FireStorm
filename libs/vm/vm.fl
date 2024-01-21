@@ -1,29 +1,24 @@
-$define struct vm_instance_offset_code 0
-$define struct vm_instance_offset_stack 8
-$define struct vm_instance_offset_stack_ptr 16
-$define struct vm_instance_offset_max_stack 20
-$define struct vm_instance_offset_global_variables 24
-$define struct vm_instance_offset_global_variable_types 32
-$define struct vm_instance_offset_global_variable_size 40
-$define struct vm_instance_offset_spark 48
+$define vm_instance_offset_code 0
+$define vm_instance_offset_stack 8
+$define vm_instance_offset_stack_ptr 16
+$define vm_instance_offset_max_stack 20
+$define vm_instance_offset_global_variables 24
+$define vm_instance_offset_global_variable_types 32
+$define vm_instance_offset_global_variable_size 40
+$define vm_instance_offset_spark 48
 $define struct vm_instance_size 56
-
 function(assembly) stack_push(int vm, int value) -> void {
     "48327"
 }
-
 function(assembly) stack_pop(int vm) -> int {
     "48328"
 }
-
 function(assembly) invoke(int vm, int location) -> void {
     "48329"
 }
-
 function(assembly) vm_load(str file) -> int {
     "48330"
 }
-
 function(assembly) vm_destroy(int vm) -> void {
     "48331"
 }
