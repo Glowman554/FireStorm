@@ -28,7 +28,6 @@ void load_so(const char* path) {
 void load_native_extensions(const char* folder) {
     DIR* dir = opendir(folder);
 	if (dir == NULL) {
-		printf("Failed to open folder: %s\n", folder);
 		return;
 	}
 	
