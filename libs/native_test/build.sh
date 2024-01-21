@@ -1,0 +1,1 @@
+gcc native.c -o native.so -fpic --shared

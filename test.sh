@@ -1,6 +1,6 @@
 set -ex 
 
-gcc src/flvm/*.c -o flvm
+gcc src/flvm/*.c -o flvm -rdynamic
 
 deno run -A test_runner/index.ts
 # deno run -A test_runner/index.interpret.ts

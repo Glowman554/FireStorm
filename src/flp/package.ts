@@ -1,5 +1,6 @@
 import { apiCall, fetchFile, InfoResponse } from "./api.ts";
 import { loadProject } from "./project.ts";
+import { decodeBase64 } from "https://deno.land/std@0.212.0/encoding/base64.ts";
 
 export async function downloadIfNecessary(nameAndVersion: string) {
     Deno.mkdirSync("modules", {
@@ -41,7 +42,11 @@ export async function downloadTo(nameAndVersion: string, folder: string) {
             recursive: true
         });
 
-        Deno.writeTextFileSync(folder + i, await fetchFile(info[i]));
+        if (i.endsWith(".so")) {
+            Deno.writeFileSync(folder + i, decodeBase64(await fetchFile(info[i])));
+        } else {
+            Deno.writeTextFileSync(folder + i, await fetchFile(info[i]));
+        }
     }
 }
 

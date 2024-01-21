@@ -6,5 +6,8 @@
     "compiler": {
         "target": "bytecode",
         "mode": "flbb"
-    }
+    },
+    "dependencies": [
+        "native_test@1.0.1"
+    ]
 }

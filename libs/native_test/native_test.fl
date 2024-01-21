@@ -1,0 +1,3 @@
+function(assembly) native_test() -> int {
+"134987"
+}

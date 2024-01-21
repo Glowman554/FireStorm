@@ -2,6 +2,9 @@ import { apiCall, loadToken } from "../api.ts";
 import { BaseCommand } from "../command.ts";
 import { loadProject, ProjectFile } from "../project.ts";
 import getFiles from "https://deno.land/x/getfiles@v1.0.0/mod.ts";
+import { encodeBase64 } from "https://deno.land/std@0.212.0/encoding/base64.ts";
+
+
 
 export class DeployCommand extends BaseCommand {
     constructor (args: string[]) {
@@ -10,7 +13,11 @@ export class DeployCommand extends BaseCommand {
 
     async upload(file: string, token: string, project: ProjectFile) {
         console.log(`Uploading ${file}...`);
-        await apiCall(`/remote/upload?token=${encodeURIComponent(token)}&name=${encodeURIComponent(project.name)}&version=${encodeURIComponent(project.version)}&file=${encodeURIComponent(file)}`, Deno.readTextFileSync(file));
+        if (file.endsWith(".so")) {
+            await apiCall(`/remote/upload?token=${encodeURIComponent(token)}&name=${encodeURIComponent(project.name)}&version=${encodeURIComponent(project.version)}&file=${encodeURIComponent(file)}`, encodeBase64(Deno.readFileSync(file)));
+        } else {
+            await apiCall(`/remote/upload?token=${encodeURIComponent(token)}&name=${encodeURIComponent(project.name)}&version=${encodeURIComponent(project.version)}&file=${encodeURIComponent(file)}`, Deno.readTextFileSync(file));
+        }
     }
 
     async execute() {
@@ -29,7 +36,7 @@ export class DeployCommand extends BaseCommand {
 
         await apiCall(`/remote/deployment?token=${encodeURIComponent(token)}&name=${encodeURIComponent(project.name)}&version=${encodeURIComponent(project.version)}`);
 
-        for (const f of getFiles(".").filter(f => f.ext == "fl").filter(f => !f.path.startsWith("modules"))) {
+        for (const f of getFiles(".").filter(f => f.ext == "fl" || f.ext == "so").filter(f => !f.path.startsWith("modules"))) {
             await this.upload(f.path, token, project);
         }
         await this.upload("project.json", token, project);
