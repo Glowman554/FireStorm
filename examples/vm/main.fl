@@ -1,0 +1,27 @@
+$include <std.fl>
+$include <vm.fl>
+
+function spark(int argc, str[] argv) -> int {
+	int vm = vm_load("../../tests/args.fl.flbb");
+
+	str arg0 = "args";
+	str arg1 = "hello";
+	str arg2 = "world";
+
+	str[] args = allocate(8 * 4);
+	args[0] = arg0;
+	args[1] = arg1;
+	args[2] = arg2;
+	args[3] = 0;
+
+	stack_push(vm, 3);
+	stack_push(vm, args);
+
+	int spark = memory_read_64(vm + vm_instance_offset_spark);
+	invoke(vm, spark);
+
+	vm_destroy(vm);
+	deallocate(args);
+
+	return 0;
+}

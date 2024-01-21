@@ -14,3 +14,4 @@ upload.sh
 /flvm
 modules
 src/backend/config
+*.so

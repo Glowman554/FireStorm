@@ -527,7 +527,7 @@ void vm_destroy(struct vm_instance* vm) {
 }
 
 void vm_native_register(int id, NativeFunction function) {
-    natives = realloc(natives, sizeof(struct vm_native) * num_natives);
+    natives = realloc(natives, sizeof(struct vm_native) * (num_natives + 1));
     natives[num_natives].function = function;
     natives[num_natives].id = id;
     num_natives++;

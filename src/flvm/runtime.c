@@ -45,16 +45,12 @@ void load_native_extensions(const char* folder) {
 				continue;
 			}
             load_native_extensions(full_path);
-			free(full_path);
 		} else if (entry->d_type == DT_REG) {
             if (strstr(entry->d_name, ".so") != NULL) {
 				load_so(full_path);
 			}
-        } else {
-			free(full_path);
-		}
-
-
+        }
+		free(full_path);
 	}
 	
 	closedir(dir);

@@ -1,0 +1,13 @@
+{
+    "name": "vm_test",
+    "version": "1.0.0",
+    "main": "main.fl",
+    "type": "executable",
+    "compiler": {
+        "target": "bytecode",
+        "mode": "flbb"
+    },
+    "dependencies": [
+        "vm@1.0.0-x64"
+    ]
+}
