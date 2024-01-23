@@ -37,8 +37,8 @@ function genCode(structDefinition: string, structName: string, members: string[]
     return code;
 }
 
-export async function structGen(structDefinition: string, structName: string, members: string[]) {
+export async function structGen(structDefinition: string, structName: string, members: string[], gcc = "gcc") {
     Deno.writeTextFileSync("/tmp/struct.c", genCode(structDefinition, structName, members));
-    await runCommand("gcc /tmp/struct.c -o /tmp/struct.elf");
+    await runCommand(gcc + " /tmp/struct.c -o /tmp/struct.elf");
     return await runCommand("/tmp/struct.elf");
 }

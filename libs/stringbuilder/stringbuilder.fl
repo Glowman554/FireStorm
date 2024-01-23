@@ -1,0 +1,32 @@
+chr[] stringbuild_current;
+
+function stringbuild_init() -> void {
+	if stringbuild_current {
+		string_delete(stringbuild_current);
+		stringbuild_current = 0;
+	}
+	stringbuild_current = allocate(1);
+	stringbuild_current[0] = 0;
+}
+
+function stringbuild_append_str(str new) -> void {
+	str tmp = stringbuild_current;
+	stringbuild_current = string_join(tmp, new);
+	string_delete(tmp);
+}
+
+function stringbuild_append_int(int new, int base) -> void {
+	str tmp = stringbuild_current;
+	str news = string_from_int(new, base);
+	stringbuild_current = string_join(tmp, news);
+	string_delete(tmp);
+	string_delete(news);
+}
+
+function stringbuild_finish() -> str {
+	return stringbuild_current;
+}
+
+function stringbuild_initial_init() -> void {
+    stringbuild_current = 0;
+}

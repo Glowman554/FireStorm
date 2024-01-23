@@ -146,11 +146,11 @@ export function functionGen(id: number, sigStr: string) {
     });
 }
 
-export function finish(include: string) {
+export function finish(include: string, initName = "init") {
     let finalc = include + outc;
 
 
-    finalc += "void init() {\n";
+    finalc += "void " + initName + "() {\n";
     for (const translation of translations) {
         finalc += `    vm_native_register(${translation.id}, ${translation.translation});\n`;
     }
