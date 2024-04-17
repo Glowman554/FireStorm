@@ -34,7 +34,7 @@ export function fetchFile(fileId: number): Promise<string> {
 }
 
 // TODO: change
-const tokenPath = "/usr/firestorm/flp_token.txt";
+const tokenPath = ".flp_token.txt";
 
 export function saveToken(token: string | undefined) {
     if (token) {
