@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"encore.app/authentication"
 	"encore.app/frontend/templates"
+	"encore.dev/beta/auth"
 	"encore.dev/rlog"
 	"github.com/a-h/templ"
 )
@@ -25,10 +27,11 @@ func initService() (*Service, error) {
 	// mux.HandleFunc("/frontend/authentication/create", wrap(create))
 	// mux.HandleFunc("/frontend/monitor/pages", wrap(pages))
 
-	mux.HandleFunc("/frontend/", wrap(rendered(templates.LayoutProps{Title: "Index"}, templates.Index())))
-	mux.HandleFunc("/frontend/authentication", wrap(rendered(templates.LayoutProps{Title: "Account"}, templates.AccountPage())))
+	mux.HandleFunc("/frontend/", wrap(renderedLayout(templates.LayoutProps{Title: "Index"}, templates.Index)))
+	mux.HandleFunc("/frontend/authentication", wrap(renderedLayout(templates.LayoutProps{Title: "Account"}, templates.AccountPage)))
 	mux.HandleFunc("/frontend/authentication/create", wrap(CreateAccount))
 	mux.HandleFunc("/frontend/authentication/login", wrap(LoginAccount))
+	mux.HandleFunc("/frontend/authentication/delete", wrap(DeleteAccount))
 
 	// assets, err := fs.Sub(dist, "dist")
 	// if err != nil {
@@ -77,9 +80,17 @@ func render(component templ.Component, ctx context.Context, w http.ResponseWrite
 	return component.Render(ctx, w)
 }
 
-func rendered(props templates.LayoutProps, component templ.Component) func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func renderedLayout(props templates.LayoutProps, component func(*authentication.User) templ.Component) func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		return render(templates.Layout(props, component), ctx, w)
+		user, _ := auth.Data().(*authentication.User)
+		return render(templates.Layout(props, component(user)), ctx, w)
+	}
+}
+
+func rendered(component func(*authentication.User) templ.Component) func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		user, _ := auth.Data().(*authentication.User)
+		return render(component(user), ctx, w)
 	}
 }
 

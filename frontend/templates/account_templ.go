@@ -10,6 +10,8 @@ import "context"
 import "io"
 import "bytes"
 
+import "encore.app/authentication"
+
 func CredentialsField(target string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -30,7 +32,7 @@ func CredentialsField(target string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(target)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 4, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 6, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -47,7 +49,7 @@ func CredentialsField(target string) templ.Component {
 	})
 }
 
-func AccountPage() templ.Component {
+func AccountPage(user *authentication.User) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -60,9 +62,16 @@ func AccountPage() templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"choice\"><table><tr><td><button hx-get=\"/frontend/authentication/login\" hx-swap=\"outerHTML\" hx-target=\"#choice\">Login</button></td></tr><tr><td><button hx-get=\"/frontend/authentication/create\" hx-swap=\"outerHTML\" hx-target=\"#choice\">Create account</button></td></tr></table></div>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		if user == nil {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"choice\"><table><tr><td><button hx-get=\"/frontend/authentication/login\" hx-swap=\"outerHTML\" hx-target=\"#choice\">Login</button></td></tr><tr><td><button hx-get=\"/frontend/authentication/create\" hx-swap=\"outerHTML\" hx-target=\"#choice\">Create account</button></td></tr></table></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><button hx-get=\"/frontend/authentication/delete\" hx-swap=\"outerHTML\">Delete account</button></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
 		if !templ_7745c5c3_IsBuffer {
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
@@ -73,12 +82,12 @@ func AccountPage() templ.Component {
 
 func setToken(token string) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_setToken_d3f6`,
-		Function: `function __templ_setToken_d3f6(token){console.log("New token " + token);
-	localStorage.setItem("token", token);
+		Name: `__templ_setToken_498a`,
+		Function: `function __templ_setToken_498a(token){console.log("New token " + token);
+	document.cookie = ` + "`" + `token=${token}; path=/;` + "`" + `;
 }`,
-		Call:       templ.SafeScript(`__templ_setToken_d3f6`, token),
-		CallInline: templ.SafeScriptInline(`__templ_setToken_d3f6`, token),
+		Call:       templ.SafeScript(`__templ_setToken_498a`, token),
+		CallInline: templ.SafeScriptInline(`__templ_setToken_498a`, token),
 	}
 }
 
@@ -102,7 +111,7 @@ func AccountDone(text string, token string) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 41, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 49, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -117,6 +126,30 @@ func AccountDone(text string, token string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+func AccountDeleted() templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var6 == nil {
+			templ_7745c5c3_Var6 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><p>Successfully deleted account</p><script type=\"text/javascript\">\r\n\t\t\tlocalStorage.removeItem(\"token\");\r\n\t\t\tdocument.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;\r\n\t\t</script></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

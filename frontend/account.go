@@ -57,3 +57,16 @@ func LoginAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) e
 		return errors.New("invalid method")
 	}
 }
+
+func DeleteAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "GET":
+		err := authentication.DeleteUser(ctx)
+		if err != nil {
+			return err
+		}
+		return render(templates.AccountDeleted(), ctx, w)
+	default:
+		return errors.New("invalid method")
+	}
+}

@@ -1,5 +1,7 @@
 package templates
 
+import "encore.app/authentication"
+
 templ CredentialsField(target string) {
 	<form hx-post={ target } hx-ext="json-enc" hx-swap="outerHTML">
 		<table>
@@ -18,22 +20,28 @@ templ CredentialsField(target string) {
 	</form>
 }
 
-templ AccountPage() {
-	<div id="choice">
-		<table>
-			<tr>
-				<td><button hx-get="/frontend/authentication/login" hx-swap="outerHTML" hx-target="#choice">Login</button></td>
-			</tr>
-			<tr>
-				<td><button hx-get="/frontend/authentication/create" hx-swap="outerHTML" hx-target="#choice">Create account</button></td>
-			</tr>
-		</table>
-	</div>
+templ AccountPage(user *authentication.User) {
+	if user == nil {
+		<div id="choice">
+			<table>
+				<tr>
+					<td><button hx-get="/frontend/authentication/login" hx-swap="outerHTML" hx-target="#choice">Login</button></td>
+				</tr>
+				<tr>
+					<td><button hx-get="/frontend/authentication/create" hx-swap="outerHTML" hx-target="#choice">Create account</button></td>
+				</tr>
+			</table>
+		</div>
+	} else {
+		<div>
+			<button hx-get="/frontend/authentication/delete" hx-swap="outerHTML">Delete account</button>
+		</div>
+	}
 }
 
 script setToken(token string) {
 	console.log("New token " + token);
-	localStorage.setItem("token", token);
+	document.cookie = `token=${token}; path=/;`;
 }
 
 templ AccountDone(text string, token string) {
@@ -41,5 +49,15 @@ templ AccountDone(text string, token string) {
 		<p>{ text }</p>
 		<a href="/frontend/">Home</a>
 		@setToken(token)
+	</div>
+}
+
+templ AccountDeleted() {
+	<div>
+		<p>Successfully deleted account</p>
+		<script type="text/javascript">
+			localStorage.removeItem("token");
+			document.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+		</script>
 	</div>
 }

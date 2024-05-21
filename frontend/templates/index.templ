@@ -1,4 +1,7 @@
 package templates
 
-templ Index() {
-	<a href="/frontend/authentication">authentication</a>}
+import "encore.app/authentication"
+
+templ Index(user *authentication.User) {
+	<a href="/frontend/authentication">authentication</a>
+}

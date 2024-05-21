@@ -2,6 +2,8 @@ package authentication
 
 import (
 	"context"
+	"errors"
+	"net/http"
 
 	"encore.dev/beta/auth"
 	"golang.org/x/crypto/bcrypt"
@@ -43,13 +45,33 @@ func CreateUser(ctx context.Context, params *AuthenticationParams) (*Authenticat
 	return complete(ctx, params.Username)
 }
 
+//encore:api auth method=GET path=/delete
+func DeleteUser(ctx context.Context) error {
+	user, ok := auth.Data().(*User)
+	if !ok {
+		return errors.New("no valid user data")
+	}
+
+	err := deleteUser(ctx, user.Username)
+	if err != nil {
+		return err
+	}
+
+	_, err = UserDeletion.Publish(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type AuthenticationHandlerParams struct {
-	Token string `header:"Token"`
+	Token *http.Cookie `cookie:"token"`
 }
 
 //encore:authhandler
 func AuthHandler(ctx context.Context, token *AuthenticationHandlerParams) (auth.UID, *User, error) {
-	user, err := loadUserByToken(ctx, token.Token)
+	user, err := loadUserByToken(ctx, token.Token.Value)
 	if err != nil {
 		return "", nil, err
 	}

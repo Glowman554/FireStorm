@@ -47,6 +47,11 @@ func loadUserByToken(ctx context.Context, token string) (*User, error) {
 	return user, nil
 }
 
+func deleteUser(ctx context.Context, username string) error {
+	_, err := db.Exec(ctx, "delete from users where username = $1", username)
+	return err
+}
+
 func cleanup(ctx context.Context) error {
 	_, err := db.Exec(ctx, `delete from sessions where timestamp < now() - interval '1 day'`)
 	return err
