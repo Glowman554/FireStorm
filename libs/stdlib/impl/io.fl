@@ -1,0 +1,45 @@
+
+function prints(chr[] in) -> void {
+	while in[0] {
+		printc(in[0]);
+		in++;
+	}
+	printc(10);
+}
+
+function printi_base(int num, int base) -> void {
+	int sign = 0;
+
+	if num < 0 {
+		sign = 1;
+		num = num * (0-1);
+	}
+
+	chr[] digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+	chr[] buf = allocate(65);
+    end {
+        deallocate(buf);
+    }
+
+	chr[] p = buf + 64;
+
+	p[0] = 0;
+
+	do {
+		p--;
+		p[0] = digits[num % base];
+		num = num / base;
+	} while num;
+
+	if sign {
+		p--;
+		p[0] = 45; // add negative sign;
+	}
+
+	prints(p);
+}
+
+function printi(int num) -> void {
+	printi_base(num, 10);
+}

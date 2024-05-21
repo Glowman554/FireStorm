@@ -1,0 +1,25 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	printi(fib(20));
+	return 0;
+}
+
+function fib(int n) -> int {
+	int[] f = allocate(8 * (n + 1));
+
+	f[0] = 0;
+	f[1] = 1;
+
+	int i = 2;
+	while i <= n {
+		f[i] = f[i - 1] + f[i - 2];
+		i++;
+	}
+
+	int ret = f[n];
+
+	deallocate(f);
+
+	return ret;
+}

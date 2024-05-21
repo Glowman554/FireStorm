@@ -1,0 +1,12 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	printi(1 < 2);
+	printi(1 <= 2);
+	printi(1 > 2);
+	printi(1 >= 2);
+	printi(1 == 2);
+	printi(1 != 2);
+	printi(!(1 == 2));
+	return 0;
+}

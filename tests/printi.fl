@@ -1,0 +1,8 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	printi(1 + 20 + 300 + 4000 + 50000 + 600000 + 7000000);
+	printi(0);
+	printi(0 - 10);
+	return 0;
+}

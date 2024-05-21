@@ -1,0 +1,9 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	printc('H');
+	printc('i');
+	printc(10);
+
+	return 0;
+}

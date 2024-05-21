@@ -1,0 +1,5 @@
+{
+	"arguments": [],
+	"output": ["Hello World! This is a file written from FL!"],
+	"should_fail": false
+}

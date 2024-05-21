@@ -1,0 +1,5 @@
+{
+	"arguments": ["test1", "test2"],
+	"output": ["*", "test1", "test2"],
+	"should_fail": false
+}

@@ -1,0 +1,22 @@
+function file_open(str path, str mode) -> ptr {
+    return fopen(path, mode);
+}
+
+function file_write(ptr file, chr[] buffer, int len, int offset) -> void {
+    fseek(file, offset, 0);
+    fwrite(buffer, len, 1, file);
+}
+
+function file_read(ptr file, chr[] buffer, int len, int offset) -> void {
+    fseek(file, offset, 0);
+    fread(buffer, len, 1, file);
+}
+
+function file_close(ptr file) -> void {
+    fclose(file);
+}
+
+function file_size(ptr file) -> int {
+    fseek(file, 0, 2);
+    return ftell(file);
+}

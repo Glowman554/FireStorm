@@ -1,0 +1,44 @@
+$use <fpic@1.0.0>
+
+$include <std.fl>
+$include <fpic.fl>
+
+function tryFpicWrite() -> void {
+	int[] canvas = allocate(8 * 4 * 4);
+	memory_area_set_64(canvas, 0xffffffff, 8 * 4 * 4);
+
+	canvas[0 + 0 * 4] = 0xff0000ff;
+	canvas[3 + 3 * 4] = 0xff00ff00;
+
+	if !write_fpic(canvas, 4, 4, "test.fpic") {
+		prints("Failed to write!");
+		do_exit(1);
+	}
+
+	deallocate(canvas);
+}
+
+function tryFpicRead() -> void {
+	int fpic = read_fpic("test.fpic");
+	if !fpic {
+		prints("Failed to read!");
+		return;
+	}
+
+	printi(width_fpic(fpic));
+	printi(height_fpic(fpic));
+
+	int[] c = canvas_from_fpic(fpic);
+	printi(c[0 + 0 * 4]);
+	printi(c[1 + 1 * 4]);
+	printi(c[3 + 3 * 4]);
+
+	deallocate(fpic);
+	deallocate(c);
+}
+
+
+function testFpic() -> void {
+	tryFpicWrite();
+	tryFpicRead();
+}

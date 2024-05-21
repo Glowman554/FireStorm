@@ -1,0 +1,5 @@
+{
+	"arguments": [],
+	"output": ["hi", "0", "A", "hi", "1", "B", "hi", "2", "C", "hi", "3", "D"],
+	"should_fail": false
+}

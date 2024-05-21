@@ -1,0 +1,30 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	str[] test = allocate(8 * 4);
+	int[] test2 = allocate(8 * 4);
+	chr[] test3 = allocate(8 * 1);
+
+	int idx = 0;
+	while idx < 4 {
+		test[idx] = "hi";
+		test2[idx] = idx;
+		test3[idx] = 65 + idx;
+		idx++;
+	}
+
+	idx = 0;
+	while idx < 4 {
+		prints(test[idx]);
+		printi(test2[idx]);
+		printc(test3[idx]);
+		printc(10);
+		idx++;
+	}
+
+	deallocate(test);
+	deallocate(test2);
+	deallocate(test3);
+
+	return 0;
+}

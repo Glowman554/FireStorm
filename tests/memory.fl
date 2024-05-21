@@ -1,0 +1,50 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	int[] int_buff = allocate(5 * 8);
+    memory_area_set_64(int_buff, 123456, 5 * 8);
+    if int_buff[2] != 123456 {
+        prints("Nooo 1");
+        return 0;
+    }
+
+	int[] int_buff2 = allocate(5 * 8);
+    memory_area_copy_64(int_buff2, int_buff, 5 * 8);
+    if int_buff2[2] != 123456 {
+        prints("Nooo 2");
+        return 0;
+    }
+
+    chr[] chr_buff = allocate(5);
+    memory_area_set_8(chr_buff, 69, 5);
+    if chr_buff[2] != 69 {
+        prints("Nooo 3");
+        return 0;
+    }
+
+    chr[] chr_buff2 = allocate(5);
+    memory_area_copy_8(chr_buff2, chr_buff, 5);
+    if chr_buff2[2] != 69 {
+        prints("Nooo 4");
+        return 0;
+    }
+
+
+    int ptr = allocate(8);
+
+    memory_write_16(ptr, 65535);
+    if memory_read_16(ptr) != 65535 {
+        prints("Nooo 5");
+        return 0;
+    }
+
+    memory_write_32(ptr, 4294967295);
+    if memory_read_32(ptr) != 4294967295 {
+        prints("Nooo 6");
+        return 0;
+    }
+
+    prints("Yay");
+
+	return 0;
+}

@@ -1,0 +1,21 @@
+$include <libc/binding.fl>
+$include <impl/io.fl>
+$include <impl/string.fl>
+$include <impl/memory.fl>
+$include <impl/old.fl>
+$include <impl/file.fl>
+
+$include <stubs.fl>
+
+function(noreturn, keep) unreachable() -> void {
+	prints("Reached unreachable code!");
+	exit(1);
+}
+
+function do_exit(int c) -> void {
+	exit(c);
+}
+
+function main(i32 argc, str[] argv) -> i32 {
+    return spark(argc, argv);
+}

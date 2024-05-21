@@ -1,0 +1,5 @@
+{
+	"arguments": [],
+	"output": ["yes", "yess", "ZERO", "ONE", "TWO", "OTHER"],
+	"should_fail": false
+}

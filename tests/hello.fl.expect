@@ -1,0 +1,5 @@
+{
+	"arguments": [],
+	"output": ["Hello world!"],
+	"should_fail": false
+}

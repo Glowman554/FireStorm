@@ -1,0 +1,12 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	noreturn();
+	return 0;
+}
+
+function(noreturn) noreturn() -> void {
+	loop {
+		return;
+	}
+}

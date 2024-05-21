@@ -1,0 +1,5 @@
+{
+	"arguments": ["a", "b"],
+	"output": ["hello world", "3 arguments provided", "Hello world!"],
+	"should_fail": false
+}

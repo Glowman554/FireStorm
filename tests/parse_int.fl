@@ -1,0 +1,7 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+    printi(parse_int("1234"));
+    printi(parse_int("-1234"));
+	return 0;
+}

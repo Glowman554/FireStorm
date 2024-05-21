@@ -1,0 +1,5 @@
+{
+	"arguments": ["a", "b", "c"],
+	"output": ["begin", "end", "argc > 2"],
+	"should_fail": false
+}

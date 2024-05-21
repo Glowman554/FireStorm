@@ -1,0 +1,4 @@
+function stub() -> void {
+    prints("Not implemented.");
+    exit(1);
+}

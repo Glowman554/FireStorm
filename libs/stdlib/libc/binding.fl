@@ -1,0 +1,15 @@
+function(external) exit(i32 code) -> void;
+
+function(external) putchar(chr code) -> void;
+function(external) puts(str code) -> void;
+
+function(external) malloc(int n) -> ptr;
+function(external) free(ptr p) -> void;
+
+
+function(external) fopen(str filename, str mode) -> ptr;
+function(external) fclose(ptr file) -> int;
+function(external) fseek(ptr file, int offset, int whence) -> int;
+function(external) fread(ptr data, int size, int nmemb, ptr file) -> int;
+function(external) fwrite(ptr data, int size, int nmemb, ptr file) -> int;
+function(external) ftell(ptr file) -> int;

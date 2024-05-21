@@ -1,0 +1,31 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	int idx = 3;
+	while idx {
+		prints("Hello world!");
+		idx--;
+	}
+
+	idx = 3;
+	do {
+		prints("Hello world 2!");
+		idx--;
+	} while idx;
+
+	
+	for int i = 0; i < 3; i++ {
+		printi(i);
+	}
+
+	idx = 3;
+	loop {
+		printi(idx);
+		if !idx {
+			return 0;
+		}
+		idx--;
+	}
+
+	return 0;
+}

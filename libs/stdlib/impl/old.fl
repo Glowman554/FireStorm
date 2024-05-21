@@ -1,0 +1,11 @@
+function allocate(int n) -> ptr {
+    return malloc(n);
+}
+
+function deallocate(ptr p) -> void {
+    free(p);
+}
+
+function printc(chr c) -> void {
+    putchar(c);
+}

@@ -1,0 +1,20 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	str res1 = string_join("hello ", "world");
+	prints(res1);
+	string_delete(res1);
+
+	str argc_s = string_from_int(argc, 10);
+	str res2 = string_join(argc_s, " arguments provided");
+	prints(res2);
+	string_delete(argc_s);
+	string_delete(res2);
+
+	chr[] dup = string_duplicate("Hello world.");
+	dup[11] = '!';
+	prints(dup);
+	string_delete(dup);
+
+	return 0;
+}

@@ -1,0 +1,5 @@
+{
+	"arguments": [],
+	"output": ["Hello world!", "Hello world!", "Hello world!", "Hello world 2!", "Hello world 2!", "Hello world 2!", "0", "1", "2", "3", "2", "1", "0"],
+	"should_fail": false
+}

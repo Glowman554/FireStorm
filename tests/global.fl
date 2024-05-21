@@ -1,0 +1,28 @@
+$include <std.fl>
+
+int g1 = 10;
+str g2 = "hello";
+
+int[] g3;
+
+chr g4 = 'X';
+
+function spark(int argc, str[] argv) -> int {
+	printi(g1);
+	g1 = 20;
+	printi(g1);
+	prints(g2);
+
+	g3 = allocate(8 * 64);
+	g3[0] = 10;
+	g3[2] = 20;
+	printi(g3[0]);
+	printi(g3[2]);
+	deallocate(g3);
+
+	printc(g4);
+	g4 = 10;
+	printc(g4);
+
+	return 0;
+}

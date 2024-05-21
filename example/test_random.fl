@@ -1,0 +1,12 @@
+$use <random@1.0.2>
+
+$include <std.fl>
+$include <random.fl>
+
+function testRandom() -> void {
+    random_seed_dev_random();
+
+    for int i = 0; i < 100; i++ {
+        printi(random());
+    }
+}

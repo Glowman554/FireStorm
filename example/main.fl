@@ -1,0 +1,19 @@
+$use <stdlib@1.0.3>
+
+$include <std.fl>
+
+$include <test_random.fl>
+$include <test_stringbuilder.fl>
+$include <test_fpic.fl>
+$include <test_file.fl>
+
+function spark(int argc, str[] argv) -> int {
+    prints("Hello world!");
+
+    testRandom();
+    testStringBuilder(argc);
+    testFpic();
+    testFile();
+
+    return 0;
+}

@@ -1,0 +1,46 @@
+$include <std.fl>
+
+function testFileWrite() -> void {
+    int file = file_open("/tmp/test.txt", "w");
+    end {
+        file_close(file);
+    }
+    if !file {
+        prints("Could not open file for write!");
+        do_exit(1);
+    }
+    
+    str toFile = "Hello World! This is a file written from FL!";
+    file_write(file, toFile, string_length(toFile), 0);
+}
+
+function testFileRead() -> void {
+    int file = file_open("/tmp/test.txt", "r");
+    end {
+        file_close(file);
+    }
+    if !file {
+        prints("Could not open file for read!");
+        do_exit(1);
+    }
+
+    int size = file_size(file);
+
+    chr[] buffer = allocate(size);
+    end {
+        deallocate(buffer);
+    }
+    file_read(file, buffer, size, 0);
+
+    int idx = 0;
+    while idx < size {
+        printc(buffer[idx]);
+        idx++;
+    }
+    printc(10);
+}
+
+function testFile() -> void {
+    testFileWrite();
+    testFileRead();
+}

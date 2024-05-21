@@ -1,0 +1,30 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+	if 0 {
+		prints("noo");
+	} else {
+		prints("yes");
+	}
+
+	if 1 {
+		prints("yess");
+	}
+
+	int idx = 0;
+	while idx < 4 {
+		if idx == 0 {
+			prints("ZERO");
+		} else if idx == 1 {
+			prints("ONE");
+		} else if idx == 2 {
+			prints("TWO");
+		} else {
+			prints("OTHER");
+		}
+
+		idx++;
+	}
+
+	return 0;
+}

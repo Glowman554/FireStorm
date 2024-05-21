@@ -1,0 +1,115 @@
+function memory_area_set_8(chr[] buffer, chr value, int ammount) -> void {
+    while ammount {
+        ammount--;
+        buffer[ammount] = value;
+    }
+    buffer[ammount] = value;
+}
+
+function memory_area_set_16(i16[] buffer, i16 value, int ammount) -> void {
+    ammount = ammount / 2;
+    while ammount {
+        ammount--;
+        buffer[ammount] = value;
+    }
+    buffer[ammount] = value;
+}
+
+function memory_area_set_32(i32[] buffer, i32 value, int ammount) -> void {
+    ammount = ammount / 4;
+    while ammount {
+        ammount--;
+        buffer[ammount] = value;
+    }
+    buffer[ammount] = value;
+}
+
+function memory_area_set_64(int[] buffer, int value, int ammount) -> void {
+    ammount = ammount / 8;
+    while ammount {
+        ammount--;
+        buffer[ammount] = value;
+    }
+    buffer[ammount] = value;
+}
+
+
+
+
+function memory_area_copy_8(chr[] dest, chr[] src, int ammount) -> void {
+    while ammount {
+        ammount--;
+        dest[ammount] = src[ammount];
+    }
+    dest[ammount] = src[ammount];
+}
+
+function memory_area_copy_16(i16[] dest, i16[] src, int ammount) -> void {
+    ammount = ammount / 2;
+    while ammount {
+        ammount--;
+        dest[ammount] = src[ammount];
+    }
+    dest[ammount] = src[ammount];
+}
+
+function memory_area_copy_32(i32[] dest, i32[] src, int ammount) -> void {
+    ammount = ammount / 4;
+    while ammount {
+        ammount--;
+        dest[ammount] = src[ammount];
+    }
+    dest[ammount] = src[ammount];
+}
+
+function memory_area_copy_64(int[] dest, int[] src, int ammount) -> void {
+    ammount = ammount / 8;
+    while ammount {
+        ammount--;
+        dest[ammount] = src[ammount];
+    }
+    dest[ammount] = src[ammount];
+}
+
+
+
+
+function memory_write_8(int ptr, int value) -> void {
+    chr[] tmp = ptr;
+    tmp[0] = value;
+}
+
+function memory_read_8(int ptr) -> int {
+    chr[] tmp = ptr;
+    return tmp[0];
+}
+
+function memory_write_16(int ptr, int value) -> void {
+    i16[] tmp = ptr;
+    tmp[0] = value;
+}
+
+function memory_read_16(int ptr) -> int {
+    i16[] tmp = ptr;
+    return tmp[0];
+}
+
+function memory_write_32(int ptr, int value) -> void {
+    i32[] tmp = ptr;
+    tmp[0] = value;
+}
+
+function memory_read_32(int ptr) -> int {
+    i32[] tmp = ptr;
+    return tmp[0];
+}
+
+function memory_write_64(int ptr, int value) -> void {
+    int[] tmp = ptr;
+    tmp[0] = value;
+}
+
+function memory_read_64(int ptr) -> int {
+    int[] tmp = ptr;
+    return tmp[0];
+}
