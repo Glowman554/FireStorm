@@ -3,9 +3,10 @@ package client
 import (
 	"io"
 	"net/http"
+	"os"
 )
 
-var host = "http://192.168.178.145:4000"
+var host = "https://staging-firestorm-tkk2.encr.app"
 
 func readResponse(res *http.Response) (*string, error) {
 	defer res.Body.Close()
@@ -15,4 +16,10 @@ func readResponse(res *http.Response) (*string, error) {
 	}
 	dataStr := string(data)
 	return &dataStr, nil
+}
+
+func init() {
+	if h, ok := os.LookupEnv("BACKEND"); ok {
+		host = h
+	}
 }
