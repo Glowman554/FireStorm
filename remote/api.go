@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"encore.dev/beta/auth"
-	"encore.dev/rlog"
 )
 
 type CreatePackageProps struct {
