@@ -25,6 +25,14 @@ func main() {
 	}
 
 	subcommand := os.Args[1]
+	if subcommand == "help" {
+		fmt.Println("Available commands:")
+		for key := range AvailableCommands {
+			fmt.Println("> " + key)
+		}
+		return
+	}
+
 	parser := arguments.NewParser()
 	if cmd, ok := AvailableCommands[subcommand]; ok {
 		cmd.PopulateParser(parser)

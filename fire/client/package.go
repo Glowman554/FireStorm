@@ -113,3 +113,41 @@ func LoadFile(pkg string, version string, file string) (*string, error) {
 	}
 	return &response.Content, nil
 }
+
+func DeletePackage(token string, pkg string) error {
+	req, err := withToken(token, "GET", "/package/delete/full/"+pkg, nil)
+	if err != nil {
+		return err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK {
+		str, err := readResponse(res)
+		if err != nil {
+			return err
+		}
+		return errors.New(*str)
+	}
+	return nil
+}
+
+func DeletePackageVersion(token string, pkg string, version string) error {
+	req, err := withToken(token, "GET", "/package/delete/version/"+pkg+"?version="+version, nil)
+	if err != nil {
+		return err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK {
+		str, err := readResponse(res)
+		if err != nil {
+			return err
+		}
+		return errors.New(*str)
+	}
+	return nil
+}

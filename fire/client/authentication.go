@@ -78,7 +78,7 @@ func withToken(token string, method string, path string, body io.Reader) (*http.
 }
 
 func DeleteUserAccount(token string) error {
-	req, err := withToken(token, "GET", host+"/user/delete", nil)
+	req, err := withToken(token, "GET", "/user/delete", nil)
 	if err != nil {
 		return err
 	}
