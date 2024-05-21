@@ -27,7 +27,7 @@ func CreatePackage(ctx context.Context, w http.ResponseWriter, r *http.Request) 
 			}
 			params.Owner = string(user)
 
-			err = remote.CreatePackage(ctx, params.Package, &remote.CreatePackageProps{Type: params.Type})
+			err = remote.CreatePackage(ctx, params.Package)
 			if err != nil {
 				return err
 			}

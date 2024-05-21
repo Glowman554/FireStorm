@@ -25,7 +25,7 @@ func PackageCreate() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-post=\"/frontend/package/create\" hx-ext=\"json-enc\" hx-swap=\"outerHTML\"><table><tr><td><p>Name</p></td><td><input type=\"text\" name=\"package\"></td></tr><tr><td><p>Type</p></td><td><input type=\"radio\" id=\"library\" name=\"type\" value=\"LIBRARY\"> <label for=\"library\">Library</label><br><input type=\"radio\" id=\"executable\" name=\"type\" value=\"EXECUTABLE\"> <label for=\"executable\">Executable</label></td></tr><tr><td><input type=\"submit\" value=\"Submit\"></td></tr></table></form>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-post=\"/frontend/package/create\" hx-ext=\"json-enc\" hx-swap=\"outerHTML\"><table><tr><td><p>Name</p></td><td><input type=\"text\" name=\"package\"></td></tr><tr><td><input type=\"submit\" value=\"Submit\"></td></tr></table></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -87,7 +87,7 @@ func PackageDone(name string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/package.templ`, Line: 38, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/package.templ`, Line: 28, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {

@@ -30,11 +30,6 @@ func ProcessPackageCreation(ctx context.Context, event *remote.Package) error {
 				Value:  event.Owner,
 				Inline: false,
 			},
-			{
-				Name:   "Type",
-				Value:  event.Type,
-				Inline: false,
-			},
 		},
 	}
 

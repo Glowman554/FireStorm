@@ -53,6 +53,6 @@ func deleteUser(ctx context.Context, username string) error {
 }
 
 func cleanup(ctx context.Context) error {
-	_, err := db.Exec(ctx, `delete from sessions where timestamp < now() - interval '1 day'`)
+	_, err := db.Exec(ctx, `delete from sessions where timestamp < now() - interval '30 days'`)
 	return err
 }

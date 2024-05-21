@@ -18,7 +18,7 @@ type AuthenticationResponse struct {
 	Token string `json:"token" encore:"sensitive"`
 }
 
-//encore:api public method=POST path=/login
+//encore:api public method=POST path=/user/login
 func LoginUser(ctx context.Context, params *AuthenticationParams) (*AuthenticationResponse, error) {
 	user, err := loadUser(ctx, params.Username)
 	if err != nil {
@@ -31,7 +31,7 @@ func LoginUser(ctx context.Context, params *AuthenticationParams) (*Authenticati
 	return complete(ctx, params.Username)
 }
 
-//encore:api public method=POST path=/create
+//encore:api public method=POST path=/user/create
 func CreateUser(ctx context.Context, params *AuthenticationParams) (*AuthenticationResponse, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.MinCost)
 	if err != nil {
@@ -45,7 +45,7 @@ func CreateUser(ctx context.Context, params *AuthenticationParams) (*Authenticat
 	return complete(ctx, params.Username)
 }
 
-//encore:api auth method=GET path=/delete
+//encore:api auth method=GET path=/user/delete
 func DeleteUser(ctx context.Context) error {
 	user, ok := auth.Data().(*User)
 	if !ok {
