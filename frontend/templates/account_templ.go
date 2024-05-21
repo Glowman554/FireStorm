@@ -38,7 +38,7 @@ func CredentialsField(target string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-ext=\"json-enc\" hx-swap=\"outerHTML\"><table><tr><td><p>Username</p></td><td><input type=\"text\" name=\"username\"></td></tr><tr><td><p>Password</p></td><td><input type=\"password\" name=\"password\"></td></tr><tr><td><input type=\"submit\" value=\"Submit\"></td></tr></table></form>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-ext=\"json-enc\" hx-swap=\"outerHTML\"><table class=\"glow-table\"><tr class=\"glow-tr\"><td class=\"glow-td\"><p>Username</p></td><td class=\"glow-td\"><input type=\"text\" name=\"username\"></td></tr><tr class=\"glow-tr\"><td class=\"glow-td\"><p>Password</p></td><td class=\"glow-td\"><input type=\"password\" name=\"password\"></td></tr><tr class=\"glow-tr\"><td class=\"glow-td\" colspan=\"2\"><input type=\"submit\" value=\"Submit\"></td></tr></table></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -47,6 +47,17 @@ func CredentialsField(target string) templ.Component {
 		}
 		return templ_7745c5c3_Err
 	})
+}
+
+func logout() templ.ComponentScript {
+	return templ.ComponentScript{
+		Name: `__templ_logout_1331`,
+		Function: `function __templ_logout_1331(){document.cookie = ` + "`" + `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;` + "`" + `;
+	location.reload();
+}`,
+		Call:       templ.SafeScript(`__templ_logout_1331`),
+		CallInline: templ.SafeScriptInline(`__templ_logout_1331`),
+	}
 }
 
 func AccountPage(user *authentication.User) templ.Component {
@@ -62,16 +73,54 @@ func AccountPage(user *authentication.User) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"glow-text\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		if user == nil {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"choice\"><table><tr><td><button hx-get=\"/frontend/authentication/login\" hx-swap=\"outerHTML\" hx-target=\"#choice\">Login</button></td></tr><tr><td><button hx-get=\"/frontend/authentication/create\" hx-swap=\"outerHTML\" hx-target=\"#choice\">Create account</button></td></tr></table></div>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"choice\"><table class=\"glow-table\"><tr class=\"glow-tr\"><td class=\"glow-td\"><button hx-get=\"/frontend/authentication/login\" hx-swap=\"outerHTML\" hx-target=\"#choice\">Login</button></td></tr><tr class=\"glow-tr\"><td class=\"glow-td\"><button hx-get=\"/frontend/authentication/create\" hx-swap=\"outerHTML\" hx-target=\"#choice\">Create account</button></td></tr></table></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><button hx-get=\"/frontend/authentication/delete\" hx-swap=\"outerHTML\">Delete account</button></div>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><p>Logged in as ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 43, Col: 35}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p><button hx-get=\"/frontend/authentication/delete\" hx-swap=\"outerHTML\">Delete account</button> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, logout())
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button onclick=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var5 templ.ComponentScript = logout()
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5.Call)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">Logout</button></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		if !templ_7745c5c3_IsBuffer {
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
@@ -99,21 +148,21 @@ func AccountDone(text string, token string) templ.Component {
 			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var4 == nil {
-			templ_7745c5c3_Var4 = templ.NopComponent
+		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var6 == nil {
+			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(text)
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 49, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 58, Col: 11}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -144,12 +193,12 @@ func AccountDeleted() templ.Component {
 			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var6 == nil {
-			templ_7745c5c3_Var6 = templ.NopComponent
+		templ_7745c5c3_Var8 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var8 == nil {
+			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><p>Successfully deleted account</p><script type=\"text/javascript\">\r\n\t\t\tlocalStorage.removeItem(\"token\");\r\n\t\t\tdocument.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;\r\n\t\t</script></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><p>Successfully deleted account</p><script type=\"text/javascript\">\r\n\t\t\tdocument.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;\r\n\t\t</script></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -4,24 +4,26 @@ import "encore.app/authentication"
 
 templ PackageCreate() {
 	<form hx-post="/frontend/package/create" hx-ext="json-enc" hx-swap="outerHTML">
-		<table>
-			<tr>
-				<td><p>Name</p></td>
-				<td><input type="text" name="package"/></td>
+		<table class="glow-table">
+			<tr class="glow-tr">
+				<td class="glow-td"><p>Name</p></td>
+				<td class="glow-td"><input type="text" name="package"/></td>
 			</tr>
-			<tr>
-				<td><input type="submit" value="Submit"/></td>
+			<tr class="glow-tr">
+				<td class="glow-td" colspan="2"><input type="submit" value="Submit"/></td>
 			</tr>
 		</table>
 	</form>
 }
 
 templ Package(user *authentication.User) {
-	if user == nil {
-		<p>You need to be logged in to use this</p>
-	} else {
-		<button hx-get="/frontend/package/create" hx-swap="outerHTML">Create package</button>
-	}
+	<div class="glow-text">
+		if user == nil {
+			<p>You need to be logged in to use this</p>
+		} else {
+			<button hx-get="/frontend/package/create" hx-swap="outerHTML">Create package</button>
+		}
+	</div>
 }
 
 templ PackageDone(name string) {

@@ -4,6 +4,39 @@ type LayoutProps struct {
 	Title string
 }
 
+script navigationToggle() {
+	const navigation = document.getElementById("navigationTop");
+	if (navigation.className == "glow-bar") {
+		navigation.className = "glow-bar responsive";
+	} else {
+		navigation.className = "glow-bar";
+	}
+}
+
+templ navigation() {
+	<div class="glow-bar" id="navigationTop">
+		<a href="/frontend/">Home</a>
+		<a href="/frontend/authentication">Account</a>
+		<a href="/frontend/package">Packages</a>
+		<a href="javascript:void(0);" class="icon" onclick={ navigationToggle() }>
+			<img src="https://glowman554.de/menu.svg" alt="Menu" style="width: 2rem;"/>
+		</a>
+	</div>
+}
+
+templ header() {
+	<header class="glow-header" style="padding:50px 16px">
+		<h1 class="glow-header-title">Glowman554</h1>
+		<p class="glow-header-subtitle">Welcome to my website!</p>
+	</header>
+}
+
+templ footer() {
+	<footer class={ "glow-footer" }>
+		<p>Copyright (c) 2024 Glowman554</p>
+	</footer>
+}
+
 templ Layout(props LayoutProps, childs templ.Component) {
 	<!DOCTYPE html>
 	<html>
@@ -13,9 +46,15 @@ templ Layout(props LayoutProps, childs templ.Component) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<script src="https://unpkg.com/htmx.org@1.9.12"></script>
 			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/json-enc.js"></script>
+			<link rel="stylesheet" href="https://glowman554.de/styles.css"/>
 		</head>
 		<body>
-			@childs
+			<div class="glow-content">
+				@navigation()
+				@header()
+				@childs
+			</div>
+			@footer()
 		</body>
 	</html>
 }
