@@ -16,7 +16,7 @@ type User struct {
 }
 
 func insertUser(ctx context.Context, username string, passwordHash string) error {
-	_, err := db.Exec(ctx, `insert into users (username, password_hash) values ($1, $2, $3)`, username, passwordHash)
+	_, err := db.Exec(ctx, `insert into users (username, password_hash) values ($1, $2)`, username, passwordHash)
 	return err
 }
 

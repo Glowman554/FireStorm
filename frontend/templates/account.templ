@@ -1,0 +1,45 @@
+package templates
+
+templ CredentialsField(target string) {
+	<form hx-post={ target } hx-ext="json-enc" hx-swap="outerHTML">
+		<table>
+			<tr>
+				<td><p>Username</p></td>
+				<td><input type="text" name="username"/></td>
+			</tr>
+			<tr>
+				<td><p>Password</p></td>
+				<td><input type="password" name="password"/></td>
+			</tr>
+			<tr>
+				<td><input type="submit" value="Submit"/></td>
+			</tr>
+		</table>
+	</form>
+}
+
+templ AccountPage() {
+	<div id="choice">
+		<table>
+			<tr>
+				<td><button hx-get="/frontend/authentication/login" hx-swap="outerHTML" hx-target="#choice">Login</button></td>
+			</tr>
+			<tr>
+				<td><button hx-get="/frontend/authentication/create" hx-swap="outerHTML" hx-target="#choice">Create account</button></td>
+			</tr>
+		</table>
+	</div>
+}
+
+script setToken(token string) {
+	console.log("New token " + token);
+	localStorage.setItem("token", token);
+}
+
+templ AccountDone(text string, token string) {
+	<div>
+		<p>{ text }</p>
+		<a href="/frontend/">Home</a>
+		@setToken(token)
+	</div>
+}

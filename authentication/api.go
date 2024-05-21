@@ -43,9 +43,13 @@ func CreateUser(ctx context.Context, params *AuthenticationParams) (*Authenticat
 	return complete(ctx, params.Username)
 }
 
+type AuthenticationHandlerParams struct {
+	Token string `header:"Token"`
+}
+
 //encore:authhandler
-func AuthHandler(ctx context.Context, token string) (auth.UID, *User, error) {
-	user, err := loadUserByToken(ctx, token)
+func AuthHandler(ctx context.Context, token *AuthenticationHandlerParams) (auth.UID, *User, error) {
+	user, err := loadUserByToken(ctx, token.Token)
 	if err != nil {
 		return "", nil, err
 	}
