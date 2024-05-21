@@ -1,0 +1,39 @@
+package templates
+
+import "encore.app/authentication"
+
+templ PackageCreate() {
+	<form hx-post="/frontend/package/create" hx-ext="json-enc" hx-swap="outerHTML">
+		<table>
+			<tr>
+				<td><p>Name</p></td>
+				<td><input type="text" name="package"/></td>
+			</tr>
+			<tr>
+				<td><p>Type</p></td>
+				<td>
+					<input type="radio" id="library" name="type" value="LIBRARY"/>
+					<label for="library">Library</label>
+					<br/>
+					<input type="radio" id="executable" name="type" value="EXECUTABLE"/>
+					<label for="executable">Executable</label>
+				</td>
+			</tr>
+			<tr>
+				<td><input type="submit" value="Submit"/></td>
+			</tr>
+		</table>
+	</form>
+}
+
+templ Package(user *authentication.User) {
+	if user == nil {
+		<p>You need to be logged in to use this</p>
+	} else {
+		<button hx-get="/frontend/package/create" hx-swap="outerHTML">Create package</button>
+	}
+}
+
+templ PackageDone(name string) {
+	<p>Created package { name }</p>
+}

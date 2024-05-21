@@ -33,6 +33,9 @@ func initService() (*Service, error) {
 	mux.HandleFunc("/frontend/authentication/login", wrap(LoginAccount))
 	mux.HandleFunc("/frontend/authentication/delete", wrap(DeleteAccount))
 
+	mux.HandleFunc("/frontend/package", wrap(renderedLayout(templates.LayoutProps{Title: "Package"}, templates.Package)))
+	mux.HandleFunc("/frontend/package/create", wrap(CreatePackage))
+
 	// assets, err := fs.Sub(dist, "dist")
 	// if err != nil {
 	// 	return nil, err
