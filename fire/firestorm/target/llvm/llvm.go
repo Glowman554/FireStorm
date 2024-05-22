@@ -416,9 +416,10 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 				ret.NewRet(nil)
 			} else {
 				// fmt.Println("[WARNING] no return in non void function")
+				x := b.generateExpression(parser.NewNode(parser.NUMBER, nil, nil, 0), main, &cf)
+				c := b.autoTypeCast(x, cf.returnType, main)
+				cf.returnIncomings = append(cf.returnIncomings, ir.NewIncoming(c, main))
 				main.NewBr(ret)
-				ret = b.generateCodeBlock(ret, cf.endExec, &cf)
-				ret.NewUnreachable()
 			}
 		}
 		if noReturn {
