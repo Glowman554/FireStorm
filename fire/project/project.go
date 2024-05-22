@@ -7,7 +7,7 @@ import (
 
 type Compiler struct {
 	Includes []string `json:"includes"`
-	Target   string   `json:"target"`
+	Target   *string  `json:"target"`
 	Input    string   `json:"input"`
 	Output   string   `json:"output"`
 }
@@ -25,7 +25,6 @@ func NewProject(name string, shouldIncludeCompiler bool) *Project {
 	if shouldIncludeCompiler {
 		compiler = &Compiler{
 			Includes: []string{},
-			Target:   "x86_64-pc-linux-gnu",
 			Input:    "main.fl",
 			Output:   "main.elf",
 		}

@@ -25,7 +25,13 @@ func (Build) Execute(parser *arguments.Parser) error {
 
 	fmt.Println("Building " + proj.Name + "@" + proj.Version)
 
-	firestorm.Compile(proj.Compiler.Input, proj.Compiler.Output, proj.Compiler.Target, proj.Compiler.Includes)
+	target := proj.Compiler.Target
+	if target == nil {
+		newTarget := firestorm.DetectTarget()
+		target = &newTarget
+	}
+
+	firestorm.Compile(proj.Compiler.Input, proj.Compiler.Output, *target, proj.Compiler.Includes)
 
 	return nil
 }

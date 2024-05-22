@@ -47,6 +47,9 @@ func run(command string, arguments []string) (*string, error) {
 func (Validate) Execute(parser *arguments.Parser) error {
 	passed := 0
 	notPassed := 0
+	extension := firestorm.DetectExtension()
+	target := firestorm.DetectTarget()
+
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err == nil {
 			path = strings.ReplaceAll(path, "\\", "/")
@@ -75,9 +78,9 @@ func (Validate) Execute(parser *arguments.Parser) error {
 					notPassed++
 				}
 			}()
-			firestorm.Compile(path, path+".elf", "x86_64-pc-linux-gnu", []string{"../libs/stdlib/"})
+			firestorm.Compile(path, path+"."+extension, target, []string{"../libs/stdlib/"})
 
-			output, err := run("./"+path+".elf", expected.Arguments)
+			output, err := run("./"+path+"."+extension, expected.Arguments)
 			if err != nil {
 				if expected.ShouldFail {
 					slog.Debug("TEST PASSED", "path", path)
@@ -92,6 +95,7 @@ func (Validate) Execute(parser *arguments.Parser) error {
 			split := strings.Split(*output, "\n")
 			for i := range expected.Output {
 				line := expected.Output[i]
+				actual := strings.ReplaceAll(split[i], "\r", "")
 				if line == "*" {
 					continue
 				}
@@ -100,8 +104,8 @@ func (Validate) Execute(parser *arguments.Parser) error {
 					notPassed++
 					return nil
 				}
-				if line != split[i] {
-					slog.Error("TEST NOT PASSED", "path", path, "error", "output does not match expected", "line", line, "output", split[i])
+				if line != actual {
+					slog.Error("TEST NOT PASSED", "path", path, "error", "output does not match expected", "line", line, "output", actual)
 					notPassed++
 					return nil
 				}

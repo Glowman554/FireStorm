@@ -3,7 +3,6 @@
 	"version": "1.0.0",
 	"compiler": {
 		"includes": [],
-		"target": "x86_64-pc-linux-gnu",
 		"input": "main.fl",
 		"output": "main.elf"
 	}
