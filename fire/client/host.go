@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var host = "https://staging-firestorm-tkk2.encr.app"
+var host = "https://production-firestorm-tkk2.encr.app"
 
 func readResponse(res *http.Response) (*string, error) {
 	defer res.Body.Close()
@@ -19,6 +19,9 @@ func readResponse(res *http.Response) (*string, error) {
 }
 
 func init() {
+	if _, ok := os.LookupEnv("STAGING"); ok {
+		host = "https://staging-firestorm-tkk2.encr.app"
+	}
 	if h, ok := os.LookupEnv("BACKEND"); ok {
 		host = h
 	}
