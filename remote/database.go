@@ -36,6 +36,24 @@ func loadPackage(ctx context.Context, name string) (*Package, error) {
 	return pkg, nil
 }
 
+func loadPackages(ctx context.Context, limit int, offset int) ([]Package, error) {
+	rows, err := db.Query(ctx, "select package, owner from packages limit $1 offset $2", limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []Package{}
+	for rows.Next() {
+		var entry Package
+		err = rows.Scan(&entry.Package, &entry.Owner)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, entry)
+	}
+	return result, nil
+}
+
 func deletePackagesFrom(ctx context.Context, username string) error {
 	_, err := db.Exec(ctx, "delete from packages where owner = $1", username)
 	return err

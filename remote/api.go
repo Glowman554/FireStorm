@@ -134,4 +134,26 @@ func LoadFile(ctx context.Context, pkgName string, props *LoadFileProps) (*LoadF
 	}, nil
 }
 
+type ListPackagesProps struct {
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
+}
+type ListPackagesResponse struct {
+	Packages []Package `json:"packages"`
+}
+
+//encore:api public method=GET path=/package/all
+func ListPackages(ctx context.Context, props *ListPackagesProps) (*ListPackagesResponse, error) {
+	if props.Limit > 10 {
+		props.Limit = 10
+	}
+	pkgs, err := loadPackages(ctx, props.Limit, props.Offset)
+	if err != nil {
+		return nil, err
+	}
+	return &ListPackagesResponse{
+		Packages: pkgs,
+	}, nil
+}
+
 // F250UwKglwNE6WJOOlV4db_OG-ONvy1MB06ceH1MKbDCTolAOBbgzVwG3AgmLf9BcMUMRSnvSTLWImxh3syp81W4J1IKhnTBUOzgQudu7MSGPXyE_-WdhlQ6a_XMOLAbhH6ioA
