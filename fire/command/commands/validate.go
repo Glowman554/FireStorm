@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"fire/arguments"
 	"fire/firestorm"
 	"log/slog"
@@ -78,7 +79,7 @@ func (Validate) Execute(parser *arguments.Parser) error {
 					notPassed++
 				}
 			}()
-			firestorm.Compile(path, path+"."+extension, target, []string{"../libs/stdlib/"})
+			firestorm.Compile(path, path+"."+extension, target, []string{"../libraries/stdlib/"})
 
 			output, err := run("./"+path+"."+extension, expected.Arguments)
 			if err != nil {
@@ -116,5 +117,8 @@ func (Validate) Execute(parser *arguments.Parser) error {
 		return nil
 	})
 	slog.Info("Validation done", "passed", passed, "notPassed", notPassed)
+	if notPassed > 0 {
+		return errors.New("not all tests passed")
+	}
 	return err
 }
