@@ -89,6 +89,8 @@ func UploadFile(ctx context.Context, pkgName string, props *UploadFileProps) err
 		return errors.New("you are not allowed to upload to this package")
 	}
 
+	updateDateUpdated(ctx, pkg.Package)
+
 	return createFile(ctx, File{
 		Package: *pkg,
 		Name:    props.Name,

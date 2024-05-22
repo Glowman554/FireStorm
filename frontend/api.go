@@ -29,12 +29,13 @@ func initService() (*Service, error) {
 
 	mux.HandleFunc("/frontend/", wrap(renderedLayout(templates.LayoutProps{Title: "Index"}, templates.Index)))
 	mux.HandleFunc("/frontend/authentication", wrap(renderedLayout(templates.LayoutProps{Title: "Account"}, templates.AccountPage)))
-	mux.HandleFunc("/frontend/authentication/create", wrap(CreateAccount))
+	// mux.HandleFunc("/frontend/authentication/create", wrap(CreateAccount))
 	mux.HandleFunc("/frontend/authentication/login", wrap(LoginAccount))
 	mux.HandleFunc("/frontend/authentication/delete", wrap(DeleteAccount))
 
-	mux.HandleFunc("/frontend/package", wrap(renderedLayout(templates.LayoutProps{Title: "Package"}, templates.Package)))
+	mux.HandleFunc("/frontend/package", wrap(renderedLayout(templates.LayoutProps{Title: "Package"}, templates.PackagePage)))
 	mux.HandleFunc("/frontend/package/create", wrap(CreatePackage))
+	mux.HandleFunc("/frontend/package/list", wrap(ListPackage))
 
 	// assets, err := fs.Sub(dist, "dist")
 	// if err != nil {

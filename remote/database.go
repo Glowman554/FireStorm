@@ -2,6 +2,7 @@ package remote
 
 import (
 	"context"
+	"time"
 
 	"encore.dev/storage/sqldb"
 )
@@ -11,8 +12,9 @@ var db = sqldb.NewDatabase("remote", sqldb.DatabaseConfig{
 })
 
 type Package struct {
-	Package string `json:"package"`
-	Owner   string `json:"owner"`
+	Package     string    `json:"package"`
+	Owner       string    `json:"owner"`
+	DateUpdated time.Time `json:"date_updated"`
 }
 
 type File struct {
@@ -29,7 +31,7 @@ func createPackage(ctx context.Context, pkg Package) error {
 
 func loadPackage(ctx context.Context, name string) (*Package, error) {
 	pkg := &Package{}
-	err := db.QueryRow(ctx, "select package, owner from packages where package = $1", name).Scan(&pkg.Package, &pkg.Owner)
+	err := db.QueryRow(ctx, "select package, owner, date_updated from packages where package = $1", name).Scan(&pkg.Package, &pkg.Owner, &pkg.DateUpdated)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +39,7 @@ func loadPackage(ctx context.Context, name string) (*Package, error) {
 }
 
 func loadPackages(ctx context.Context, limit int, offset int) ([]Package, error) {
-	rows, err := db.Query(ctx, "select package, owner from packages limit $1 offset $2", limit, offset)
+	rows, err := db.Query(ctx, "select package, owner, date_updated from packages order by date_updated desc limit $1 offset $2", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -45,13 +47,18 @@ func loadPackages(ctx context.Context, limit int, offset int) ([]Package, error)
 	result := []Package{}
 	for rows.Next() {
 		var entry Package
-		err = rows.Scan(&entry.Package, &entry.Owner)
+		err = rows.Scan(&entry.Package, &entry.Owner, &entry.DateUpdated)
 		if err != nil {
 			return nil, err
 		}
 		result = append(result, entry)
 	}
 	return result, nil
+}
+
+func updateDateUpdated(ctx context.Context, pkg string) error {
+	_, err := db.Exec(ctx, "update packages set date_updated = CURRENT_TIMESTAMP where package = $1", pkg)
+	return err
 }
 
 func deletePackagesFrom(ctx context.Context, username string) error {

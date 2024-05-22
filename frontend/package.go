@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"encore.app/frontend/templates"
 	"encore.app/remote"
@@ -36,6 +37,33 @@ func CreatePackage(ctx context.Context, w http.ResponseWriter, r *http.Request) 
 		})
 	case "GET":
 		return render(templates.PackageCreate(), ctx, w)
+	default:
+		return errors.New("invalid method")
+	}
+}
+
+var itemsPerPage = 10
+
+func ListPackage(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "GET":
+		pageString := r.URL.Query().Get("page")
+
+		page, err := strconv.Atoi(pageString)
+		if err != nil {
+			page = 0
+		}
+
+		pkgs, err := remote.ListPackages(ctx, &remote.ListPackagesProps{
+			Limit:  itemsPerPage,
+			Offset: page * itemsPerPage,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return render(templates.Packages(pkgs.Packages, page+1), ctx, w)
 	default:
 		return errors.New("invalid method")
 	}
