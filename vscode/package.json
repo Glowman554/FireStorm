@@ -1,0 +1,25 @@
+{
+  "name": "firestorm",
+  "displayName": "firestorm",
+  "description": "FireStorm syntax",
+  "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "firestorm",
+      "aliases": ["FireStorm", "firestorm"],
+      "extensions": ["fl"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "firestorm",
+      "scopeName": "source.firestorm",
+      "path": "./syntaxes/firestorm.tmLanguage.json"
+    }]
+  }
+}
