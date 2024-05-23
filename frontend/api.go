@@ -98,7 +98,7 @@ func rendered(component func(*authentication.User) templ.Component) func(ctx con
 	}
 }
 
-//encore:api public raw path=/frontend/*path
+//encore:api public raw path=/frontend/*endpoint
 func (service *Service) Serve(w http.ResponseWriter, req *http.Request) {
 	service.mux.ServeHTTP(w, req)
 }
