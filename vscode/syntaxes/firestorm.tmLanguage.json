@@ -49,7 +49,7 @@
 			"patterns": [
 				{
 					"name": "storage.type.firestorm",
-					"match": "\\b(void|int|str|chr)\\b"
+					"match": "\\b(void|int|str|chr|ptr|i32|i64)\\b"
 				},
 				{
 					"name": "constant.numeric.firestorm",
