@@ -45,7 +45,7 @@ func (p *Parser) error(message string, pos int) {
 	errorLine := parser.FindErrorLineFile(p.code, pos)
 	fmt.Println("error:", message, "(at", errorLine.File+":"+strconv.Itoa(errorLine.Line)+":"+strconv.Itoa(errorLine.Char)+")")
 
-	fmt.Println(strings.ReplaceAll(errorLine.LineString, "\t", " "))
+	fmt.Println(strings.ReplaceAll(strings.ReplaceAll(errorLine.LineString, "\t", " "), "\r", " "))
 
 	for i := 0; i < errorLine.Char; i++ {
 		fmt.Print(" ")
@@ -381,6 +381,9 @@ func (p *Parser) parseIf() *parser.Node {
 }
 
 func (p *Parser) keyword() []*parser.Node {
+	if p.current.Type != lexer.ID {
+		return nil
+	}
 	switch p.current.Value.(string) {
 	case "return":
 		p.advance()

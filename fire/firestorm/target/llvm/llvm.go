@@ -189,6 +189,10 @@ func (b *LLVM) generateExpression(exp *parser.Node, block *ir.Block, cf *Compile
 func (b *LLVM) generateFunctionCall(fc parser.FunctionCall, block *ir.Block, cf *CompiledFunction) *ir.InstCall {
 	f := b.findFunction(fc.Name, cf)
 
+	if len(fc.Arguments) != len(f.Sig.Params) {
+		panic("Argument count mismatch in call to " + f.GlobalName)
+	}
+
 	arguments := []value.Value{}
 	for i := range fc.Arguments {
 		arguments = append(arguments, b.autoTypeCast(b.generateExpression(fc.Arguments[i], block, cf), f.Sig.Params[i], block))
