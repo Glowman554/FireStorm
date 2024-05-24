@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 )
 
@@ -76,6 +77,7 @@ func (Validate) Execute(parser *arguments.Parser) error {
 			defer func() {
 				if r := recover(); r != nil {
 					slog.Error("TEST NOT PASSED", "path", path, "error", r)
+					println(string(debug.Stack()))
 					notPassed++
 				}
 			}()

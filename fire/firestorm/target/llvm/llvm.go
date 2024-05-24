@@ -166,8 +166,16 @@ func (b *LLVM) generateExpressionRaw(exp *parser.Node, block *ir.Block, cf *Comp
 		v, t := b.findVariable(exp.Value.(string), cf)
 		ptr := block.NewLoad(t, v)
 		i := b.generateExpression(exp.A, block, cf)
-		indexed := block.NewGetElementPtr(ptr.ElemType.(*types.PointerType).ElemType, ptr, i)
-		return block.NewLoad(ptr.ElemType.(*types.PointerType).ElemType, indexed)
+
+		if arrPtr, ok := ptr.ElemType.(*types.PointerType); ok {
+			indexed := block.NewGetElementPtr(arrPtr.ElemType, ptr, i)
+			return block.NewLoad(arrPtr.ElemType, indexed)
+		} else {
+			// bit index
+			index := block.NewShl(constant.NewInt(types.I64, 1), i)
+			x := block.NewAnd(ptr, b.autoTypeCast(index, ptr.Type(), block))
+			return x
+		}
 	default:
 		panic("Unknown " + strconv.Itoa(int(exp.Type)))
 	}

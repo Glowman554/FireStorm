@@ -55,7 +55,6 @@ func Compile(input string, output string, target string, includes []string) {
 }
 
 func runCommand(command string) {
-	// fmt.Println("[CMD]", command)
 	tmp := strings.Split(command, " ")
 
 	cmd := exec.Command(tmp[0], tmp[1:]...)
@@ -67,6 +66,7 @@ func runCommand(command string) {
 
 	err = cmd.Wait()
 	if err != nil {
+		fmt.Println("[CMD]", command)
 		panic(err)
 	}
 }
