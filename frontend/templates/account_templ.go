@@ -51,12 +51,12 @@ func CredentialsField(target string) templ.Component {
 
 func logout() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_logout_1331`,
-		Function: `function __templ_logout_1331(){document.cookie = ` + "`" + `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;` + "`" + `;
+		Name: `__templ_logout_8c00`,
+		Function: `function __templ_logout_8c00(){document.cookie = ` + "`" + `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;` + "`" + `;
 	location.reload();
 }`,
-		Call:       templ.SafeScript(`__templ_logout_1331`),
-		CallInline: templ.SafeScriptInline(`__templ_logout_1331`),
+		Call:       templ.SafeScript(`__templ_logout_8c00`),
+		CallInline: templ.SafeScriptInline(`__templ_logout_8c00`),
 	}
 }
 
@@ -131,12 +131,12 @@ func AccountPage(user *authentication.User) templ.Component {
 
 func setToken(token string) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_setToken_498a`,
-		Function: `function __templ_setToken_498a(token){console.log("New token " + token);
+		Name: `__templ_setToken_9374`,
+		Function: `function __templ_setToken_9374(token){console.log("New token " + token);
 	document.cookie = ` + "`" + `token=${token}; path=/;` + "`" + `;
 }`,
-		Call:       templ.SafeScript(`__templ_setToken_498a`, token),
-		CallInline: templ.SafeScriptInline(`__templ_setToken_498a`, token),
+		Call:       templ.SafeScript(`__templ_setToken_9374`, token),
+		CallInline: templ.SafeScriptInline(`__templ_setToken_9374`, token),
 	}
 }
 
@@ -198,7 +198,7 @@ func AccountDeleted() templ.Component {
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><p>Successfully deleted account</p><script type=\"text/javascript\">\r\n\t\t\tdocument.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;\r\n\t\t</script></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><p>Successfully deleted account</p><script type=\"text/javascript\">\n\t\t\tdocument.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;\n\t\t</script></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

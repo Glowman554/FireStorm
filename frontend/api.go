@@ -29,7 +29,7 @@ func initService() (*Service, error) {
 
 	mux.HandleFunc("/frontend/", wrap(renderedLayout(templates.LayoutProps{Title: "Index"}, templates.Index)))
 	mux.HandleFunc("/frontend/authentication", wrap(renderedLayout(templates.LayoutProps{Title: "Account"}, templates.AccountPage)))
-	// mux.HandleFunc("/frontend/authentication/create", wrap(CreateAccount))
+	mux.HandleFunc("/frontend/authentication/create", wrap(CreateAccount))
 	mux.HandleFunc("/frontend/authentication/login", wrap(LoginAccount))
 	mux.HandleFunc("/frontend/authentication/delete", wrap(DeleteAccount))
 

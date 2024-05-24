@@ -19,7 +19,9 @@ templ PackageCreate() {
 }
 
 templ packageEntry(pkg remote.Package) {
-	<td class="glow-td">{ pkg.Package }</td>
+	<td class="glow-td">
+		<a href={ templ.SafeURL("/frontend/package/show?package=" + pkg.Package) }>{ pkg.Package }</a>
+	</td>
 	<td class="glow-td">{ pkg.Owner }</td>
 	<td class="glow-td">{ pkg.DateUpdated.Local().Local().Format("2006.01.02 15:04") }</td>
 }
