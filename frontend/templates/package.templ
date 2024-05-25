@@ -45,12 +45,15 @@ templ PackagePage(pkg remote.Package, versions []string) {
 	<div class="glow-text">
 		<table class="glow-table">
 			<tr class="glow-tr">
+				<td class="glow-td">Name</td>
 				<td class="glow-td">{ pkg.Package }</td>
 			</tr>
 			<tr class="glow-tr">
+				<td class="glow-td">Owner</td>
 				<td class="glow-td">{ pkg.Owner }</td>
 			</tr>
 			<tr class="glow-tr">
+				<td class="glow-td">Last updated</td>
 				<td class="glow-td">{ pkg.DateUpdated.Local().Local().Format("2006.01.02 15:04") }</td>
 			</tr>
 		</table>
