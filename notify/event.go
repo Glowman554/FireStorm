@@ -2,7 +2,6 @@ package notify
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"encore.app/authentication"
@@ -26,41 +25,79 @@ var _ = pubsub.NewSubscription(authentication.UserDeletion, "notify-user-deletio
 	Handler: ProccessUserDeletion,
 })
 
+func send(ctx context.Context, embeds []Embed) error {
+	hook := Hook{
+		Username: "FireStorm package registry",
+		Embeds:   embeds,
+	}
+	return SendEmbed(ctx, secrets.Webhook, hook)
+}
+
+func packageFields(pkg *remote.Package) []Field {
+	return []Field{
+		{
+			Name:   "Name",
+			Value:  pkg.Package,
+			Inline: false,
+		},
+		{
+			Name:   "Owner",
+			Value:  pkg.Owner,
+			Inline: false,
+		},
+	}
+}
+
+func userFields(user *authentication.User) []Field {
+	return []Field{
+		{
+			Name:   "Username",
+			Value:  user.Username,
+			Inline: false,
+		},
+	}
+}
+
 //encore:api private
 func ProccessUserCreation(ctx context.Context, event *authentication.User) error {
-	return errors.New("not implemented")
+	return send(ctx, []Embed{
+		{
+			Title:     "User created",
+			Timestamp: time.Now(),
+			Fields:    userFields(event),
+		},
+	})
 }
 
 //encore:api private
 func ProccessUserDeletion(ctx context.Context, event *authentication.User) error {
-	return errors.New("not implemented")
+	return send(ctx, []Embed{
+		{
+			Title:     "User deleted",
+			Timestamp: time.Now(),
+			Fields:    userFields(event),
+		},
+	})
 }
 
 //encore:api private
 func ProccessPackageDeletion(ctx context.Context, event *remote.Package) error {
-	return errors.New("not implemented")
+	return send(ctx, []Embed{
+		{
+			Title:     "Package deleted",
+			Timestamp: time.Now(),
+			Fields:    packageFields(event),
+		},
+	})
 }
 
 //encore:api private
 func ProcessPackageCreation(ctx context.Context, event *remote.Package) error {
-	var webhookurl = "https://discord.com/api/webhooks/1202728708876537856/8p6hvo5SkRrOVrwnhqF2fwjWQFyuWud1stgkXvHV4QXDOvApan0Wprc_t2uyyo5KLWyT"
-
-	embed := Embed{
-		Title:     "New package created",
-		Timestamp: time.Now(),
-		Fields: []Field{
-			{
-				Name:   "Name",
-				Value:  event.Package,
-				Inline: false,
-			},
-			{
-				Name:   "Owner",
-				Value:  event.Owner,
-				Inline: false,
-			},
+	return send(ctx, []Embed{
+		{
+			Title:     "New package created",
+			Timestamp: time.Now(),
+			Fields:    packageFields(event),
 		},
-	}
-
-	return SendEmbed(ctx, webhookurl, embed)
+	})
 }

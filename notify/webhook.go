@@ -82,15 +82,7 @@ func ExecuteWebhook(ctx context.Context, link string, data []byte) error {
 	return err
 }
 
-func SendEmbed(ctx context.Context, link string, embeds Embed) error {
-
-	hook := Hook{
-		Username:   "Captain Hook",
-		Avatar_url: "https://avatars.githubusercontent.com/u/6016509?s=48&v=4",
-		Content:    "Message",
-		Embeds:     []Embed{embeds},
-	}
-
+func SendEmbed(ctx context.Context, link string, hook Hook) error {
 	payload, err := json.Marshal(hook)
 	if err != nil {
 		rlog.Error(err.Error())
