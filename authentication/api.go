@@ -88,12 +88,17 @@ func DeleteUser(ctx context.Context) error {
 }
 
 type AuthenticationHandlerParams struct {
-	Token *http.Cookie `cookie:"token"`
+	Token         *http.Cookie `cookie:"token"`
+	Authorization string       `header:"Authorization"`
 }
 
 //encore:authhandler
-func AuthHandler(ctx context.Context, token *AuthenticationHandlerParams) (auth.UID, *User, error) {
-	user, err := loadUserByToken(ctx, token.Token.Value)
+func AuthHandler(ctx context.Context, params *AuthenticationHandlerParams) (auth.UID, *User, error) {
+	token := params.Authorization
+	if params.Token != nil {
+		token = params.Token.Value
+	}
+	user, err := loadUserByToken(ctx, token)
 	if err != nil {
 		return "", nil, err
 	}
