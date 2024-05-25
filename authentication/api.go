@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"encore.dev/beta/auth"
 	"golang.org/x/crypto/bcrypt"
@@ -20,6 +21,10 @@ type AuthenticationResponse struct {
 
 //encore:api public method=POST path=/user/login
 func LoginUser(ctx context.Context, params *AuthenticationParams) (*AuthenticationResponse, error) {
+	if strings.TrimSpace(params.Password) == "" || strings.TrimSpace(params.Username) == "" {
+		return nil, errors.New("neither password nor username should be empty")
+	}
+
 	user, err := loadUser(ctx, params.Username)
 	if err != nil {
 		return nil, err
@@ -33,6 +38,14 @@ func LoginUser(ctx context.Context, params *AuthenticationParams) (*Authenticati
 
 //encore:api public method=POST path=/user/create
 func CreateUser(ctx context.Context, params *AuthenticationParams) (*AuthenticationResponse, error) {
+	if strings.TrimSpace(params.Password) == "" || strings.TrimSpace(params.Username) == "" {
+		return nil, errors.New("neither password nor username should be empty")
+	}
+	err := isValidPassword(params.Password)
+	if err != nil {
+		return nil, err
+	}
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.MinCost)
 	if err != nil {
 		return nil, err

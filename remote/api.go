@@ -7,8 +7,21 @@ import (
 	"encore.dev/beta/auth"
 )
 
+func isValidName(name string) bool {
+	for _, c := range name {
+		if !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_') {
+			return false
+		}
+	}
+	return true
+}
+
 //encore:api auth method=GET path=/package/create/:name
 func CreatePackage(ctx context.Context, name string) error {
+	if !isValidName(name) {
+		return errors.New("invalid package name")
+	}
+	
 	uid, ok := auth.UserID()
 	if !ok {
 		return errors.New("missing uid")
