@@ -52,7 +52,7 @@ func DeletePackage(ctx context.Context, name string) error {
 }
 
 type DeletePackageVersionProps struct {
-	Version string `json:"version"`
+	Version string `json:"version" query:"version"`
 }
 
 //encore:api auth method=GET path=/package/delete/version/:name
@@ -106,7 +106,7 @@ func UploadFile(ctx context.Context, pkgName string, props *UploadFileProps) err
 }
 
 type ListFilesProps struct {
-	Version string `json:"version"`
+	Version string `json:"version" query:"version"`
 }
 type ListFilesResponse struct {
 	Files []string `json:"files"`
@@ -124,8 +124,8 @@ func ListFiles(ctx context.Context, pkgName string, props *ListFilesProps) (*Lis
 }
 
 type LoadFileProps struct {
-	Version string `json:"version"`
-	Name    string `json:"name"`
+	Version string `json:"version" query:"version"`
+	Name    string `json:"name" query:"name"`
 }
 type LoadFileResponse struct {
 	Content string `json:"content"`
@@ -143,8 +143,8 @@ func LoadFile(ctx context.Context, pkgName string, props *LoadFileProps) (*LoadF
 }
 
 type ListPackagesProps struct {
-	Limit  int `json:"limit"`
-	Offset int `json:"offset"`
+	Limit  int `json:"limit" query:"limit"`
+	Offset int `json:"offset" query:"offset"`
 }
 type ListPackagesResponse struct {
 	Packages []Package `json:"packages"`
@@ -175,7 +175,7 @@ func GetPackage(ctx context.Context, pkgName string) (*Package, error) {
 }
 
 type GetVersionsResponse struct {
-	Versions []string `json:"versions"`
+	Versions []string `json:"versions" query:"version"`
 }
 
 //encore:api public method=GET path=/package/version/list/:pkgName
@@ -189,5 +189,3 @@ func GetVersions(ctx context.Context, pkgName string) (*GetVersionsResponse, err
 		Versions: versions,
 	}, nil
 }
-
-// F250UwKglwNE6WJOOlV4db_OG-ONvy1MB06ceH1MKbDCTolAOBbgzVwG3AgmLf9BcMUMRSnvSTLWImxh3syp81W4J1IKhnTBUOzgQudu7MSGPXyE_-WdhlQ6a_XMOLAbhH6ioA

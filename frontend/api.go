@@ -13,9 +13,6 @@ import (
 	"github.com/a-h/templ"
 )
 
-// //go:embed dist
-// var dist embed.FS
-
 //encore:service
 type Service struct {
 	mux *http.ServeMux
@@ -23,9 +20,6 @@ type Service struct {
 
 func initService() (*Service, error) {
 	mux := http.NewServeMux()
-
-	// mux.HandleFunc("/frontend/authentication/create", wrap(create))
-	// mux.HandleFunc("/frontend/monitor/pages", wrap(pages))
 
 	mux.HandleFunc("/frontend/", renderedLayout(templates.LayoutProps{Title: "Index"}, nofail(templates.Index)))
 	mux.HandleFunc("/frontend/authentication", renderedLayout(templates.LayoutProps{Title: "Account"}, nofail(templates.AccountPage)))
@@ -37,15 +31,7 @@ func initService() (*Service, error) {
 	mux.HandleFunc("/frontend/package/create", wrap(CreatePackage))
 	mux.HandleFunc("/frontend/package/list", wrap(ListPackage))
 	mux.HandleFunc("/frontend/package/show", renderedLayout(templates.LayoutProps{Title: "Package"}, PackagePage))
-	//frontend/package/show/version
 	mux.HandleFunc("/frontend/package/show/version", renderedLayout(templates.LayoutProps{Title: "Package"}, PackageVersionPage))
-
-	// assets, err := fs.Sub(dist, "dist")
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// mux.Handle("/frontend/", http.StripPrefix("/frontend/", http.FileServer(http.FS(assets))))
 
 	return &Service{
 		mux: mux,
