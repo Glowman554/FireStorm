@@ -22,8 +22,17 @@ var _ = pubsub.NewSubscription(authentication.UserCreation, "notify-user-creatio
 	Handler: ProccessUserCreation,
 })
 
+var _ = pubsub.NewSubscription(authentication.UserDeletion, "notify-user-deletion", pubsub.SubscriptionConfig[*authentication.User]{
+	Handler: ProccessUserDeletion,
+})
+
 //encore:api private
 func ProccessUserCreation(ctx context.Context, event *authentication.User) error {
+	return errors.New("not implemented")
+}
+
+//encore:api private
+func ProccessUserDeletion(ctx context.Context, event *authentication.User) error {
 	return errors.New("not implemented")
 }
 

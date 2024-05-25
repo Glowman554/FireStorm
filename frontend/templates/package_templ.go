@@ -186,7 +186,7 @@ func PackagePage(pkg remote.Package, versions []string) templ.Component {
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><table class=\"glow-table\"><tr class=\"glow-tr\"><td class=\"glow-td\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"glow-text\"><table class=\"glow-table\"><tr class=\"glow-tr\"><td class=\"glow-td\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -230,14 +230,14 @@ func PackagePage(pkg remote.Package, versions []string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		for _, item := range versions {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr class=\"glow-tr\"><td>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr class=\"glow-tr\"><td class=\"glow-td\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(item)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/package.templ`, Line: 64, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/package.templ`, Line: 64, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {

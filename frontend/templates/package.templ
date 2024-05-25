@@ -42,7 +42,7 @@ templ Packages(pkgs []remote.Package, next int) {
 }
 
 templ PackagePage(pkg remote.Package, versions []string) {
-	<div>
+	<div class="glow-text">
 		<table class="glow-table">
 			<tr class="glow-tr">
 				<td class="glow-td">{ pkg.Package }</td>
@@ -59,9 +59,9 @@ templ PackagePage(pkg remote.Package, versions []string) {
 		<br/>
 		<h2>Versions</h2>
 		<table class="glow-table">
-			for _, item:=range versions {
+			for _, item := range versions {
 				<tr class="glow-tr">
-					<td>{ item }</td>
+					<td class="glow-td">{ item }</td>
 				</tr>
 			}
 		</table>
