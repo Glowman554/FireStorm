@@ -42,6 +42,15 @@ func CreateUser(ctx context.Context, params *AuthenticationParams) (*Authenticat
 	if err != nil {
 		return nil, err
 	}
+
+	_, err = UserCreation.Publish(ctx, &User{
+		Username:     params.Username,
+		PasswordHash: string(hash),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return complete(ctx, params.Username)
 }
 

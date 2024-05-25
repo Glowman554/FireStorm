@@ -56,6 +56,25 @@ func loadPackages(ctx context.Context, limit int, offset int) ([]Package, error)
 	return result, nil
 }
 
+func loadPackageVersions(ctx context.Context, pkg string) ([]string, error) {
+	rows, err := db.Query(ctx, "select version from files where package = $1 group by version order by version", pkg)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []string{}
+	for rows.Next() {
+		var entry string
+		err = rows.Scan(&entry)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, entry)
+	}
+
+	return result, nil
+}
+
 func updateDateUpdated(ctx context.Context, pkg string) error {
 	_, err := db.Exec(ctx, "update packages set date_updated = CURRENT_TIMESTAMP where package = $1", pkg)
 	return err

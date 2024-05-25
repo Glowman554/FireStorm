@@ -42,7 +42,13 @@ func DeletePackage(ctx context.Context, name string) error {
 	if pkg.Owner != string(uid) {
 		return errors.New("you are not allowed to delete this package")
 	}
-	return deletePackage(ctx, name)
+	err = deletePackage(ctx, name)
+	if err != nil {
+		return err
+	}
+
+	_, err = PackageDeletion.Publish(ctx, pkg)
+	return err
 }
 
 type DeletePackageVersionProps struct {
@@ -166,6 +172,22 @@ func GetPackage(ctx context.Context, pkgName string) (*Package, error) {
 	}
 	return pkg, nil
 
+}
+
+type GetVersionsResponse struct {
+	Versions []string `json:"versions"`
+}
+
+//encore:api public method=GET path=/package/version/list/:pkgName
+func GetVersions(ctx context.Context, pkgName string) (*GetVersionsResponse, error) {
+	versions, err := loadPackageVersions(ctx, pkgName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GetVersionsResponse{
+		Versions: versions,
+	}, nil
 }
 
 // F250UwKglwNE6WJOOlV4db_OG-ONvy1MB06ceH1MKbDCTolAOBbgzVwG3AgmLf9BcMUMRSnvSTLWImxh3syp81W4J1IKhnTBUOzgQudu7MSGPXyE_-WdhlQ6a_XMOLAbhH6ioA

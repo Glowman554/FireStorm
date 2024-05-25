@@ -18,6 +18,10 @@ var PackageCreation = pubsub.NewTopic[*Package]("create-package", pubsub.TopicCo
 	DeliveryGuarantee: pubsub.AtLeastOnce,
 })
 
+var PackageDeletion = pubsub.NewTopic[*Package]("delete-package", pubsub.TopicConfig{
+	DeliveryGuarantee: pubsub.AtLeastOnce,
+})
+
 func DeleteUserPackages(ctx context.Context, event *authentication.User) error {
 	return deletePackagesFrom(ctx, event.Username)
 }

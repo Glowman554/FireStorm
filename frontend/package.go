@@ -82,5 +82,10 @@ func PackagePage(user *authentication.User, r *http.Request) (templ.Component, e
 		return nil, err
 	}
 
-	return templates.PackagePage(*pkg, []string{}), nil
+	versions, err := remote.GetVersions(context.Background(), packageName)
+	if err != nil {
+		return nil, err
+	}
+
+	return templates.PackagePage(*pkg, versions.Versions), nil
 }
