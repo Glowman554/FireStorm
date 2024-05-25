@@ -83,7 +83,7 @@ func header() templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<header class=\"glow-header\" style=\"padding:50px 16px\"><h1 class=\"glow-header-title\">Glowman554</h1><p class=\"glow-header-subtitle\">Welcome to my website!</p></header>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<header class=\"glow-header\" style=\"padding:50px 16px\"><h1 class=\"glow-header-title\">FireStorm package registry</h1><p class=\"glow-header-subtitle\">Welcome to the FireStorm package registry!</p></header>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
