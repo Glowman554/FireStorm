@@ -11,6 +11,7 @@ import "io"
 import "bytes"
 
 import "encore.app/authentication"
+import "net/http"
 
 func CredentialsField(target string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
@@ -32,7 +33,7 @@ func CredentialsField(target string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(target)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 6, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 7, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -60,7 +61,7 @@ func logout() templ.ComponentScript {
 	}
 }
 
-func AccountPage(user *authentication.User) templ.Component {
+func AccountPage(user *authentication.User, r *http.Request) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -90,7 +91,7 @@ func AccountPage(user *authentication.User) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.Username)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 43, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 44, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -160,7 +161,7 @@ func AccountDone(text string, token string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 58, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `frontend/templates/account.templ`, Line: 59, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {

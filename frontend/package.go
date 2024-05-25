@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"encore.app/authentication"
 	"encore.app/frontend/templates"
 	"encore.app/remote"
 	"encore.dev/beta/auth"
+	"github.com/a-h/templ"
 )
 
 func CreatePackage(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -67,4 +69,18 @@ func ListPackage(ctx context.Context, w http.ResponseWriter, r *http.Request) er
 	default:
 		return errors.New("invalid method")
 	}
+}
+
+func PackagePage(user *authentication.User, r *http.Request) (templ.Component, error) {
+	if ok := r.URL.Query().Has("package"); !ok {
+		return nil, errors.New("missing parameter package")
+	}
+	packageName := r.URL.Query().Get("package")
+
+	pkg, err := remote.GetPackage(context.Background(), packageName)
+	if err != nil {
+		return nil, err
+	}
+
+	return templates.PackagePage(*pkg, []string{}), nil
 }

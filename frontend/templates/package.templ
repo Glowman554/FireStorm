@@ -3,6 +3,7 @@ package templates
 import "encore.app/authentication"
 import "encore.app/remote"
 import "strconv"
+import "net/http"
 
 templ PackageCreate() {
 	<form hx-post="/frontend/package/create" hx-ext="json-enc" hx-swap="outerHTML">
@@ -40,7 +41,34 @@ templ Packages(pkgs []remote.Package, next int) {
 	}
 }
 
-templ PackagePage(user *authentication.User) {
+templ PackagePage(pkg remote.Package, versions []string) {
+	<div>
+		<table class="glow-table">
+			<tr class="glow-tr">
+				<td class="glow-td">{ pkg.Package }</td>
+			</tr>
+			<tr class="glow-tr">
+				<td class="glow-td">{ pkg.Owner }</td>
+			</tr>
+			<tr class="glow-tr">
+				<td class="glow-td">{ pkg.DateUpdated.Local().Local().Format("2006.01.02 15:04") }</td>
+			</tr>
+		</table>
+		<br/>
+		<hr/>
+		<br/>
+		<h2>Versions</h2>
+		<table class="glow-table">
+			for _, item:=range versions {
+				<tr class="glow-tr">
+					<td>{ item }</td>
+				</tr>
+			}
+		</table>
+	</div>
+}
+
+templ PackagesPage(user *authentication.User, r *http.Request) {
 	<div class="glow-text">
 		// if user == nil {
 		// 	<p>You need to be logged in to use this</p>

@@ -1,6 +1,7 @@
 package templates
 
 import "encore.app/authentication"
+import "net/http"
 
-templ Index(user *authentication.User) {
+templ Index(user *authentication.User, r *http.Request) {
 }

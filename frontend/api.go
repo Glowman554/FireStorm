@@ -27,15 +27,16 @@ func initService() (*Service, error) {
 	// mux.HandleFunc("/frontend/authentication/create", wrap(create))
 	// mux.HandleFunc("/frontend/monitor/pages", wrap(pages))
 
-	mux.HandleFunc("/frontend/", wrap(renderedLayout(templates.LayoutProps{Title: "Index"}, templates.Index)))
-	mux.HandleFunc("/frontend/authentication", wrap(renderedLayout(templates.LayoutProps{Title: "Account"}, templates.AccountPage)))
+	mux.HandleFunc("/frontend/", renderedLayout(templates.LayoutProps{Title: "Index"}, nofail(templates.Index)))
+	mux.HandleFunc("/frontend/authentication", renderedLayout(templates.LayoutProps{Title: "Account"}, nofail(templates.AccountPage)))
 	mux.HandleFunc("/frontend/authentication/create", wrap(CreateAccount))
 	mux.HandleFunc("/frontend/authentication/login", wrap(LoginAccount))
 	mux.HandleFunc("/frontend/authentication/delete", wrap(DeleteAccount))
 
-	mux.HandleFunc("/frontend/package", wrap(renderedLayout(templates.LayoutProps{Title: "Package"}, templates.PackagePage)))
+	mux.HandleFunc("/frontend/package", renderedLayout(templates.LayoutProps{Title: "Package"}, nofail(templates.PackagesPage)))
 	mux.HandleFunc("/frontend/package/create", wrap(CreatePackage))
 	mux.HandleFunc("/frontend/package/list", wrap(ListPackage))
+	mux.HandleFunc("/frontend/package/show", renderedLayout(templates.LayoutProps{Title: "Package"}, PackagePage))
 
 	// assets, err := fs.Sub(dist, "dist")
 	// if err != nil {
@@ -80,15 +81,26 @@ func wrap(f func(ctx context.Context, w http.ResponseWriter, r *http.Request) er
 	}
 }
 
+func nofail(component func(*authentication.User, *http.Request) templ.Component) func(*authentication.User, *http.Request) (templ.Component, error) {
+	return func(u *authentication.User, r *http.Request) (templ.Component, error) {
+		return component(u, r), nil
+	}
+}
+
 func render(component templ.Component, ctx context.Context, w http.ResponseWriter) error {
 	return component.Render(ctx, w)
 }
 
-func renderedLayout(props templates.LayoutProps, component func(*authentication.User) templ.Component) func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func renderedLayout(props templates.LayoutProps, component func(*authentication.User, *http.Request) (templ.Component, error)) func(w http.ResponseWriter, r *http.Request) {
+	return wrap(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		user, _ := auth.Data().(*authentication.User)
-		return render(templates.Layout(props, component(user)), ctx, w)
-	}
+		c, err := component(user, r)
+		if err != nil {
+			return err
+		}
+		return render(templates.Layout(props, c), ctx, w)
+	})
+
 }
 
 func rendered(component func(*authentication.User) templ.Component) func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {

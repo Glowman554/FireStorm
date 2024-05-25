@@ -158,4 +158,14 @@ func ListPackages(ctx context.Context, props *ListPackagesProps) (*ListPackagesR
 	}, nil
 }
 
+//encore:api public method=GET path=/package/get/:pkgName
+func GetPackage(ctx context.Context, pkgName string) (*Package, error) {
+	pkg, err := loadPackage(ctx, pkgName)
+	if err != nil {
+		return nil, err
+	}
+	return pkg, nil
+
+}
+
 // F250UwKglwNE6WJOOlV4db_OG-ONvy1MB06ceH1MKbDCTolAOBbgzVwG3AgmLf9BcMUMRSnvSTLWImxh3syp81W4J1IKhnTBUOzgQudu7MSGPXyE_-WdhlQ6a_XMOLAbhH6ioA

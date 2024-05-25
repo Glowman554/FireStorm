@@ -11,8 +11,9 @@ import "io"
 import "bytes"
 
 import "encore.app/authentication"
+import "net/http"
 
-func Index(user *authentication.User) templ.Component {
+func Index(user *authentication.User, r *http.Request) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {

@@ -1,6 +1,7 @@
 package templates
 
 import "encore.app/authentication"
+import "net/http"
 
 templ CredentialsField(target string) {
 	<form hx-post={ target } hx-ext="json-enc" hx-swap="outerHTML">
@@ -25,7 +26,7 @@ script logout() {
 	location.reload();
 }
 
-templ AccountPage(user *authentication.User) {
+templ AccountPage(user *authentication.User, r *http.Request) {
 	<div class="glow-text">
 		if user == nil {
 			<div id="choice">
