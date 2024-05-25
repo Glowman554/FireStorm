@@ -96,7 +96,7 @@ func PackageVersionPage(user *authentication.User, r *http.Request) (templ.Compo
 	}
 	packageName := r.URL.Query().Get("package")
 
-	if ok := r.URL.Query().Has("version"); ok {
+	if ok := r.URL.Query().Has("version"); !ok {
 		return nil, errors.New("missing parameter version")
 	}
 	packageVersion := r.URL.Query().Get("version")
