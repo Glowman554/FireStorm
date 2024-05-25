@@ -9,3 +9,4 @@
 - [ ] Send notification on package deletion
 - [ ] Improve notification (do not hardcode stuff)
 - [ ] Notify package deletion if it is deleted because of user deletion
+- [ ] Implement being abel to change password
