@@ -1,7 +1,7 @@
 # Todo
 
-- [ ] Finish package view
-- [ ] Implement package version view
+- [x] Finish package view
+- [x] Implement package version view
 - [x] Implement user creation event
 - [ ] Send notification on user creation
 - [ ] Send notification on user deletion

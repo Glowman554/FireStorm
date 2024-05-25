@@ -89,3 +89,24 @@ func PackagePage(user *authentication.User, r *http.Request) (templ.Component, e
 
 	return templates.PackagePage(*pkg, versions.Versions), nil
 }
+
+func PackageVersionPage(user *authentication.User, r *http.Request) (templ.Component, error) {
+	if ok := r.URL.Query().Has("package"); !ok {
+		return nil, errors.New("missing parameter package")
+	}
+	packageName := r.URL.Query().Get("package")
+
+	if ok := r.URL.Query().Has("version"); ok {
+		return nil, errors.New("missing parameter version")
+	}
+	packageVersion := r.URL.Query().Get("version")
+
+	files, err := remote.ListFiles(context.Background(), packageName, &remote.ListFilesProps{
+		Version: packageVersion,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return templates.PackageVersionPage(packageName, packageVersion, files.Files), nil
+}

@@ -41,28 +41,46 @@ templ Packages(pkgs []remote.Package, next int) {
 	}
 }
 
+templ packageInfo(pkg remote.Package) {
+	<table class="glow-table">
+		<tr class="glow-tr">
+			<td class="glow-td">Name</td>
+			<td class="glow-td">{ pkg.Package }</td>
+		</tr>
+		<tr class="glow-tr">
+			<td class="glow-td">Owner</td>
+			<td class="glow-td">{ pkg.Owner }</td>
+		</tr>
+		<tr class="glow-tr">
+			<td class="glow-td">Last updated</td>
+			<td class="glow-td">{ pkg.DateUpdated.Local().Local().Format("2006.01.02 15:04") }</td>
+		</tr>
+	</table>
+}
+
 templ PackagePage(pkg remote.Package, versions []string) {
 	<div class="glow-text">
-		<table class="glow-table">
-			<tr class="glow-tr">
-				<td class="glow-td">Name</td>
-				<td class="glow-td">{ pkg.Package }</td>
-			</tr>
-			<tr class="glow-tr">
-				<td class="glow-td">Owner</td>
-				<td class="glow-td">{ pkg.Owner }</td>
-			</tr>
-			<tr class="glow-tr">
-				<td class="glow-td">Last updated</td>
-				<td class="glow-td">{ pkg.DateUpdated.Local().Local().Format("2006.01.02 15:04") }</td>
-			</tr>
-		</table>
-		<br/>
+		@packageInfo(pkg)
 		<hr/>
-		<br/>
 		<h2>Versions</h2>
 		<table class="glow-table">
 			for _, item := range versions {
+				<tr class="glow-tr">
+					<td class="glow-td">
+						<a href={ templ.SafeURL("/frontend/package/show/version?package=" + pkg.Package + "&version=" + item) }>{ item }</a>
+					</td>
+				</tr>
+			}
+		</table>
+	</div>
+}
+
+templ PackageVersionPage(name string, version string, files []string) {
+	<div class="glow-text">
+		<h2>{ name } { version }</h2>
+		<br/>
+		<table class="glow-table">
+			for _, item := range files {
 				<tr class="glow-tr">
 					<td class="glow-td">{ item }</td>
 				</tr>

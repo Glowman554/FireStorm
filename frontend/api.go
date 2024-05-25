@@ -37,6 +37,8 @@ func initService() (*Service, error) {
 	mux.HandleFunc("/frontend/package/create", wrap(CreatePackage))
 	mux.HandleFunc("/frontend/package/list", wrap(ListPackage))
 	mux.HandleFunc("/frontend/package/show", renderedLayout(templates.LayoutProps{Title: "Package"}, PackagePage))
+	//frontend/package/show/version
+	mux.HandleFunc("/frontend/package/show/version", renderedLayout(templates.LayoutProps{Title: "Package"}, PackageVersionPage))
 
 	// assets, err := fs.Sub(dist, "dist")
 	// if err != nil {
