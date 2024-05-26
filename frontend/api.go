@@ -33,6 +33,7 @@ func initService() (*Service, error) {
 	mux.HandleFunc("/frontend/package/list", wrap(ListPackage))
 	mux.HandleFunc("/frontend/package/show", renderedLayout(templates.LayoutProps{Title: "Package"}, PackagePage))
 	mux.HandleFunc("/frontend/package/show/version", renderedLayout(templates.LayoutProps{Title: "Package"}, PackageVersionPage))
+	mux.HandleFunc("/frontend/package/show/file", renderedLayout(templates.LayoutProps{Title: "Package"}, PackageFileVersionPage))
 
 	return &Service{
 		mux: mux,

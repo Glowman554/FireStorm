@@ -9,4 +9,4 @@
 - [x] Send notification on package deletion
 - [x] Improve notification (do not hardcode stuff)
 - [x] Implement being abel to change password
-- [ ] Allow viewing of file in frontend
+- [x] Allow viewing of file in frontend

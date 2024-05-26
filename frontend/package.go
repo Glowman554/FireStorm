@@ -110,3 +110,30 @@ func PackageVersionPage(user *authentication.User, r *http.Request) (templ.Compo
 
 	return templates.PackageVersionPage(packageName, packageVersion, files.Files), nil
 }
+
+func PackageFileVersionPage(user *authentication.User, r *http.Request) (templ.Component, error) {
+	if ok := r.URL.Query().Has("package"); !ok {
+		return nil, errors.New("missing parameter package")
+	}
+	packageName := r.URL.Query().Get("package")
+
+	if ok := r.URL.Query().Has("version"); !ok {
+		return nil, errors.New("missing parameter version")
+	}
+	packageVersion := r.URL.Query().Get("version")
+
+	if ok := r.URL.Query().Has("file"); !ok {
+		return nil, errors.New("missing file version")
+	}
+	fileName := r.URL.Query().Get("file")
+
+	file, err := remote.LoadFile(context.Background(), packageName, &remote.LoadFileProps{
+		Version: packageVersion,
+		Name:    fileName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return templates.PackageFileVersionPage(fileName, packageVersion, file.Content), nil
+}

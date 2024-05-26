@@ -82,10 +82,20 @@ templ PackageVersionPage(name string, version string, files []string) {
 		<table class="glow-table">
 			for _, item := range files {
 				<tr class="glow-tr">
-					<td class="glow-td">{ item }</td>
+					<td class="glow-td">
+						<a href={ templ.SafeURL("/frontend/package/show/file?package=" + name + "&version=" + version + "&file=" + item) }>{ item }</a>
+					</td>
 				</tr>
 			}
 		</table>
+	</div>
+}
+
+templ PackageFileVersionPage(name string, version string, content string) {
+	<div class="glow-text">
+		<h2>{ name } { version }</h2>
+		// 50dvh is dirty hack but works well enough
+		<textarea style="width: 100%; height: 50dvh;">{ content }</textarea>
 	</div>
 }
 
