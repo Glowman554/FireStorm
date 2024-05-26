@@ -176,6 +176,9 @@ func (b *LLVM) generateExpressionRaw(exp *parser.Node, block *ir.Block, cf *Comp
 			x := block.NewAnd(ptr, b.autoTypeCast(index, ptr.Type(), block))
 			return x
 		}
+
+	case parser.MINUS:
+		return block.NewMul(b.generateExpression(exp.A, block, cf), constant.NewInt(types.I64, -1))
 	default:
 		panic("Unknown " + strconv.Itoa(int(exp.Type)))
 	}
