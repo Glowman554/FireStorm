@@ -1,9 +1,9 @@
 {
-	"name": "example",
-	"version": "1.0.0",
-	"compiler": {
-		"includes": [],
-		"input": "main.fl",
-		"output": "main.elf"
-	}
+  "name": "example",
+  "version": "1.0.1",
+  "compiler": {
+    "includes": [],
+    "input": "main.fl",
+    "output": "main.elf"
+  }
 }

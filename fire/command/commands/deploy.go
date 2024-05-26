@@ -42,7 +42,7 @@ func (Deploy) Execute(parser *arguments.Parser) error {
 	err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err == nil {
 			path = strings.ReplaceAll(path, "\\", "/")
-			if !strings.HasSuffix(path, ".fl") {
+			if !strings.HasSuffix(path, ".fl") || strings.Contains(path, ".fire/") {
 				return nil
 			}
 
