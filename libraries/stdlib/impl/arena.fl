@@ -1,0 +1,59 @@
+$define int_size 64
+$define page_size 128
+
+$define arena_configuration_bitmap_size 0
+$define arena_configuration_bitmap 1
+$define arena_configuration_buffer 2
+
+function arena_init(int bitmap_size) -> ptr {
+    int[] bitmap = allocate(8 * bitmap_size);
+    memory_area_set_64(bitmap, 0, bitmap_size * 8);
+    ptr buffer = allocate(int_size * page_size * bitmap_size);
+
+    int[] configuration = allocate(8 * 3);
+    configuration[arena_configuration_bitmap_size] = bitmap_size;
+    configuration[arena_configuration_bitmap] = bitmap;
+    configuration[arena_configuration_buffer] = buffer;
+    return configuration;
+}
+
+function arena_delete(ptr configuration) -> void {
+    int[] bitmap = arena_configuration_read(configuration, arena_configuration_bitmap);
+    int bitmap_size = arena_configuration_read(configuration, arena_configuration_bitmap_size);
+    ptr buffer = arena_configuration_read(configuration, arena_configuration_buffer);
+
+    deallocate(bitmap);
+    deallocate(buffer);
+    deallocate(configuration);
+}
+
+function arena_configuration_read(int[] configuration, int value) -> int {
+    return configuration[value];
+}
+
+function arena_allocate(ptr configuration) -> chr[] {
+    int[] bitmap = arena_configuration_read(configuration, arena_configuration_bitmap);
+    int bitmap_size = arena_configuration_read(configuration, arena_configuration_bitmap_size);
+    ptr buffer = arena_configuration_read(configuration, arena_configuration_buffer);
+
+    for int i = 0; i < 5; i++ {
+        for int j = 0; j < int_size; j++ {
+            int entry = bitmap[i];
+            if entry[j] == 0 {
+                bitmap[i] = entry | (1 << j);
+                return buffer + (i * int_size + j) * page_size;
+            }
+        }
+    }
+    return 0 - 1;
+}
+
+function arena_free(ptr configuration, ptr p) -> void {
+    int[] bitmap = arena_configuration_read(configuration, arena_configuration_bitmap);
+    ptr buffer = arena_configuration_read(configuration, arena_configuration_buffer);
+
+    int index = (p - buffer) / page_size;
+    int i = index / int_size;
+    int j = index % int_size;
+    bitmap[i] = bitmap[i] & ~(1 << j);
+}

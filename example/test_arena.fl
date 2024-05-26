@@ -1,0 +1,17 @@
+function testArena() -> void {
+    ptr configuration = arena_init(5);
+
+    ptr a = arena_allocate(configuration);
+    ptr b = arena_allocate(configuration);
+
+    // arena_free(configuration, b);
+    arena_free(configuration, a);
+
+    ptr c = arena_allocate(configuration);
+    ptr d = arena_allocate(configuration);
+
+    printi(a);
+    printi(b);
+    printi(c);
+    printi(d);
+}
