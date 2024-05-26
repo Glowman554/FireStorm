@@ -18,7 +18,7 @@ type Project struct {
 	Compiler *Compiler `json:"compiler"`
 }
 
-var projectFile = "fire.json"
+var ProjectFile = "fire.json"
 
 func NewProject(name string, shouldIncludeCompiler bool) *Project {
 	var compiler *Compiler = nil
@@ -37,15 +37,19 @@ func NewProject(name string, shouldIncludeCompiler bool) *Project {
 }
 
 func Save(project *Project) error {
+	return SavePath(ProjectFile, project)
+}
+
+func SavePath(path string, project *Project) error {
 	data, err := json.MarshalIndent(project, "", "\t")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(projectFile, data, os.ModePerm)
+	return os.WriteFile(path, data, os.ModePerm)
 }
 
 func Load() (*Project, error) {
-	data, err := os.ReadFile(projectFile)
+	data, err := os.ReadFile(ProjectFile)
 	if err != nil {
 		return nil, err
 	}

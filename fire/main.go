@@ -9,13 +9,15 @@ import (
 )
 
 var AvailableCommands = map[string]command.Command{
-	"create":   commands.Create{},
-	"login":    commands.Login{},
-	"delete":   commands.Delete{},
-	"init":     commands.Init{},
-	"deploy":   commands.Deploy{},
-	"build":    commands.Build{},
-	"validate": commands.Validate{},
+	"create":     commands.Create{},
+	"login":      commands.Login{},
+	"delete":     commands.Delete{},
+	"init":       commands.Init{},
+	"deploy":     commands.Deploy{},
+	"build":      commands.Build{},
+	"validate":   commands.Validate{},
+	"get":        commands.Get{},
+	"executable": commands.Executable{},
 }
 
 func main() {
