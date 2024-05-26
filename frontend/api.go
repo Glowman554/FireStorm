@@ -26,6 +26,7 @@ func initService() (*Service, error) {
 	mux.HandleFunc("/frontend/authentication/create", wrap(CreateAccount))
 	mux.HandleFunc("/frontend/authentication/login", wrap(LoginAccount))
 	mux.HandleFunc("/frontend/authentication/delete", wrap(DeleteAccount))
+	mux.HandleFunc("/frontend/authentication/password/change", wrap(ChangePasswordAccount))
 
 	mux.HandleFunc("/frontend/package", renderedLayout(templates.LayoutProps{Title: "Package"}, nofail(templates.PackagesPage)))
 	mux.HandleFunc("/frontend/package/create", wrap(CreatePackage))

@@ -21,6 +21,24 @@ templ CredentialsField(target string) {
 	</form>
 }
 
+templ PasswordChangeField() {
+	<form hx-post="/frontend/authentication/password/change" hx-ext="json-enc" hx-swap="outerHTML">
+		<table class="glow-table">
+			<tr class="glow-tr">
+				<td class="glow-td"><p>Old password</p></td>
+				<td class="glow-td"><input type="password" name="old_password"/></td>
+			</tr>
+			<tr class="glow-tr">
+				<td class="glow-td"><p>New password</p></td>
+				<td class="glow-td"><input type="password" name="new_password"/></td>
+			</tr>
+			<tr class="glow-tr">
+				<td class="glow-td" colspan="2"><input type="submit" value="Submit"/></td>
+			</tr>
+		</table>
+	</form>
+}
+
 script logout() {
 	document.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 	location.reload();
@@ -40,9 +58,10 @@ templ AccountPage(user *authentication.User, r *http.Request) {
 				</table>
 			</div>
 		} else {
-			<div>
+			<div id="choice">
 				<p>Logged in as { user.Username }</p>
-				<button hx-get="/frontend/authentication/delete" hx-swap="outerHTML">Delete account</button>
+				<button hx-get="/frontend/authentication/delete" hx-swap="outerHTML" hx-target="#choice">Delete account</button>
+				<button hx-get="/frontend/authentication/password/change" hx-swap="outerHTML" hx-target="#choice">Change password</button>
 				<button onclick={ logout() }>Logout</button>
 			</div>
 		}
@@ -68,5 +87,11 @@ templ AccountDeleted() {
 		<script type="text/javascript">
 			document.cookie = `token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 		</script>
+	</div>
+}
+
+templ PasswordChanged() {
+	<div>
+		<p>Successfully changed password</p>
 	</div>
 }

@@ -52,6 +52,11 @@ func deleteUser(ctx context.Context, username string) error {
 	return err
 }
 
+func updateUserPasswordHash(ctx context.Context, username string, hash string) error {
+	_, err := db.Exec(ctx, `update users set password_hash = $1 where username = $2`, hash, username)
+	return err
+}
+
 func cleanup(ctx context.Context) error {
 	_, err := db.Exec(ctx, `delete from sessions where timestamp < now() - interval '30 days'`)
 	return err

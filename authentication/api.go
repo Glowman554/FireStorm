@@ -105,6 +105,38 @@ func AuthHandler(ctx context.Context, params *AuthenticationHandlerParams) (auth
 	return auth.UID(user.Username), user, nil
 }
 
+type ChangePasswordUserParams struct {
+	NewPassword string `json:"new_password" encore:"sensitive"`
+	OldPassword string `json:"old_password" encore:"sensitive"`
+}
+
+//encore:api auth method=POST path=/user/password/change
+func ChangePasswordUser(ctx context.Context, params *ChangePasswordUserParams) error {
+	user, ok := auth.Data().(*User)
+	if !ok {
+		return errors.New("no valid user data")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(params.OldPassword)); err != nil {
+		return err
+	}
+
+	if err := isValidPassword(params.NewPassword); err != nil {
+		return err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(params.NewPassword), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+
+	if err := updateUserPasswordHash(ctx, user.Username, string(hash)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func complete(ctx context.Context, username string) (*AuthenticationResponse, error) {
 	token, err := generateToken()
 	if err != nil {

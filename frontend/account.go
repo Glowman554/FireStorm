@@ -70,3 +70,28 @@ func DeleteAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) 
 		return errors.New("invalid method")
 	}
 }
+
+func ChangePasswordAccount(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	switch r.Method {
+	case "POST":
+		return withBody(r, func(data []byte) error {
+
+			var params *authentication.ChangePasswordUserParams
+			err := json.Unmarshal(data, &params)
+			if err != nil {
+				return err
+			}
+
+			err = authentication.ChangePasswordUser(ctx, params)
+			if err != nil {
+				return err
+			}
+
+			return render(templates.PasswordChanged(), ctx, w)
+		})
+	case "GET":
+		return render(templates.PasswordChangeField(), ctx, w)
+	default:
+		return errors.New("invalid method")
+	}
+}
