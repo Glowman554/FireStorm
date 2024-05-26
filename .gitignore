@@ -5,3 +5,4 @@
 .firetoken
 *.vsix
 *.fpic
+.fire
