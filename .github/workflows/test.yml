@@ -26,3 +26,6 @@ jobs:
 
     - name: Run validation
       run: cd validation && fire validate
+
+    - name: Test build
+      run: cd example && fire build && ./main.elf

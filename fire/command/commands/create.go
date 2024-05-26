@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fire/arguments"
 	"fire/client"
 	"fire/storage"
@@ -24,13 +25,18 @@ func (Create) Execute(parser *arguments.Parser) error {
 		return err
 	}
 
-	fmt.Println("Creating account " + *username + "...")
-
-	token, err := client.CreateUserAccount(*username, *password)
+	c, err := client.Get()
 	if err != nil {
 		return err
 	}
 
-	err = storage.StoreToken(*token)
+	fmt.Println("Creating account " + *username + "...")
+
+	token, err := c.Authentication.CreateUser(context.Background(), client.AuthenticationAuthenticationParams{Username: *username, Password: *password})
+	if err != nil {
+		return err
+	}
+
+	err = storage.StoreToken(token.Token)
 	return err
 }

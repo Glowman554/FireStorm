@@ -1,6 +1,10 @@
 package storage
 
-import "os"
+import (
+	"context"
+	"fire/client"
+	"os"
+)
 
 var tokenFile = ".firetoken"
 
@@ -14,4 +18,14 @@ func LoadToken() (*string, error) {
 	}
 	token := string(data)
 	return &token, nil
+}
+
+func TokenOption() client.Option {
+	return client.WithAuthFunc(func(ctx context.Context) (client.AuthenticationAuthenticationHandlerParams, error) {
+		token, err := LoadToken()
+		if err != nil {
+			return client.AuthenticationAuthenticationHandlerParams{}, err
+		}
+		return client.AuthenticationAuthenticationHandlerParams{Authorization: *token}, nil
+	})
 }

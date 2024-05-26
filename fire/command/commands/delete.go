@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fire/arguments"
 	"fire/client"
 	"fire/storage"
@@ -16,14 +17,14 @@ func (Delete) PopulateParser(parser *arguments.Parser) {
 }
 
 func (Delete) Execute(parser *arguments.Parser) error {
-	token, err := storage.LoadToken()
+	c, err := client.Get(storage.TokenOption())
 	if err != nil {
 		return err
 	}
 
 	if parser.Has("account") {
 		fmt.Println("deleting account...")
-		err := client.DeleteUserAccount(*token)
+		err := c.Authentication.DeleteUser(context.Background())
 		if err != nil {
 			return err
 		}
@@ -41,13 +42,13 @@ func (Delete) Execute(parser *arguments.Parser) error {
 				return err
 			}
 			fmt.Println("deleting version...")
-			err = client.DeletePackageVersion(*token, *pkg, *version)
+			err = c.Remote.DeletePackageVersion(context.Background(), *pkg, client.RemoteDeletePackageVersionProps{Version: *version})
 			if err != nil {
 				return err
 			}
 		} else {
 			fmt.Println("deleting package...")
-			err = client.DeletePackage(*token, *pkg)
+			err = c.Remote.DeletePackage(context.Background(), *pkg)
 			if err != nil {
 				return err
 			}

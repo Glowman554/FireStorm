@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fire/arguments"
 	"fire/client"
 	"fire/storage"
@@ -24,13 +25,18 @@ func (Login) Execute(parser *arguments.Parser) error {
 		return err
 	}
 
-	fmt.Println("Logging in using username " + *username + "...")
-
-	token, err := client.LoginUserAccount(*username, *password)
+	c, err := client.Get()
 	if err != nil {
 		return err
 	}
 
-	err = storage.StoreToken(*token)
+	fmt.Println("Logging in using username " + *username + "...")
+
+	token, err := c.Authentication.LoginUser(context.Background(), client.AuthenticationAuthenticationParams{Username: *username, Password: *password})
+	if err != nil {
+		return err
+	}
+
+	err = storage.StoreToken(token.Token)
 	return err
 }

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fire/arguments"
 	"fire/client"
 	"fire/project"
@@ -18,7 +19,7 @@ func (Deploy) PopulateParser(parser *arguments.Parser) {
 }
 
 func (Deploy) Execute(parser *arguments.Parser) error {
-	token, err := storage.LoadToken()
+	c, err := client.Get(storage.TokenOption())
 	if err != nil {
 		return err
 	}
@@ -30,7 +31,7 @@ func (Deploy) Execute(parser *arguments.Parser) error {
 
 	if parser.Has("init") {
 		fmt.Println("Creating remote repository...")
-		err = client.CreatePackage(*token, proj.Name)
+		err = c.Remote.CreatePackage(context.Background(), proj.Name)
 		if err != nil {
 			return err
 		}
@@ -51,7 +52,7 @@ func (Deploy) Execute(parser *arguments.Parser) error {
 				return err
 			}
 
-			return client.UploadFile(*token, proj.Name, &client.UploadFileProps{
+			return c.Remote.UploadFile(context.Background(), proj.Name, client.RemoteUploadFileProps{
 				Name:    path,
 				Version: proj.Version,
 				Content: string(data),
