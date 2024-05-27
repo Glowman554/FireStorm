@@ -15,7 +15,7 @@ import (
 type Deploy struct{}
 
 func (Deploy) PopulateParser(parser *arguments.Parser) {
-	parser.Allow("init")
+	parser.Allow("init", "Set to remote init package")
 }
 
 func (Deploy) Execute(parser *arguments.Parser) error {
@@ -65,4 +65,8 @@ func (Deploy) Execute(parser *arguments.Parser) error {
 	}
 
 	return nil
+}
+
+func (Deploy) Description() string {
+	return "Deploy a project to the package registry"
 }

@@ -124,3 +124,7 @@ func (Validate) Execute(parser *arguments.Parser) error {
 	}
 	return err
 }
+
+func (Validate) Description() string {
+	return "Run the tests"
+}

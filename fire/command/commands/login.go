@@ -11,8 +11,8 @@ import (
 type Login struct{}
 
 func (Login) PopulateParser(parser *arguments.Parser) {
-	parser.Allow("username")
-	parser.Allow("password")
+	parser.Allow("username", "Account username")
+	parser.Allow("password", "Password for account")
 }
 
 func (Login) Execute(parser *arguments.Parser) error {
@@ -39,4 +39,8 @@ func (Login) Execute(parser *arguments.Parser) error {
 
 	err = storage.StoreToken(token.Token)
 	return err
+}
+
+func (Login) Description() string {
+	return "Login with an user account"
 }

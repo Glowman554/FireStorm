@@ -11,14 +11,19 @@ type Node struct {
 	Value *string
 }
 
+type Allowed struct {
+	Name        string
+	Description string
+}
+
 type Parser struct {
-	Allowed []string
+	Allowed []Allowed
 	Nodes   []Node
 }
 
 func NewParser() *Parser {
 	return &Parser{
-		Allowed: []string{},
+		Allowed: []Allowed{},
 		Nodes:   []Node{},
 	}
 }
@@ -51,7 +56,7 @@ func (p *Parser) Parse(args []string) error {
 
 func (p *Parser) isValid(arg string) bool {
 	for i := range p.Allowed {
-		if p.Allowed[i] == arg {
+		if p.Allowed[i].Name == arg {
 			return true
 		}
 	}
@@ -59,9 +64,22 @@ func (p *Parser) isValid(arg string) bool {
 }
 
 func (p *Parser) help() {
+	maxLen := 0
+	for _, entry := range p.Allowed {
+		if len(entry.Name) > maxLen {
+			maxLen = len(entry.Name)
+		}
+	}
+
 	fmt.Println("Valid options: ")
-	for i := range p.Allowed {
-		fmt.Println("> --" + p.Allowed[i])
+	for _, entry := range p.Allowed {
+		paddingAmount := maxLen - len(entry.Name)
+		padding := ""
+		for range paddingAmount {
+			padding += " "
+		}
+
+		fmt.Println("> --" + entry.Name + padding + " - " + entry.Description)
 	}
 }
 
@@ -95,8 +113,8 @@ func (p *Parser) Has(name string) bool {
 	return false
 }
 
-func (p *Parser) Allow(a string) {
-	p.Allowed = append(p.Allowed, a)
+func (p *Parser) Allow(a string, des string) {
+	p.Allowed = append(p.Allowed, Allowed{Name: a, Description: des})
 }
 
 func remove(s []Node, index int) []Node {

@@ -18,6 +18,7 @@ var AvailableCommands = map[string]command.Command{
 	"validate":   commands.Validate{},
 	"get":        commands.Get{},
 	"executable": commands.Executable{},
+	"compile":    commands.Compile{},
 }
 
 func main() {
@@ -28,9 +29,22 @@ func main() {
 
 	subcommand := os.Args[1]
 	if subcommand == "help" {
+		maxLen := 0
+		for key := range AvailableCommands {
+			if len(key) > maxLen {
+				maxLen = len(key)
+			}
+		}
+
 		fmt.Println("Available commands:")
 		for key := range AvailableCommands {
-			fmt.Println("> " + key)
+			paddingAmount := maxLen - len(key)
+			padding := ""
+			for range paddingAmount {
+				padding += " "
+			}
+
+			fmt.Println("> " + key + padding + " - " + AvailableCommands[key].Description())
 		}
 		return
 	}

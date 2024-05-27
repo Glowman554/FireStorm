@@ -12,8 +12,8 @@ import (
 type Get struct{}
 
 func (Get) PopulateParser(parser *arguments.Parser) {
-	parser.Allow("package")
-	parser.Allow("version")
+	parser.Allow("package", "Package name")
+	parser.Allow("version", "Package version")
 }
 
 func (Get) Execute(parser *arguments.Parser) error {
@@ -62,4 +62,8 @@ func (Get) Execute(parser *arguments.Parser) error {
 	})
 
 	return nil
+}
+
+func (Get) Description() string {
+	return "Get a project from the package registry"
 }

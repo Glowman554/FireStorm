@@ -11,9 +11,9 @@ import (
 type Delete struct{}
 
 func (Delete) PopulateParser(parser *arguments.Parser) {
-	parser.Allow("account")
-	parser.Allow("package")
-	parser.Allow("version")
+	parser.Allow("account", "Set to delete account")
+	parser.Allow("package", "Package to delete")
+	parser.Allow("version", "Package version to delete")
 }
 
 func (Delete) Execute(parser *arguments.Parser) error {
@@ -56,4 +56,8 @@ func (Delete) Execute(parser *arguments.Parser) error {
 	}
 
 	return nil
+}
+
+func (Delete) Description() string {
+	return "Delete a package / version or user account"
 }

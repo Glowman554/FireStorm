@@ -11,8 +11,8 @@ import (
 type Create struct{}
 
 func (Create) PopulateParser(parser *arguments.Parser) {
-	parser.Allow("username")
-	parser.Allow("password")
+	parser.Allow("username", "Account username")
+	parser.Allow("password", "Password for account")
 }
 
 func (Create) Execute(parser *arguments.Parser) error {
@@ -39,4 +39,8 @@ func (Create) Execute(parser *arguments.Parser) error {
 
 	err = storage.StoreToken(token.Token)
 	return err
+}
+
+func (Create) Description() string {
+	return "Create a user account"
 }

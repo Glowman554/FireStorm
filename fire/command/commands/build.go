@@ -35,3 +35,7 @@ func (Build) Execute(parser *arguments.Parser) error {
 
 	return nil
 }
+
+func (Build) Description() string {
+	return "Build a project"
+}

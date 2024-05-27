@@ -24,3 +24,7 @@ func (Executable) Execute(parser *arguments.Parser) error {
 
 	return project.Save(proj)
 }
+
+func (Executable) Description() string {
+	return "Convert a project to be executable"
+}
