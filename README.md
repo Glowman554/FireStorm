@@ -23,7 +23,7 @@
 
 
 ```fl
-$use <stdlib@1.0.3>
+$use <stdlib@1.0.4>
 
 $include <std.fl>
 
@@ -32,5 +32,3 @@ function spark(int argc, str[] argv) -> int {
     return 0;
 }
 ```
-
-
