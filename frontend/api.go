@@ -21,19 +21,19 @@ type Service struct {
 func initService() (*Service, error) {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/frontend/", renderedLayout(templates.LayoutProps{Title: "Index"}, nofail(templates.Index)))
-	mux.HandleFunc("/frontend/authentication", renderedLayout(templates.LayoutProps{Title: "Account"}, nofail(templates.AccountPage)))
+	mux.HandleFunc("/frontend/", renderedLayout(templates.LayoutProps{Title: "FireStorm - Home"}, nofail(templates.Index)))
+	mux.HandleFunc("/frontend/authentication", renderedLayout(templates.LayoutProps{Title: "FireStorm - Account"}, nofail(templates.AccountPage)))
 	mux.HandleFunc("/frontend/authentication/create", wrap(CreateAccount))
 	mux.HandleFunc("/frontend/authentication/login", wrap(LoginAccount))
 	mux.HandleFunc("/frontend/authentication/delete", wrap(DeleteAccount))
 	mux.HandleFunc("/frontend/authentication/password/change", wrap(ChangePasswordAccount))
 
-	mux.HandleFunc("/frontend/package", renderedLayout(templates.LayoutProps{Title: "Package"}, nofail(templates.PackagesPage)))
+	mux.HandleFunc("/frontend/package", renderedLayout(templates.LayoutProps{Title: "FireStorm - Packages"}, nofail(templates.PackagesPage)))
 	mux.HandleFunc("/frontend/package/create", wrap(CreatePackage))
 	mux.HandleFunc("/frontend/package/list", wrap(ListPackage))
-	mux.HandleFunc("/frontend/package/show", renderedLayout(templates.LayoutProps{Title: "Package"}, PackagePage))
-	mux.HandleFunc("/frontend/package/show/version", renderedLayout(templates.LayoutProps{Title: "Package"}, PackageVersionPage))
-	mux.HandleFunc("/frontend/package/show/file", renderedLayout(templates.LayoutProps{Title: "Package"}, PackageFileVersionPage))
+	mux.HandleFunc("/frontend/package/show", renderedLayout(templates.LayoutProps{Title: "FireStorm - Package"}, PackagePage))
+	mux.HandleFunc("/frontend/package/show/version", renderedLayout(templates.LayoutProps{Title: "FireStorm - Home"}, PackageVersionPage))
+	mux.HandleFunc("/frontend/package/show/file", renderedLayout(templates.LayoutProps{Title: "FireStorm - Package"}, PackageFileVersionPage))
 
 	return &Service{
 		mux: mux,
