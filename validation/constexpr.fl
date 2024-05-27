@@ -1,0 +1,18 @@
+$include <std.fl>
+
+int g1 = 1 + 2 * 3;
+int g2 = (1 + 2) * 3;
+chr g3 = 'a' + 5;
+int g4 = 1 > 2;
+int g5 = 1 < 2;
+
+
+function spark(int argc, str[] argv) -> int {
+    printi(g1);
+    printi(g2);
+    printc(g3);
+    printnl();
+    printi(g4);
+    printi(g5);
+	return 0;
+}

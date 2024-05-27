@@ -1,6 +1,7 @@
 package llvm
 
 import (
+	"fire/firestorm/constexpr"
 	"fire/firestorm/parser"
 	"fire/firestorm/utils"
 	"fmt"
@@ -489,10 +490,12 @@ func (b *LLVM) Compile() string {
 				if tmp[i].A.Type == parser.STRING {
 					s := b.module.NewGlobalDef(datatype.Name+".init", constant.NewCharArrayFromString(tmp[i].A.Value.(string)+"\x00"))
 					global = b.module.NewGlobalDef(datatype.Name, constant.NewIntToPtr(constant.NewPtrToInt(s, types.I64), d))
-				} else if tmp[i].A.Type == parser.NUMBER {
-					global = b.module.NewGlobalDef(datatype.Name, constant.NewInt(d.(*types.IntType), int64(tmp[i].A.Value.(int))))
 				} else {
-					panic("Only string and number are supported for globals!")
+					if inttype, ok := d.(*types.IntType); ok {
+						global = b.module.NewGlobalDef(datatype.Name, constant.NewInt(inttype, int64(constexpr.Evaluate(tmp[i].A))))
+					} else {
+						panic("Expected int type when using constant expression")
+					}
 				}
 			} else {
 				switch d := d.(type) {

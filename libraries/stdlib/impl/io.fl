@@ -43,3 +43,7 @@ function printi_base(int num, int base) -> void {
 function printi(int num) -> void {
 	printi_base(num, 10);
 }
+
+function printnl() -> void {
+    printc(10);
+}
