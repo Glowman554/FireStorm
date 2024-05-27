@@ -57,7 +57,7 @@ func (p *Parser) error(message string, pos int) {
 
 func (p *Parser) expect(tokenType lexer.TokenType) {
 	if p.current.Type != tokenType {
-		p.error("Expected "+strconv.Itoa(int(tokenType))+" but was "+strconv.Itoa(int(p.current.Type)), p.current.Pos)
+		p.error("Expected "+lexer.ToString(tokenType)+" but was "+lexer.ToString(p.current.Type), p.current.Pos)
 	}
 }
 
@@ -74,7 +74,7 @@ func (p *Parser) commaOrRparen() bool {
 		p.advance()
 		return true
 	} else {
-		p.error("Unexpected "+strconv.Itoa(int(p.current.Type)), p.current.Pos)
+		p.error("Unexpected "+lexer.ToString(p.current.Type), p.current.Pos)
 	}
 	panic("?")
 }
