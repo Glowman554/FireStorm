@@ -1,0 +1,34 @@
+$include <std.fl>
+
+offset test {
+    int a;
+    chr b;
+}
+
+function spark(int argc, str[] argv) -> int {
+    ptr s1 = allocate(test_size);
+    end {
+        deallocate(s1);
+    }
+
+    set_int(offset(s1, test_a), 69);
+    set_chr(offset(s1, test_b), 'a');
+
+    printi(get_int(offset(s1, test_a)));
+    printc(get_chr(offset(s1, test_b)));
+    printnl();
+
+
+    ptr s2 = allocate(test_size * 2);
+    end {
+        deallocate(s2);
+    }
+
+    set_int(offset(indexed(s2, test_size, 0), test_a), 420);
+    set_int(offset(indexed(s2, test_size, 1), test_a), 69);
+
+    printi(get_int(offset(indexed(s2, test_size, 0), test_a)));
+    printi(get_int(offset(indexed(s2, test_size, 1), test_a)));
+
+	return 0;
+}

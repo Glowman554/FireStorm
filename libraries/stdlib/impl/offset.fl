@@ -1,0 +1,57 @@
+function offset(ptr p, int o) -> ptr {
+    return p + o;
+}
+
+function indexed(ptr p, int s, int i) -> ptr {
+    return p + s * i;
+}
+
+
+function set_int(int[] p, int v) -> void {
+    p[0] = v;
+}
+
+function set_str(str[] p, str v) -> void {
+    p[0] = v;
+}
+
+function set_chr(chr[] p, int v) -> void {
+    p[0] = v;
+}
+
+function set_ptr(ptr[] p, ptr v) -> void {
+    p[0] = v;
+}
+
+function set_i32(i32[] p, i32 v) -> void {
+    p[0] = v;
+}
+
+function set_i16(i16[] p, i16 v) -> void {
+    p[0] = v;
+}
+
+
+function get_int(int[] p) -> int {
+    return p[0];
+}
+
+function get_str(str[] p) -> str {
+    return p[0];
+}
+
+function get_chr(chr[] p) -> chr {
+    return p[0];
+}
+
+function get_ptr(ptr[] p) -> ptr {
+    return p[0];
+}
+
+function get_i32(i32[] p) -> i32 {
+    return p[0];
+}
+
+function get_i16(i16[] p) -> i16 {
+    return p[0];
+}

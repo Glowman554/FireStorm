@@ -14,9 +14,14 @@ import (
 	"github.com/llir/llvm/ir/value"
 )
 
+type GlobalVariable struct {
+	varivable *ir.Global
+	final     bool
+}
+
 type LLVM struct {
 	global          *parser.Node
-	globalVariables map[string]*ir.Global
+	globalVariables map[string]GlobalVariable
 	functions       map[string]*ir.Func
 	module          *ir.Module
 	globalId        int
@@ -27,7 +32,7 @@ type LLVM struct {
 func NewLLVM(global *parser.Node, target string) *LLVM {
 	return &LLVM{
 		global:          global,
-		globalVariables: make(map[string]*ir.Global),
+		globalVariables: make(map[string]GlobalVariable),
 		functions:       make(map[string]*ir.Func),
 		globalId:        0,
 		ptrType:         types.I64,
@@ -52,9 +57,12 @@ func (l *LLVM) findFunction(name string, cf *CompiledFunction) *ir.Func {
 	panic("?")
 }
 
-func (l *LLVM) findVariable(name string, cf *CompiledFunction) (value.Value, types.Type) {
+func (l *LLVM) findVariable(name string, cf *CompiledFunction, assign bool) (value.Value, types.Type) {
 	if v, ok := l.globalVariables[name]; ok {
-		return v, v.ContentType
+		if assign && v.final {
+			panic("Cannot assign to final varibale " + name)
+		}
+		return v.varivable, v.varivable.ContentType
 	}
 	return cf.findVariable(name, l.error)
 }
@@ -107,11 +115,36 @@ func (b *LLVM) datatypeToLLVM(d parser.UnnamedDatatype) types.Type {
 	case parser.CHR:
 		return b.datatypeArraySelect(d, types.I8, types.I8Ptr)
 	case parser.PTR:
-		return b.ptrType
+		return b.datatypeArraySelect(d, b.ptrType, types.NewPointer(b.ptrType))
 	case parser.INT_32:
 		return b.datatypeArraySelect(d, types.I32, types.I32Ptr)
 	case parser.INT_16:
 		return b.datatypeArraySelect(d, types.I16, types.I16Ptr)
+	default:
+		panic("Invalid datatype")
+	}
+}
+
+func (b *LLVM) datatypeToSize(d parser.UnnamedDatatype) int {
+	if d.IsArray {
+		return 8
+	}
+
+	switch d.Type {
+	case parser.INT:
+		return 8
+	case parser.STR:
+		return 8
+	case parser.VOID:
+		return 0
+	case parser.CHR:
+		return 1
+	case parser.PTR:
+		return 8
+	case parser.INT_32:
+		return 4
+	case parser.INT_16:
+		return 2
 	default:
 		panic("Invalid datatype")
 	}
@@ -156,7 +189,7 @@ func (b *LLVM) generateExpressionRaw(exp *parser.Node, block *ir.Block, cf *Comp
 		fc := exp.Value.(parser.FunctionCall)
 		return b.generateFunctionCall(fc, block, cf)
 	case parser.VARIABLE_LOOKUP:
-		v, t := b.findVariable(exp.Value.(string), cf)
+		v, t := b.findVariable(exp.Value.(string), cf, false)
 		// if _, ok := v.ElemType.(*types.PointerType); ok {
 		// 	l := block.NewLoad(v.ElemType, v)
 		// 	return b.autoTypeCast(l, b.ptrType, block)
@@ -164,7 +197,7 @@ func (b *LLVM) generateExpressionRaw(exp *parser.Node, block *ir.Block, cf *Comp
 		return block.NewLoad(t, v)
 
 	case parser.VARIABLE_LOOKUP_ARRAY:
-		v, t := b.findVariable(exp.Value.(string), cf)
+		v, t := b.findVariable(exp.Value.(string), cf, false)
 		ptr := block.NewLoad(t, v)
 		i := b.generateExpression(exp.A, block, cf)
 
@@ -325,12 +358,12 @@ func (b *LLVM) generateCodeBlock(block *ir.Block, body []*parser.Node, cf *Compi
 				block.NewStore(c, v)
 			}
 		case parser.VARIABLE_ASSIGN:
-			v, t := b.findVariable(node.Value.(string), cf)
+			v, t := b.findVariable(node.Value.(string), cf, true)
 			x := b.generateExpression(node.A, block, cf)
 			c := b.autoTypeCast(x, t, block)
 			block.NewStore(c, v)
 		case parser.VARIABLE_ASSIGN_ARRAY:
-			v, t := b.findVariable(node.Value.(string), cf)
+			v, t := b.findVariable(node.Value.(string), cf, true)
 			ptr := block.NewLoad(t, v)
 			i := b.generateExpression(node.A, block, cf)
 			indexed := block.NewGetElementPtr(ptr.ElemType.(*types.PointerType).ElemType, ptr, i)
@@ -469,6 +502,22 @@ func (b *LLVM) generateFunctionDeclaration(f parser.Function, module *ir.Module)
 
 }
 
+func (b *LLVM) generateOffset(offset parser.Offset, module *ir.Module) {
+	current := 0
+
+	for _, entry := range offset.Entries {
+		size := b.datatypeToSize(entry.UnnamedDatatype)
+		name := offset.Name + "_" + entry.Name
+		x := module.NewGlobalDef(name, constant.NewInt(types.I64, int64(current)))
+		b.globalVariables[name] = GlobalVariable{varivable: x, final: true}
+		current += size
+	}
+
+	name := offset.Name + "_size"
+	x := module.NewGlobalDef(name, constant.NewInt(types.I64, int64(current)))
+	b.globalVariables[name] = GlobalVariable{varivable: x, final: true}
+}
+
 func (b *LLVM) Compile() string {
 	tmp := b.global.Value.([]*parser.Node)
 
@@ -508,7 +557,10 @@ func (b *LLVM) Compile() string {
 				}
 			}
 
-			b.globalVariables[datatype.Name] = global
+			b.globalVariables[datatype.Name] = GlobalVariable{varivable: global, final: false}
+
+		case parser.OFFSET:
+			b.generateOffset(tmp[i].Value.(parser.Offset), b.module)
 		}
 	}
 

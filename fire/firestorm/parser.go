@@ -587,6 +587,27 @@ func (p *Parser) Global() *parser.Node {
 						Arguments:      arguments,
 					}))
 				}
+			} else if p.current.Value == "offset" {
+				p.advanceExpect(lexer.ID)
+				name := p.current.Value.(string)
+				p.advanceExpect(lexer.LBRACE)
+
+				entries := []parser.NamedDatatype{}
+
+				for {
+					p.advance()
+					if p.current.Type == lexer.RBRACE {
+						break
+					}
+					entries = append(entries, p.datatypeNamed())
+					p.expect(lexer.END_OF_LINE)
+				}
+
+				p.expect(lexer.RBRACE)
+				global = append(global, parser.NewNode(parser.OFFSET, nil, nil, parser.Offset{
+					Name:    name,
+					Entries: entries,
+				}))
 			} else {
 				p.error("Expected function", p.pos)
 			}

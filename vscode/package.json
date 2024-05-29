@@ -2,7 +2,7 @@
   "name": "firestorm",
   "displayName": "firestorm",
   "description": "FireStorm syntax",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.89.0"
   },
@@ -10,16 +10,25 @@
     "Programming Languages"
   ],
   "contributes": {
-    "languages": [{
-      "id": "firestorm",
-      "aliases": ["FireStorm", "firestorm"],
-      "extensions": ["fl"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "firestorm",
-      "scopeName": "source.firestorm",
-      "path": "./syntaxes/firestorm.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "firestorm",
+        "aliases": [
+          "FireStorm",
+          "firestorm"
+        ],
+        "extensions": [
+          "fl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "firestorm",
+        "scopeName": "source.firestorm",
+        "path": "./syntaxes/firestorm.tmLanguage.json"
+      }
+    ]
   }
 }

@@ -5,6 +5,7 @@ $include <impl/memory.fl>
 $include <impl/old.fl>
 $include <impl/file.fl>
 $include <impl/arena.fl>
+$include <impl/offset.fl>
 
 $include <stubs.fl>
 

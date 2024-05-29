@@ -47,6 +47,8 @@ const (
 	BIT_NOT
 
 	END_EXEC
+
+	OFFSET
 )
 
 type Node struct {

@@ -1,0 +1,17 @@
+$include <std.fl>
+
+offset test {
+    int a;
+    chr b;
+    ptr c;
+    ptr[] d;
+}
+
+function spark(int argc, str[] argv) -> int {
+    printi(test_a);
+    printi(test_b);
+    printi(test_c);
+    printi(test_d);
+    printi(test_size);
+	return 0;
+}
