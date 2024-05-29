@@ -127,20 +127,20 @@ func (b *LLVM) datatypeToLLVM(d parser.UnnamedDatatype) types.Type {
 
 func (b *LLVM) datatypeToSize(d parser.UnnamedDatatype) int {
 	if d.IsArray {
-		return int(b.ptrType.(*types.IntType).BitSize)
+		return int(b.ptrType.(*types.IntType).BitSize) / 8
 	}
 
 	switch d.Type {
 	case parser.INT:
 		return 8
 	case parser.STR:
-		return int(b.ptrType.(*types.IntType).BitSize)
+		return int(b.ptrType.(*types.IntType).BitSize) / 8
 	case parser.VOID:
 		return 0
 	case parser.CHR:
 		return 1
 	case parser.PTR:
-		return int(b.ptrType.(*types.IntType).BitSize)
+		return int(b.ptrType.(*types.IntType).BitSize) / 8
 	case parser.INT_32:
 		return 4
 	case parser.INT_16:
