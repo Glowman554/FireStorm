@@ -23,7 +23,7 @@
 
 
 ```fl
-$use <stdlib@1.0.4>
+$use <stdlib@1.0.6>
 
 $include <std.fl>
 
