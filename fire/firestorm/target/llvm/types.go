@@ -10,10 +10,12 @@ import (
 
 type CompiledFunction struct {
 	variables       map[string]*ir.InstAlloca
+	entryBlock      *ir.Block
 	returnBlock     *ir.Block
 	returnIncomings []*ir.Incoming
 	returnType      types.Type
 	name            string
+	endId           int
 	endExec         []*parser.Node
 }
 

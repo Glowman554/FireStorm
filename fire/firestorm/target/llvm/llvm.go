@@ -406,7 +406,17 @@ func (b *LLVM) generateCodeBlock(block *ir.Block, body []*parser.Node, cf *Compi
 
 			block = b.newBlock(block)
 		case parser.END_EXEC:
-			cf.endExec = append(cf.endExec, node.Value.([]*parser.Node)...)
+			hit := cf.entryBlock.NewAlloca(types.I64)
+			endId := "end_" + strconv.Itoa(cf.endId)
+			hit.SetName(endId)
+			cf.endId++
+			cf.entryBlock.NewStore(constant.NewInt(types.I64, 0), hit)
+			cf.variables[endId] = hit
+
+			block.NewStore(constant.NewInt(types.I64, 1), hit)
+			cf.endExec = append(cf.endExec, parser.NewNode(parser.IF, parser.NewNode(parser.VARIABLE_LOOKUP, nil, nil, endId), nil, parser.If{
+				TrueBlock: node.Value.([]*parser.Node),
+			}))
 		default:
 			panic("Unknown " + strconv.Itoa(int(node.Type)))
 		}
@@ -421,6 +431,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 		returnIncomings: []*ir.Incoming{},
 		returnType:      f.Sig.RetType,
 		name:            af.Name,
+		endId:           0,
 		endExec:         []*parser.Node{},
 	}
 
@@ -448,6 +459,8 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 			cf.variables[argument.Name] = v
 			entry.NewStore(f.Params[i], v)
 		}
+
+		cf.entryBlock = entry
 
 		entry.NewBr(main)
 

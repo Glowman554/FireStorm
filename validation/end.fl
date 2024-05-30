@@ -4,10 +4,16 @@ function spark(int argc, str[] argv) -> int {
     end {
         prints("end");
     }
-    
-    end {
-        if argc > 2 {
+
+    if argc > 2 {
+        end {
             prints("argc > 2");
+        }
+    } else {
+        int s = 10;
+        end {
+            prints("argc <= 2");
+            printi(s);
         }
     }
 
