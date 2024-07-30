@@ -1,0 +1,17 @@
+$include <std.fl>
+
+
+function spark(int argc, str[] argv) -> int {
+    int a = 0;
+    int b = 3;
+
+    range a .. b as i up {
+        printi(i);
+    }
+
+    range b .. a as j down {
+        printi(j);
+    }
+
+	return 0;
+}

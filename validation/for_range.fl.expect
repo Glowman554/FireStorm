@@ -1,0 +1,5 @@
+{
+	"arguments": [],
+	"output": ["0", "1", "2", "3", "2", "1"],
+	"should_fail": false
+}

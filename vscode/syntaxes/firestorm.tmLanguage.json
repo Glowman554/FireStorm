@@ -23,7 +23,7 @@
       "patterns": [
         {
           "name": "keyword.control.firestorm",
-          "match": "\\b(if|else|while|loop|for|return|do|function|end|offset)\\b"
+          "match": "\\b(if|else|while|loop|for|return|do|function|end|offset|range|up|down)\\b"
         }
       ]
     },
