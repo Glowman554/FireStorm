@@ -8,8 +8,7 @@ import (
 type DataType int
 
 const (
-	INVALID          = -1
-	INT     DataType = iota
+	INT DataType = iota
 	STR
 	VOID
 	CHR
@@ -35,7 +34,7 @@ func GetDatatypeFromString(t string) (DataType, error) {
 	case "i16":
 		return INT_16, nil
 	default:
-		return INVALID, fmt.Errorf("Invalid datatype " + t)
+		return 0, fmt.Errorf("Invalid datatype " + t)
 	}
 }
 

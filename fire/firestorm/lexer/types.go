@@ -38,6 +38,8 @@ const (
 
 	INCREASE
 	DECREASE
+
+	RANGE_DOT
 )
 
 type Token struct {

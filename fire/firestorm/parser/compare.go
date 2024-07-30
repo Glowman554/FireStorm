@@ -9,8 +9,7 @@ import (
 type Compare int
 
 const (
-	Invalid         = -1
-	More    Compare = iota
+	More Compare = iota
 	Less
 	MoreEquals
 	LessEquals
@@ -33,6 +32,6 @@ func TokenTypeToCompare(t lexer.TokenType) (Compare, error) {
 	case lexer.NOT_EQUALS:
 		return NotEquals, nil
 	default:
-		return Invalid, fmt.Errorf("Invalid compare " + strconv.Itoa(int(t)))
+		return 0, fmt.Errorf("Invalid compare " + strconv.Itoa(int(t)))
 	}
 }

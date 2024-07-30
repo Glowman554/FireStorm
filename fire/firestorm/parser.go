@@ -451,6 +451,63 @@ func (p *Parser) keyword() []*parser.Node {
 		codeBlock := p.codeBlock()
 		p.expect(lexer.RBRACE)
 		return []*parser.Node{parser.NewNode(parser.END_EXEC, nil, nil, codeBlock)}
+	case "range":
+		p.advance()
+		from := p.expression()
+		p.expect(lexer.RANGE_DOT)
+
+		p.advance()
+		to := p.expression()
+		p.expect(lexer.ID)
+
+		if p.current.Value.(string) != "as" {
+			p.error("Expected as", p.current.Pos)
+		}
+		p.advanceExpect(lexer.ID)
+
+		as := p.current.Value.(string)
+		p.advanceExpect(lexer.ID)
+
+		modeStr := p.current.Value.(string)
+		mode, err := parser.GetRangeMode(modeStr)
+		if err != nil {
+			p.error(err.Error(), p.current.Pos)
+		}
+		p.advanceExpect(lexer.LBRACE)
+
+		codeBlock := p.codeBlock()
+		switch mode {
+		case parser.UP:
+			codeBlock = append(codeBlock, parser.NewNode(parser.VARIABLE_INCREASE, nil, nil, as))
+		case parser.DOWN:
+			codeBlock = append(codeBlock, parser.NewNode(parser.VARIABLE_DECREASE, nil, nil, as))
+		default:
+			panic("?")
+		}
+		p.expect(lexer.RBRACE)
+
+		ret := []*parser.Node{
+			parser.NewNode(parser.VARIABLE_DECLARATION, from, nil, parser.NamedDatatype{
+				UnnamedDatatype: parser.UnnamedDatatype{
+					Type:    parser.INT,
+					IsArray: false,
+				},
+				Name: as,
+			}),
+		}
+
+		switch mode {
+		case parser.UP:
+			ret = append(ret, parser.NewNode(parser.CONDITIONAL_LOOP, parser.NewNode(parser.COMPARE,
+				parser.NewNode(parser.VARIABLE_LOOKUP, nil, nil, as), to, parser.Less), nil, codeBlock))
+		case parser.DOWN:
+			ret = append(ret, parser.NewNode(parser.CONDITIONAL_LOOP, parser.NewNode(parser.COMPARE,
+				parser.NewNode(parser.VARIABLE_LOOKUP, nil, nil, as), to, parser.More), nil, codeBlock))
+		default:
+			panic("?")
+		}
+
+		return ret
 	default:
 		return nil
 	}

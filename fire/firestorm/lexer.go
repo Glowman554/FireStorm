@@ -154,6 +154,13 @@ func (l *Lexer) Tokenize() []lexer.Token {
 				l.reverse()
 				tokens = append(tokens, lexer.NewToken(lexer.MORE, nil, l.pos))
 			}
+		case '.':
+			l.advance()
+			if l.current == '.' {
+				tokens = append(tokens, lexer.NewToken(lexer.RANGE_DOT, nil, l.pos))
+			} else {
+				panic("Illegal token " + string(l.current))
+			}
 		case '<':
 			l.advance()
 			if l.current == '=' {

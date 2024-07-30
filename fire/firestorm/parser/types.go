@@ -49,6 +49,8 @@ const (
 	END_EXEC
 
 	OFFSET
+
+	RANGE_LOOP
 )
 
 type Node struct {
