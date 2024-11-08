@@ -1,6 +1,8 @@
 package parser
 
+import "fire/firestorm/parser/node"
+
 type If struct {
-	TrueBlock  []*Node
-	FalseBlock []*Node
+	TrueBlock  []*node.Node
+	FalseBlock []*node.Node
 }

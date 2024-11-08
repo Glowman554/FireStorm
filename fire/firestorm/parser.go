@@ -3,6 +3,10 @@ package firestorm
 import (
 	"fire/firestorm/lexer"
 	"fire/firestorm/parser"
+	"fire/firestorm/parser/compare"
+	"fire/firestorm/parser/datatype"
+	"fire/firestorm/parser/function"
+	"fire/firestorm/parser/node"
 	"fire/firestorm/utils"
 	"fmt"
 	"strconv"
@@ -79,9 +83,9 @@ func (p *Parser) commaOrRparen() bool {
 	panic("?")
 }
 
-func (p *Parser) datatypeNamed() parser.NamedDatatype {
+func (p *Parser) datatypeNamed() datatype.NamedDatatype {
 	if p.current.Type == lexer.ID {
-		datatype, err := parser.GetDatatypeFromString(p.current.Value.(string))
+		dt, err := datatype.GetDatatypeFromString(p.current.Value.(string))
 		if err != nil {
 			p.error(err.Error(), p.current.Pos)
 		}
@@ -89,9 +93,9 @@ func (p *Parser) datatypeNamed() parser.NamedDatatype {
 		if p.current.Type == lexer.LBRACKET {
 			p.advanceExpect(lexer.RBRACKET)
 			p.advanceExpect(lexer.ID)
-			tmp := parser.NamedDatatype{
-				UnnamedDatatype: parser.UnnamedDatatype{
-					Type:    datatype,
+			tmp := datatype.NamedDatatype{
+				UnnamedDatatype: datatype.UnnamedDatatype{
+					Type:    dt,
 					IsArray: true,
 				},
 				Name: p.current.Value.(string),
@@ -100,9 +104,9 @@ func (p *Parser) datatypeNamed() parser.NamedDatatype {
 			return tmp
 		} else {
 			p.expect(lexer.ID)
-			tmp := parser.NamedDatatype{
-				UnnamedDatatype: parser.UnnamedDatatype{
-					Type:    datatype,
+			tmp := datatype.NamedDatatype{
+				UnnamedDatatype: datatype.UnnamedDatatype{
+					Type:    dt,
 					IsArray: false,
 				},
 				Name: p.current.Value.(string),
@@ -116,9 +120,9 @@ func (p *Parser) datatypeNamed() parser.NamedDatatype {
 	panic("?")
 }
 
-func (p *Parser) datatypeUnnamed() parser.UnnamedDatatype {
+func (p *Parser) datatypeUnnamed() datatype.UnnamedDatatype {
 	if p.current.Type == lexer.ID {
-		datatype, err := parser.GetDatatypeFromString(p.current.Value.(string))
+		dt, err := datatype.GetDatatypeFromString(p.current.Value.(string))
 		if err != nil {
 			p.error(err.Error(), p.current.Pos)
 		}
@@ -126,13 +130,13 @@ func (p *Parser) datatypeUnnamed() parser.UnnamedDatatype {
 		if p.current.Type == lexer.LBRACKET {
 			p.advanceExpect(lexer.RBRACKET)
 			p.advance()
-			return parser.UnnamedDatatype{
-				Type:    datatype,
+			return datatype.UnnamedDatatype{
+				Type:    dt,
 				IsArray: true,
 			}
 		} else {
-			return parser.UnnamedDatatype{
-				Type:    datatype,
+			return datatype.UnnamedDatatype{
+				Type:    dt,
 				IsArray: false,
 			}
 		}
@@ -143,7 +147,7 @@ func (p *Parser) datatypeUnnamed() parser.UnnamedDatatype {
 	panic("?")
 }
 
-func (p *Parser) factor() *parser.Node {
+func (p *Parser) factor() *node.Node {
 	token := p.current
 	if token == nil {
 		return nil
@@ -158,22 +162,22 @@ func (p *Parser) factor() *parser.Node {
 		return result
 	} else if token.Type == lexer.NUMBER {
 		p.advance()
-		return parser.NewNode(parser.NUMBER, nil, nil, token.Value)
+		return node.NewNode(node.NUMBER, nil, nil, token.Value)
 	} else if token.Type == lexer.STRING {
 		p.advance()
-		return parser.NewNode(parser.STRING, nil, nil, token.Value)
+		return node.NewNode(node.STRING, nil, nil, token.Value)
 	} else if token.Type == lexer.NOT {
 		p.advance()
-		return parser.NewNode(parser.NOT, p.expression(), nil, token.Value)
+		return node.NewNode(node.NOT, p.expression(), nil, token.Value)
 	} else if token.Type == lexer.BIT_NOT {
 		p.advance()
-		return parser.NewNode(parser.BIT_NOT, p.expression(), nil, token.Value)
+		return node.NewNode(node.BIT_NOT, p.expression(), nil, token.Value)
 	} else if token.Type == lexer.PLUS {
 		p.advance()
-		return parser.NewNode(parser.PLUS, p.factor(), nil, token.Value)
+		return node.NewNode(node.PLUS, p.factor(), nil, token.Value)
 	} else if token.Type == lexer.MINUS {
 		p.advance()
-		return parser.NewNode(parser.MINUS, p.factor(), nil, token.Value)
+		return node.NewNode(node.MINUS, p.factor(), nil, token.Value)
 	} else if token.Type == lexer.ID {
 		p.advance()
 		if p.current.Type == lexer.LPAREN {
@@ -181,9 +185,9 @@ func (p *Parser) factor() *parser.Node {
 			// function call
 			if p.current.Type == lexer.RPAREN {
 				p.advance()
-				return parser.NewNode(parser.FUNCTION_CALL, nil, nil, parser.FunctionCall{Name: token.Value.(string), Arguments: []*parser.Node{}})
+				return node.NewNode(node.FUNCTION_CALL, nil, nil, function.FunctionCall{Name: token.Value.(string), Arguments: []*node.Node{}})
 			} else {
-				arguments := []*parser.Node{}
+				arguments := []*node.Node{}
 				for {
 					expression := p.expression()
 					if expression == nil {
@@ -192,7 +196,7 @@ func (p *Parser) factor() *parser.Node {
 					}
 					arguments = append(arguments, expression)
 					if p.commaOrRparen() {
-						return parser.NewNode(parser.FUNCTION_CALL, nil, nil, parser.FunctionCall{Name: token.Value.(string), Arguments: arguments})
+						return node.NewNode(node.FUNCTION_CALL, nil, nil, function.FunctionCall{Name: token.Value.(string), Arguments: arguments})
 					}
 				}
 			}
@@ -202,9 +206,9 @@ func (p *Parser) factor() *parser.Node {
 				expression := p.expression()
 				p.expect(lexer.RBRACKET)
 				p.advance()
-				return parser.NewNode(parser.VARIABLE_LOOKUP_ARRAY, expression, nil, token.Value)
+				return node.NewNode(node.VARIABLE_LOOKUP_ARRAY, expression, nil, token.Value)
 			} else {
-				return parser.NewNode(parser.VARIABLE_LOOKUP, nil, nil, token.Value)
+				return node.NewNode(node.VARIABLE_LOOKUP, nil, nil, token.Value)
 			}
 		}
 	} else if token.Type == lexer.END_OF_LINE {
@@ -214,7 +218,7 @@ func (p *Parser) factor() *parser.Node {
 	panic("?")
 }
 
-func (p *Parser) bitLogic() *parser.Node {
+func (p *Parser) bitLogic() *node.Node {
 	result := p.factor()
 
 	for p.current.Type == lexer.AND ||
@@ -224,19 +228,19 @@ func (p *Parser) bitLogic() *parser.Node {
 		p.current.Type == lexer.SHIFT_RIGHT {
 		if p.current.Type == lexer.AND {
 			p.advance()
-			result = parser.NewNode(parser.AND, result, p.factor(), nil)
+			result = node.NewNode(node.AND, result, p.factor(), nil)
 		} else if p.current.Type == lexer.OR {
 			p.advance()
-			result = parser.NewNode(parser.OR, result, p.factor(), nil)
+			result = node.NewNode(node.OR, result, p.factor(), nil)
 		} else if p.current.Type == lexer.XOR {
 			p.advance()
-			result = parser.NewNode(parser.XOR, result, p.factor(), nil)
+			result = node.NewNode(node.XOR, result, p.factor(), nil)
 		} else if p.current.Type == lexer.SHIFT_LEFT {
 			p.advance()
-			result = parser.NewNode(parser.SHIFT_LEFT, result, p.factor(), nil)
+			result = node.NewNode(node.SHIFT_LEFT, result, p.factor(), nil)
 		} else if p.current.Type == lexer.SHIFT_RIGHT {
 			p.advance()
-			result = parser.NewNode(parser.SHIFT_RIGHT, result, p.factor(), nil)
+			result = node.NewNode(node.SHIFT_RIGHT, result, p.factor(), nil)
 		} else {
 			p.error("Invalid power", p.current.Pos)
 		}
@@ -245,7 +249,7 @@ func (p *Parser) bitLogic() *parser.Node {
 	return result
 }
 
-func (p *Parser) term() *parser.Node {
+func (p *Parser) term() *node.Node {
 	result := p.bitLogic()
 
 	for p.current.Type == lexer.MULTIPLY ||
@@ -254,13 +258,13 @@ func (p *Parser) term() *parser.Node {
 
 		if p.current.Type == lexer.MULTIPLY {
 			p.advance()
-			result = parser.NewNode(parser.MULTIPLY, result, p.bitLogic(), nil)
+			result = node.NewNode(node.MULTIPLY, result, p.bitLogic(), nil)
 		} else if p.current.Type == lexer.DIVIDE {
 			p.advance()
-			result = parser.NewNode(parser.DIVIDE, result, p.bitLogic(), nil)
+			result = node.NewNode(node.DIVIDE, result, p.bitLogic(), nil)
 		} else if p.current.Type == lexer.MODULO {
 			p.advance()
-			result = parser.NewNode(parser.MODULO, result, p.bitLogic(), nil)
+			result = node.NewNode(node.MODULO, result, p.bitLogic(), nil)
 		} else {
 			p.error("Invalid term", p.current.Pos)
 		}
@@ -269,7 +273,7 @@ func (p *Parser) term() *parser.Node {
 	return result
 }
 
-func (p *Parser) compare() *parser.Node {
+func (p *Parser) compare() *node.Node {
 	result := p.term()
 
 	for p.current.Type == lexer.EQUALS ||
@@ -278,25 +282,25 @@ func (p *Parser) compare() *parser.Node {
 		p.current.Type == lexer.LESS_EQUALS ||
 		p.current.Type == lexer.MORE ||
 		p.current.Type == lexer.MORE_EQUALS {
-		compare, _ := parser.TokenTypeToCompare(p.current.Type)
+		c, _ := compare.TokenTypeToCompare(p.current.Type)
 		p.advance()
-		result = parser.NewNode(parser.COMPARE, result, p.term(), compare)
+		result = node.NewNode(node.COMPARE, result, p.term(), c)
 	}
 
 	return result
 }
 
-func (p *Parser) expression() *parser.Node {
+func (p *Parser) expression() *node.Node {
 	result := p.compare()
 
 	for p.current.Type == lexer.PLUS ||
 		p.current.Type == lexer.MINUS {
 		if p.current.Type == lexer.MINUS {
 			p.advance()
-			result = parser.NewNode(parser.SUBTRACT, result, p.term(), nil)
+			result = node.NewNode(node.SUBTRACT, result, p.term(), nil)
 		} else if p.current.Type == lexer.PLUS {
 			p.advance()
-			result = parser.NewNode(parser.ADD, result, p.term(), nil)
+			result = node.NewNode(node.ADD, result, p.term(), nil)
 		} else {
 			p.error("Invalid expression", p.current.Pos)
 		}
@@ -305,14 +309,14 @@ func (p *Parser) expression() *parser.Node {
 	return result
 }
 
-func (p *Parser) functionAttributes() []parser.FunctionAttribute {
-	attributes := []parser.FunctionAttribute{}
+func (p *Parser) functionAttributes() []function.FunctionAttribute {
+	attributes := []function.FunctionAttribute{}
 
 	if p.current.Type == lexer.LPAREN {
 		p.advance()
 		for {
 			if p.current.Type == lexer.ID {
-				attributes = append(attributes, parser.StringToFunctionAttribute(p.current.Value.(string)))
+				attributes = append(attributes, function.StringToFunctionAttribute(p.current.Value.(string)))
 				p.advance()
 				if p.commaOrRparen() {
 					return attributes
@@ -326,8 +330,8 @@ func (p *Parser) functionAttributes() []parser.FunctionAttribute {
 	}
 }
 
-func (p *Parser) functionArguments() []parser.NamedDatatype {
-	arguments := []parser.NamedDatatype{}
+func (p *Parser) functionArguments() []datatype.NamedDatatype {
+	arguments := []datatype.NamedDatatype{}
 	p.expect(lexer.LPAREN)
 	p.advance()
 	if p.current.Type == lexer.RPAREN {
@@ -342,7 +346,7 @@ func (p *Parser) functionArguments() []parser.NamedDatatype {
 	}
 }
 
-func (p *Parser) parseIf(f *parser.Function) *parser.Node {
+func (p *Parser) parseIf(f *function.Function) *node.Node {
 	p.advance()
 	expression := p.expression()
 	if expression == nil {
@@ -359,7 +363,7 @@ func (p *Parser) parseIf(f *parser.Function) *parser.Node {
 				if p.current.Value == "if" {
 					elseCodeBlock := p.parseIf(f)
 					p.expect(lexer.RBRACE)
-					return parser.NewNode(parser.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: []*parser.Node{elseCodeBlock}})
+					return node.NewNode(node.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: []*node.Node{elseCodeBlock}})
 				} else {
 					p.error("Expected if", p.current.Pos)
 					panic("?")
@@ -368,30 +372,30 @@ func (p *Parser) parseIf(f *parser.Function) *parser.Node {
 				p.expect(lexer.LBRACE)
 				elseCodeBlock := p.codeBlock(f)
 				p.expect(lexer.RBRACE)
-				return parser.NewNode(parser.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: elseCodeBlock})
+				return node.NewNode(node.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: elseCodeBlock})
 			}
 		} else {
 			p.reverse()
-			return parser.NewNode(parser.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: []*parser.Node{}})
+			return node.NewNode(node.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: []*node.Node{}})
 		}
 	} else {
 		p.reverse()
-		return parser.NewNode(parser.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: []*parser.Node{}})
+		return node.NewNode(node.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: []*node.Node{}})
 	}
 }
 
-func (p *Parser) keyword(f *parser.Function) []*parser.Node {
+func (p *Parser) keyword(f *function.Function) []*node.Node {
 	if p.current.Type != lexer.ID {
 		return nil
 	}
 	switch p.current.Value.(string) {
 	case "return":
 		p.advance()
-		ret := []*parser.Node{parser.NewNode(parser.RETURN, p.expression(), nil, nil)}
+		ret := []*node.Node{node.NewNode(node.RETURN, p.expression(), nil, nil)}
 		p.expect(lexer.END_OF_LINE)
 		return ret
 	case "for":
-		forBody := []*parser.Node{}
+		forBody := []*node.Node{}
 		p.advance()
 		forBody = append(forBody, p.codeLine())
 		p.expect(lexer.END_OF_LINE)
@@ -407,12 +411,12 @@ func (p *Parser) keyword(f *parser.Function) []*parser.Node {
 		update := p.codeLine()
 		codeBlock := p.codeBlock(f)
 		codeBlock = append(codeBlock, update)
-		forBody = append(forBody, parser.NewNode(parser.CONDITIONAL_LOOP, expression, nil, codeBlock))
+		forBody = append(forBody, node.NewNode(node.CONDITIONAL_LOOP, expression, nil, codeBlock))
 		p.expect(lexer.RBRACE)
 
 		return forBody
 	case "if":
-		return []*parser.Node{p.parseIf(f)}
+		return []*node.Node{p.parseIf(f)}
 	case "while":
 		p.advance()
 		expression := p.expression()
@@ -423,7 +427,7 @@ func (p *Parser) keyword(f *parser.Function) []*parser.Node {
 
 		codeBlock := p.codeBlock(f)
 		p.expect(lexer.RBRACE)
-		return []*parser.Node{parser.NewNode(parser.CONDITIONAL_LOOP, expression, nil, codeBlock)}
+		return []*node.Node{node.NewNode(node.CONDITIONAL_LOOP, expression, nil, codeBlock)}
 	case "do":
 		p.advanceExpect(lexer.LBRACE)
 		codeBlock := p.codeBlock(f)
@@ -438,13 +442,13 @@ func (p *Parser) keyword(f *parser.Function) []*parser.Node {
 			p.error("Expected expression", p.current.Pos)
 		}
 		p.expect(lexer.END_OF_LINE)
-		return []*parser.Node{parser.NewNode(parser.POST_CONDITIONAL_LOOP, expression, nil, codeBlock)}
+		return []*node.Node{node.NewNode(node.POST_CONDITIONAL_LOOP, expression, nil, codeBlock)}
 	case "loop":
 		p.advance()
 		p.expect(lexer.LBRACE)
 		codeBlock := p.codeBlock(f)
 		p.expect(lexer.RBRACE)
-		return []*parser.Node{parser.NewNode(parser.LOOP, nil, nil, codeBlock)}
+		return []*node.Node{node.NewNode(node.LOOP, nil, nil, codeBlock)}
 	case "end":
 		p.advance()
 		p.expect(lexer.LBRACE)
@@ -454,13 +458,13 @@ func (p *Parser) keyword(f *parser.Function) []*parser.Node {
 		endId := "end_" + strconv.Itoa(f.EndId)
 		f.EndId++
 
-		f.Entry = append(f.Entry, parser.NewNode(parser.VARIABLE_DECLARATION, parser.NewNode(parser.NUMBER, nil, nil, 0), nil, parser.NamedDatatype{
-			UnnamedDatatype: parser.UnnamedDatatype{Type: parser.INT, IsArray: false},
+		f.Entry = append(f.Entry, node.NewNode(node.VARIABLE_DECLARATION, node.NewNode(node.NUMBER, nil, nil, 0), nil, datatype.NamedDatatype{
+			UnnamedDatatype: datatype.UnnamedDatatype{Type: datatype.INT, IsArray: false},
 			Name:            endId,
 		}))
-		f.Exit = append(f.Exit, parser.NewNode(parser.IF, parser.NewNode(parser.VARIABLE_LOOKUP, nil, nil, endId), nil, parser.If{TrueBlock: codeBlock}))
+		f.Exit = append(f.Exit, node.NewNode(node.IF, node.NewNode(node.VARIABLE_LOOKUP, nil, nil, endId), nil, parser.If{TrueBlock: codeBlock}))
 
-		return []*parser.Node{parser.NewNode(parser.VARIABLE_ASSIGN, parser.NewNode(parser.NUMBER, nil, nil, 1), nil, endId)}
+		return []*node.Node{node.NewNode(node.VARIABLE_ASSIGN, node.NewNode(node.NUMBER, nil, nil, 1), nil, endId)}
 	case "range":
 		p.advance()
 		from := p.expression()
@@ -487,19 +491,19 @@ func (p *Parser) keyword(f *parser.Function) []*parser.Node {
 
 		codeBlock := p.codeBlock(f)
 		switch mode {
-		case parser.UP:
-			codeBlock = append(codeBlock, p.variableSelfModify(as, parser.ADD))
-		case parser.DOWN:
-			codeBlock = append(codeBlock, p.variableSelfModify(as, parser.SUBTRACT))
+		case parser.RANGE_UP:
+			codeBlock = append(codeBlock, p.variableSelfModify(as, node.ADD))
+		case parser.RANGE_DOWN:
+			codeBlock = append(codeBlock, p.variableSelfModify(as, node.SUBTRACT))
 		default:
 			panic("?")
 		}
 		p.expect(lexer.RBRACE)
 
-		ret := []*parser.Node{
-			parser.NewNode(parser.VARIABLE_DECLARATION, from, nil, parser.NamedDatatype{
-				UnnamedDatatype: parser.UnnamedDatatype{
-					Type:    parser.INT,
+		ret := []*node.Node{
+			node.NewNode(node.VARIABLE_DECLARATION, from, nil, datatype.NamedDatatype{
+				UnnamedDatatype: datatype.UnnamedDatatype{
+					Type:    datatype.INT,
 					IsArray: false,
 				},
 				Name: as,
@@ -507,12 +511,12 @@ func (p *Parser) keyword(f *parser.Function) []*parser.Node {
 		}
 
 		switch mode {
-		case parser.UP:
-			ret = append(ret, parser.NewNode(parser.CONDITIONAL_LOOP, parser.NewNode(parser.COMPARE,
-				parser.NewNode(parser.VARIABLE_LOOKUP, nil, nil, as), to, parser.Less), nil, codeBlock))
-		case parser.DOWN:
-			ret = append(ret, parser.NewNode(parser.CONDITIONAL_LOOP, parser.NewNode(parser.COMPARE,
-				parser.NewNode(parser.VARIABLE_LOOKUP, nil, nil, as), to, parser.More), nil, codeBlock))
+		case parser.RANGE_UP:
+			ret = append(ret, node.NewNode(node.CONDITIONAL_LOOP, node.NewNode(node.COMPARE,
+				node.NewNode(node.VARIABLE_LOOKUP, nil, nil, as), to, compare.Less), nil, codeBlock))
+		case parser.RANGE_DOWN:
+			ret = append(ret, node.NewNode(node.CONDITIONAL_LOOP, node.NewNode(node.COMPARE,
+				node.NewNode(node.VARIABLE_LOOKUP, nil, nil, as), to, compare.More), nil, codeBlock))
 		default:
 			panic("?")
 		}
@@ -523,17 +527,17 @@ func (p *Parser) keyword(f *parser.Function) []*parser.Node {
 	}
 }
 
-func (p *Parser) variableSelfModify(name string, operation parser.NodeType) *parser.Node {
-	return &parser.Node{
-		Type: parser.VARIABLE_ASSIGN,
-		A: &parser.Node{
+func (p *Parser) variableSelfModify(name string, operation node.NodeType) *node.Node {
+	return &node.Node{
+		Type: node.VARIABLE_ASSIGN,
+		A: &node.Node{
 			Type: operation,
-			A: &parser.Node{
-				Type:  parser.VARIABLE_LOOKUP,
+			A: &node.Node{
+				Type:  node.VARIABLE_LOOKUP,
 				Value: name,
 			},
-			B: &parser.Node{
-				Type:  parser.NUMBER,
+			B: &node.Node{
+				Type:  node.NUMBER,
 				Value: 1,
 			},
 		},
@@ -541,16 +545,16 @@ func (p *Parser) variableSelfModify(name string, operation parser.NodeType) *par
 	}
 }
 
-func (p *Parser) codeLine() *parser.Node {
+func (p *Parser) codeLine() *node.Node {
 	if p.current.Type == lexer.ID {
-		if parser.IsDatatypeString(p.current.Value.(string)) {
+		if datatype.IsDatatypeString(p.current.Value.(string)) {
 			datatype := p.datatypeNamed()
 			if p.current.Type == lexer.END_OF_LINE {
-				return parser.NewNode(parser.VARIABLE_DECLARATION, nil, nil, datatype)
+				return node.NewNode(node.VARIABLE_DECLARATION, nil, nil, datatype)
 			}
 			p.expect(lexer.ASSIGN)
 			p.advance()
-			return parser.NewNode(parser.VARIABLE_DECLARATION, p.expression(), nil, datatype)
+			return node.NewNode(node.VARIABLE_DECLARATION, p.expression(), nil, datatype)
 		} else {
 			possibleVariableName := p.current.Value.(string)
 			p.advance()
@@ -560,13 +564,13 @@ func (p *Parser) codeLine() *parser.Node {
 				if expression == nil {
 					p.error("Expected expression", p.current.Pos)
 				}
-				return parser.NewNode(parser.VARIABLE_ASSIGN, expression, nil, possibleVariableName)
+				return node.NewNode(node.VARIABLE_ASSIGN, expression, nil, possibleVariableName)
 			} else if p.current.Type == lexer.INCREASE {
 				p.advance()
-				return p.variableSelfModify(possibleVariableName, parser.ADD)
+				return p.variableSelfModify(possibleVariableName, node.ADD)
 			} else if p.current.Type == lexer.DECREASE {
 				p.advance()
-				return p.variableSelfModify(possibleVariableName, parser.SUBTRACT)
+				return p.variableSelfModify(possibleVariableName, node.SUBTRACT)
 			} else if p.current.Type == lexer.LBRACKET {
 				p.advance()
 				indexExpression := p.expression()
@@ -580,7 +584,7 @@ func (p *Parser) codeLine() *parser.Node {
 				if expression == nil {
 					p.error("Expected expression", p.current.Pos)
 				}
-				return parser.NewNode(parser.VARIABLE_ASSIGN_ARRAY, indexExpression, expression, possibleVariableName)
+				return node.NewNode(node.VARIABLE_ASSIGN_ARRAY, indexExpression, expression, possibleVariableName)
 			} else {
 				p.reverse()
 				expression := p.expression()
@@ -596,8 +600,8 @@ func (p *Parser) codeLine() *parser.Node {
 	panic("?")
 }
 
-func (p *Parser) codeBlock(f *parser.Function) []*parser.Node {
-	body := []*parser.Node{}
+func (p *Parser) codeBlock(f *function.Function) []*node.Node {
+	body := []*node.Node{}
 	p.expect(lexer.LBRACE)
 	p.advance()
 	for {
@@ -615,19 +619,19 @@ func (p *Parser) codeBlock(f *parser.Function) []*parser.Node {
 	}
 }
 
-func (p *Parser) Global() *parser.Node {
-	global := []*parser.Node{}
+func (p *Parser) Global() *node.Node {
+	global := []*node.Node{}
 
 	for p.current != nil {
 		if p.current.Type == lexer.ID {
-			if parser.IsDatatypeString(p.current.Value.(string)) {
+			if datatype.IsDatatypeString(p.current.Value.(string)) {
 				datatype := p.datatypeNamed()
 				if p.current.Type == lexer.END_OF_LINE {
-					global = append(global, parser.NewNode(parser.VARIABLE_DECLARATION, nil, nil, datatype))
+					global = append(global, node.NewNode(node.VARIABLE_DECLARATION, nil, nil, datatype))
 				} else {
 					p.expect(lexer.ASSIGN)
 					p.advance()
-					global = append(global, parser.NewNode(parser.VARIABLE_DECLARATION, p.expression(), nil, datatype))
+					global = append(global, node.NewNode(node.VARIABLE_DECLARATION, p.expression(), nil, datatype))
 					p.expect(lexer.END_OF_LINE)
 				}
 			} else if p.current.Value == "function" {
@@ -641,52 +645,52 @@ func (p *Parser) Global() *parser.Node {
 				p.expect(lexer.ARROW)
 				p.advance()
 				returnDatatype := p.datatypeUnnamed()
-				if utils.IndexOf(attributes, parser.Assembly) >= 0 {
+				if utils.IndexOf(attributes, function.Assembly) >= 0 {
 					p.expect(lexer.LBRACE)
 					p.advanceExpect(lexer.STRING)
-					body := []*parser.Node{parser.NewNode(parser.ASSEMBLY_CODE, nil, nil, p.current.Value)}
+					body := []*node.Node{node.NewNode(node.ASSEMBLY_CODE, nil, nil, p.current.Value)}
 					p.advanceExpect(lexer.RBRACE)
-					global = append(global, parser.NewNode(parser.FUNCTION, nil, nil, parser.Function{
+					global = append(global, node.NewNode(node.FUNCTION, nil, nil, function.Function{
 						Name:           name,
 						Attributes:     attributes,
 						Body:           body,
 						ReturnDatatype: returnDatatype,
 						Arguments:      arguments,
 						EndId:          0,
-						Exit:           []*parser.Node{},
-						Entry:          []*parser.Node{},
+						Exit:           []*node.Node{},
+						Entry:          []*node.Node{},
 					}))
-				} else if utils.IndexOf(attributes, parser.External) >= 0 {
+				} else if utils.IndexOf(attributes, function.External) >= 0 {
 					p.expect(lexer.END_OF_LINE)
-					global = append(global, parser.NewNode(parser.FUNCTION, nil, nil, parser.Function{
+					global = append(global, node.NewNode(node.FUNCTION, nil, nil, function.Function{
 						Name:           name,
 						Attributes:     attributes,
 						Body:           nil,
 						ReturnDatatype: returnDatatype,
 						Arguments:      arguments,
 						EndId:          0,
-						Exit:           []*parser.Node{},
-						Entry:          []*parser.Node{},
+						Exit:           []*node.Node{},
+						Entry:          []*node.Node{},
 					}))
 				} else {
-					function := parser.Function{
+					function := function.Function{
 						Name:           name,
 						Attributes:     attributes,
 						ReturnDatatype: returnDatatype,
 						Arguments:      arguments,
-						Exit:           []*parser.Node{},
-						Entry:          []*parser.Node{},
+						Exit:           []*node.Node{},
+						Entry:          []*node.Node{},
 					}
 					function.Body = p.codeBlock(&function)
 
-					global = append(global, parser.NewNode(parser.FUNCTION, nil, nil, function))
+					global = append(global, node.NewNode(node.FUNCTION, nil, nil, function))
 				}
 			} else if p.current.Value == "offset" {
 				p.advanceExpect(lexer.ID)
 				name := p.current.Value.(string)
 				p.advanceExpect(lexer.LBRACE)
 
-				entries := []parser.NamedDatatype{}
+				entries := []datatype.NamedDatatype{}
 
 				for {
 					p.advance()
@@ -698,7 +702,7 @@ func (p *Parser) Global() *parser.Node {
 				}
 
 				p.expect(lexer.RBRACE)
-				global = append(global, parser.NewNode(parser.OFFSET, nil, nil, parser.Offset{
+				global = append(global, node.NewNode(node.OFFSET, nil, nil, parser.Offset{
 					Name:    name,
 					Entries: entries,
 				}))
@@ -711,5 +715,5 @@ func (p *Parser) Global() *parser.Node {
 		p.advance()
 	}
 
-	return parser.NewNode(parser.GLOBAL, nil, nil, global)
+	return node.NewNode(node.GLOBAL, nil, nil, global)
 }

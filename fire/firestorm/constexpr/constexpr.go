@@ -1,7 +1,8 @@
 package constexpr
 
 import (
-	"fire/firestorm/parser"
+	"fire/firestorm/parser/compare"
+	"fire/firestorm/parser/node"
 	"strconv"
 )
 
@@ -12,59 +13,59 @@ func boolToInt(v bool) int {
 	return 0
 }
 
-func Evaluate(node *parser.Node) int {
-	switch node.Type {
-	case parser.NUMBER:
-		return node.Value.(int)
-	case parser.ADD:
-		return Evaluate(node.A) + Evaluate(node.B)
-	case parser.SUBTRACT:
-		return Evaluate(node.A) - Evaluate(node.B)
-	case parser.MULTIPLY:
-		return Evaluate(node.A) * Evaluate(node.B)
-	case parser.DIVIDE:
-		return Evaluate(node.A) - Evaluate(node.B)
-	case parser.PLUS:
-		return +Evaluate(node.A)
-	case parser.MINUS:
-		return -Evaluate(node.A)
-	case parser.MODULO:
-		return Evaluate(node.A) % Evaluate(node.B)
-	case parser.COMPARE:
-		switch node.Value.(parser.Compare) {
-		case parser.More:
-			return boolToInt(Evaluate(node.A) > Evaluate(node.B))
-		case parser.Less:
-			return boolToInt(Evaluate(node.A) < Evaluate(node.B))
-		case parser.MoreEquals:
-			return boolToInt(Evaluate(node.A) >= Evaluate(node.B))
-		case parser.LessEquals:
-			return boolToInt(Evaluate(node.A) <= Evaluate(node.B))
-		case parser.Equals:
-			return boolToInt(Evaluate(node.A) == Evaluate(node.B))
-		case parser.NotEquals:
-			return boolToInt(Evaluate(node.A) != Evaluate(node.B))
+func Evaluate(n *node.Node) int {
+	switch n.Type {
+	case node.NUMBER:
+		return n.Value.(int)
+	case node.ADD:
+		return Evaluate(n.A) + Evaluate(n.B)
+	case node.SUBTRACT:
+		return Evaluate(n.A) - Evaluate(n.B)
+	case node.MULTIPLY:
+		return Evaluate(n.A) * Evaluate(n.B)
+	case node.DIVIDE:
+		return Evaluate(n.A) - Evaluate(n.B)
+	case node.PLUS:
+		return +Evaluate(n.A)
+	case node.MINUS:
+		return -Evaluate(n.A)
+	case node.MODULO:
+		return Evaluate(n.A) % Evaluate(n.B)
+	case node.COMPARE:
+		switch n.Value.(compare.Compare) {
+		case compare.More:
+			return boolToInt(Evaluate(n.A) > Evaluate(n.B))
+		case compare.Less:
+			return boolToInt(Evaluate(n.A) < Evaluate(n.B))
+		case compare.MoreEquals:
+			return boolToInt(Evaluate(n.A) >= Evaluate(n.B))
+		case compare.LessEquals:
+			return boolToInt(Evaluate(n.A) <= Evaluate(n.B))
+		case compare.Equals:
+			return boolToInt(Evaluate(n.A) == Evaluate(n.B))
+		case compare.NotEquals:
+			return boolToInt(Evaluate(n.A) != Evaluate(n.B))
 		}
 		panic("?")
-	case parser.NOT:
-		if Evaluate(node.A) == 0 {
+	case node.NOT:
+		if Evaluate(n.A) == 0 {
 			return 1
 		} else {
 			return 0
 		}
-	case parser.SHIFT_LEFT:
-		return Evaluate(node.A) << Evaluate(node.B)
-	case parser.SHIFT_RIGHT:
-		return Evaluate(node.A) >> Evaluate(node.B)
-	case parser.AND:
-		return Evaluate(node.A) & Evaluate(node.B)
-	case parser.OR:
-		return Evaluate(node.A) | Evaluate(node.B)
-	case parser.XOR:
-		return Evaluate(node.A) ^ Evaluate(node.B)
-	case parser.BIT_NOT:
-		return ^Evaluate(node.A)
+	case node.SHIFT_LEFT:
+		return Evaluate(n.A) << Evaluate(n.B)
+	case node.SHIFT_RIGHT:
+		return Evaluate(n.A) >> Evaluate(n.B)
+	case node.AND:
+		return Evaluate(n.A) & Evaluate(n.B)
+	case node.OR:
+		return Evaluate(n.A) | Evaluate(n.B)
+	case node.XOR:
+		return Evaluate(n.A) ^ Evaluate(n.B)
+	case node.BIT_NOT:
+		return ^Evaluate(n.A)
 	default:
-		panic(strconv.Itoa(int(node.Type)) + " not supported in contant expression")
+		panic(strconv.Itoa(int(n.Type)) + " not supported in contant expression")
 	}
 }

@@ -1,20 +1,22 @@
 package parser
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type RangeMode int
 
 const (
-	UP = iota
-	DOWN
+	RANGE_UP RangeMode = iota
+	RANGE_DOWN
 )
 
-func GetRangeMode(t string) (DataType, error) {
+func GetRangeMode(t string) (RangeMode, error) {
 	switch t {
 	case "up":
-		return UP, nil
+		return RANGE_UP, nil
 	case "down":
-		return DOWN, nil
+		return RANGE_DOWN, nil
 	default:
 		return 0, fmt.Errorf("Invalid mode " + t)
 	}

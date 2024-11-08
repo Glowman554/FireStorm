@@ -1,4 +1,4 @@
-package parser
+package compare
 
 import (
 	"fire/firestorm/lexer"

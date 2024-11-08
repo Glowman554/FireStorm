@@ -1,4 +1,4 @@
-package parser
+package datatype
 
 import (
 	"fire/firestorm/lexer"

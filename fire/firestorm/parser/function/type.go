@@ -1,8 +1,13 @@
-package parser
+package function
+
+import (
+	"fire/firestorm/parser/datatype"
+	"fire/firestorm/parser/node"
+)
 
 type FunctionCall struct {
 	Name      string
-	Arguments []*Node
+	Arguments []*node.Node
 }
 
 type FunctionAttribute int
@@ -35,10 +40,10 @@ func StringToFunctionAttribute(s string) FunctionAttribute {
 type Function struct {
 	Name           string
 	Attributes     []FunctionAttribute
-	Body           []*Node
-	ReturnDatatype UnnamedDatatype
-	Arguments      []NamedDatatype
+	Body           []*node.Node
+	ReturnDatatype datatype.UnnamedDatatype
+	Arguments      []datatype.NamedDatatype
 	EndId          int
-	Exit           []*Node
-	Entry          []*Node
+	Exit           []*node.Node
+	Entry          []*node.Node
 }

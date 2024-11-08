@@ -3,6 +3,10 @@ package llvm
 import (
 	"fire/firestorm/constexpr"
 	"fire/firestorm/parser"
+	"fire/firestorm/parser/compare"
+	"fire/firestorm/parser/datatype"
+	"fire/firestorm/parser/function"
+	"fire/firestorm/parser/node"
 	"fire/firestorm/utils"
 	"fmt"
 	"log/slog"
@@ -21,7 +25,7 @@ type GlobalVariable struct {
 }
 
 type LLVM struct {
-	global          *parser.Node
+	global          *node.Node
 	globalVariables map[string]GlobalVariable
 	functions       map[string]*ir.Func
 	module          *ir.Module
@@ -30,7 +34,7 @@ type LLVM struct {
 	target          string
 }
 
-func NewLLVM(global *parser.Node, target string) *LLVM {
+func NewLLVM(global *node.Node, target string) *LLVM {
 	return &LLVM{
 		global:          global,
 		globalVariables: make(map[string]GlobalVariable),
@@ -79,25 +83,25 @@ func (b *LLVM) newGlobalString(v string) value.Value {
 	return constant.NewGetElementPtr(str.Typ, globalStr, zero, zero)
 }
 
-func (b *LLVM) compareToLLVM(c parser.Compare) enum.IPred {
+func (b *LLVM) compareToLLVM(c compare.Compare) enum.IPred {
 	switch c {
-	case parser.More:
+	case compare.More:
 		return enum.IPredSGT
-	case parser.Less:
+	case compare.Less:
 		return enum.IPredSLT
-	case parser.MoreEquals:
+	case compare.MoreEquals:
 		return enum.IPredSGE
-	case parser.LessEquals:
+	case compare.LessEquals:
 		return enum.IPredSLE
-	case parser.Equals:
+	case compare.Equals:
 		return enum.IPredEQ
-	case parser.NotEquals:
+	case compare.NotEquals:
 		return enum.IPredNE
 	}
 	panic("?")
 }
 
-func (b *LLVM) datatypeArraySelect(d parser.UnnamedDatatype, single types.Type, array types.Type) types.Type {
+func (b *LLVM) datatypeArraySelect(d datatype.UnnamedDatatype, single types.Type, array types.Type) types.Type {
 	if d.IsArray {
 		return array
 	} else {
@@ -105,91 +109,91 @@ func (b *LLVM) datatypeArraySelect(d parser.UnnamedDatatype, single types.Type, 
 	}
 }
 
-func (b *LLVM) datatypeToLLVM(d parser.UnnamedDatatype) types.Type {
+func (b *LLVM) datatypeToLLVM(d datatype.UnnamedDatatype) types.Type {
 	switch d.Type {
-	case parser.INT:
+	case datatype.INT:
 		return b.datatypeArraySelect(d, types.I64, types.I64Ptr)
-	case parser.STR:
+	case datatype.STR:
 		return b.datatypeArraySelect(d, types.I8Ptr, types.NewPointer(types.I8Ptr))
-	case parser.VOID:
+	case datatype.VOID:
 		return types.Void
-	case parser.CHR:
+	case datatype.CHR:
 		return b.datatypeArraySelect(d, types.I8, types.I8Ptr)
-	case parser.PTR:
+	case datatype.PTR:
 		return b.datatypeArraySelect(d, b.ptrType, types.NewPointer(b.ptrType))
-	case parser.INT_32:
+	case datatype.INT_32:
 		return b.datatypeArraySelect(d, types.I32, types.I32Ptr)
-	case parser.INT_16:
+	case datatype.INT_16:
 		return b.datatypeArraySelect(d, types.I16, types.I16Ptr)
 	default:
 		panic("Invalid datatype")
 	}
 }
 
-func (b *LLVM) datatypeToSize(d parser.UnnamedDatatype) int {
+func (b *LLVM) datatypeToSize(d datatype.UnnamedDatatype) int {
 	if d.IsArray {
 		return int(b.ptrType.(*types.IntType).BitSize) / 8
 	}
 
 	switch d.Type {
-	case parser.INT:
+	case datatype.INT:
 		return 8
-	case parser.STR:
+	case datatype.STR:
 		return int(b.ptrType.(*types.IntType).BitSize) / 8
-	case parser.VOID:
+	case datatype.VOID:
 		return 0
-	case parser.CHR:
+	case datatype.CHR:
 		return 1
-	case parser.PTR:
+	case datatype.PTR:
 		return int(b.ptrType.(*types.IntType).BitSize) / 8
-	case parser.INT_32:
+	case datatype.INT_32:
 		return 4
-	case parser.INT_16:
+	case datatype.INT_16:
 		return 2
 	default:
 		panic("Invalid datatype")
 	}
 }
 
-func (b *LLVM) generateExpressionRaw(exp *parser.Node, block *ir.Block, cf *CompiledFunction) value.Value {
+func (b *LLVM) generateExpressionRaw(exp *node.Node, block *ir.Block, cf *CompiledFunction) value.Value {
 
 	switch exp.Type {
-	case parser.NUMBER:
+	case node.NUMBER:
 		return constant.NewInt(types.I64, int64(exp.Value.(int)))
-	case parser.STRING:
+	case node.STRING:
 		return b.newGlobalString(exp.Value.(string))
-	case parser.COMPARE:
-		cmp := block.NewICmp(b.compareToLLVM(exp.Value.(parser.Compare)), b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
+	case node.COMPARE:
+		cmp := block.NewICmp(b.compareToLLVM(exp.Value.(compare.Compare)), b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
 		return block.NewZExt(cmp, types.I64)
-	case parser.NOT:
+	case node.NOT:
 		cmp := block.NewICmp(enum.IPredEQ, b.generateExpression(exp.A, block, cf), constant.NewInt(types.I64, 0))
 		return block.NewZExt(cmp, types.I64)
-	case parser.ADD:
+	case node.ADD:
 		return block.NewAdd(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.SUBTRACT:
+	case node.SUBTRACT:
 		return block.NewSub(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.MULTIPLY:
+	case node.MULTIPLY:
 		return block.NewMul(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.DIVIDE:
+	case node.DIVIDE:
 		return block.NewSDiv(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.MODULO:
+	case node.MODULO:
 		return block.NewSRem(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.OR:
+	case node.OR:
 		return block.NewOr(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.AND:
+	case node.AND:
 		return block.NewAnd(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.XOR:
+	case node.XOR:
 		return block.NewXor(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.BIT_NOT:
+	case node.BIT_NOT:
 		return block.NewXor(b.generateExpression(exp.A, block, cf), constant.NewInt(types.I64, -1))
-	case parser.SHIFT_LEFT:
+	case node.SHIFT_LEFT:
 		return block.NewShl(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.SHIFT_RIGHT:
+	case node.SHIFT_RIGHT:
 		return block.NewLShr(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
-	case parser.FUNCTION_CALL:
-		fc := exp.Value.(parser.FunctionCall)
+	case node.FUNCTION_CALL:
+		fc := exp.Value.(function.FunctionCall)
 		return b.generateFunctionCall(fc, block, cf)
-	case parser.VARIABLE_LOOKUP:
+	case node.VARIABLE_LOOKUP:
 		v, t := b.findVariable(exp.Value.(string), cf, false)
 		// if _, ok := v.ElemType.(*types.PointerType); ok {
 		// 	l := block.NewLoad(v.ElemType, v)
@@ -197,7 +201,7 @@ func (b *LLVM) generateExpressionRaw(exp *parser.Node, block *ir.Block, cf *Comp
 		// }
 		return block.NewLoad(t, v)
 
-	case parser.VARIABLE_LOOKUP_ARRAY:
+	case node.VARIABLE_LOOKUP_ARRAY:
 		v, t := b.findVariable(exp.Value.(string), cf, false)
 		ptr := block.NewLoad(t, v)
 		i := b.generateExpression(exp.A, block, cf)
@@ -212,7 +216,7 @@ func (b *LLVM) generateExpressionRaw(exp *parser.Node, block *ir.Block, cf *Comp
 			return x
 		}
 
-	case parser.MINUS:
+	case node.MINUS:
 		return block.NewMul(b.generateExpression(exp.A, block, cf), constant.NewInt(types.I64, -1))
 	default:
 		panic("Unknown " + strconv.Itoa(int(exp.Type)))
@@ -220,11 +224,11 @@ func (b *LLVM) generateExpressionRaw(exp *parser.Node, block *ir.Block, cf *Comp
 
 }
 
-func (b *LLVM) generateExpression(exp *parser.Node, block *ir.Block, cf *CompiledFunction) value.Value {
+func (b *LLVM) generateExpression(exp *node.Node, block *ir.Block, cf *CompiledFunction) value.Value {
 	return b.autoTypeCast(b.generateExpressionRaw(exp, block, cf), types.I64, block)
 }
 
-func (b *LLVM) generateFunctionCall(fc parser.FunctionCall, block *ir.Block, cf *CompiledFunction) *ir.InstCall {
+func (b *LLVM) generateFunctionCall(fc function.FunctionCall, block *ir.Block, cf *CompiledFunction) *ir.InstCall {
 	f := b.findFunction(fc.Name, cf)
 
 	if len(fc.Arguments) != len(f.Sig.Params) {
@@ -263,7 +267,7 @@ func (b *LLVM) newBlock(block *ir.Block) *ir.Block {
 	return new
 }
 
-func (b *LLVM) generateIf(block *ir.Block, node *parser.Node, iff parser.If, cf *CompiledFunction) *ir.Block {
+func (b *LLVM) generateIf(block *ir.Block, node *node.Node, iff parser.If, cf *CompiledFunction) *ir.Block {
 	ifTrue := b.newBlock(block)
 	ifFalse := b.newBlock(block)
 	ifAfter := b.newBlock(block)
@@ -285,18 +289,18 @@ func (b *LLVM) generateIf(block *ir.Block, node *parser.Node, iff parser.If, cf 
 	return ifAfter
 }
 
-func (b *LLVM) generateConditionalLoop(block *ir.Block, node *parser.Node, cf *CompiledFunction) *ir.Block {
+func (b *LLVM) generateConditionalLoop(block *ir.Block, n *node.Node, cf *CompiledFunction) *ir.Block {
 	loopCompare := b.newBlock(block)
 	loopBody := b.newBlock(block)
 	loopEnd := b.newBlock(block)
 
 	block.NewBr(loopCompare)
 
-	x := b.generateExpression(node.A, loopCompare, cf)
+	x := b.generateExpression(n.A, loopCompare, cf)
 	cmp := loopCompare.NewICmp(enum.IPredNE, x, constant.NewInt(types.I64, 0))
 	loopCompare.NewCondBr(cmp, loopBody, loopEnd)
 
-	loopBody = b.generateCodeBlock(loopBody, node.Value.([]*parser.Node), cf)
+	loopBody = b.generateCodeBlock(loopBody, n.Value.([]*node.Node), cf)
 	if loopBody.Term == nil {
 		loopBody.NewBr(loopCompare)
 	}
@@ -304,15 +308,15 @@ func (b *LLVM) generateConditionalLoop(block *ir.Block, node *parser.Node, cf *C
 	return loopEnd
 }
 
-func (b *LLVM) generatePostConditionalLoop(block *ir.Block, node *parser.Node, cf *CompiledFunction) *ir.Block {
+func (b *LLVM) generatePostConditionalLoop(block *ir.Block, n *node.Node, cf *CompiledFunction) *ir.Block {
 	loopBody := b.newBlock(block)
 	loopEnd := b.newBlock(block)
 
 	block.NewBr(loopBody)
 
-	loopBody = b.generateCodeBlock(loopBody, node.Value.([]*parser.Node), cf)
+	loopBody = b.generateCodeBlock(loopBody, n.Value.([]*node.Node), cf)
 
-	x := b.generateExpression(node.A, loopBody, cf)
+	x := b.generateExpression(n.A, loopBody, cf)
 	cmp := loopBody.NewICmp(enum.IPredNE, x, constant.NewInt(types.I64, 0))
 	if loopBody.Term == nil {
 		loopBody.NewCondBr(cmp, loopBody, loopEnd)
@@ -321,75 +325,75 @@ func (b *LLVM) generatePostConditionalLoop(block *ir.Block, node *parser.Node, c
 	return loopEnd
 }
 
-func (b *LLVM) generateCodeBlock(block *ir.Block, body []*parser.Node, cf *CompiledFunction) *ir.Block {
+func (b *LLVM) generateCodeBlock(block *ir.Block, body []*node.Node, cf *CompiledFunction) *ir.Block {
 
 	for i := range body {
-		node := body[i]
+		n := body[i]
 
-		switch node.Type {
-		case parser.VARIABLE_DECLARATION:
-			datatype := node.Value.(parser.NamedDatatype)
+		switch n.Type {
+		case node.VARIABLE_DECLARATION:
+			datatype := n.Value.(datatype.NamedDatatype)
 			v := block.NewAlloca(b.datatypeToLLVM(datatype.UnnamedDatatype))
 			v.SetName("local_" + datatype.Name)
 			cf.variables[datatype.Name] = v
 
-			if node.A != nil {
-				x := b.generateExpression(node.A, block, cf)
+			if n.A != nil {
+				x := b.generateExpression(n.A, block, cf)
 				c := b.autoTypeCast(x, v.ElemType, block)
 				block.NewStore(c, v)
 			}
-		case parser.VARIABLE_ASSIGN:
-			v, t := b.findVariable(node.Value.(string), cf, true)
-			x := b.generateExpression(node.A, block, cf)
+		case node.VARIABLE_ASSIGN:
+			v, t := b.findVariable(n.Value.(string), cf, true)
+			x := b.generateExpression(n.A, block, cf)
 			c := b.autoTypeCast(x, t, block)
 			block.NewStore(c, v)
-		case parser.VARIABLE_ASSIGN_ARRAY:
-			v, t := b.findVariable(node.Value.(string), cf, true)
+		case node.VARIABLE_ASSIGN_ARRAY:
+			v, t := b.findVariable(n.Value.(string), cf, true)
 			ptr := block.NewLoad(t, v)
-			i := b.generateExpression(node.A, block, cf)
+			i := b.generateExpression(n.A, block, cf)
 			indexed := block.NewGetElementPtr(ptr.ElemType.(*types.PointerType).ElemType, ptr, i)
-			x := b.generateExpression(node.B, block, cf)
+			x := b.generateExpression(n.B, block, cf)
 			c := b.autoTypeCast(x, ptr.ElemType.(*types.PointerType).ElemType, block)
 			block.NewStore(c, indexed)
-		case parser.FUNCTION_CALL:
-			fc := node.Value.(parser.FunctionCall)
+		case node.FUNCTION_CALL:
+			fc := n.Value.(function.FunctionCall)
 			b.generateFunctionCall(fc, block, cf)
-		case parser.RETURN:
+		case node.RETURN:
 			if block.Term != nil {
 				b.error("Block already terminated", cf)
 			}
 
-			if node.A != nil {
-				x := b.generateExpression(node.A, block, cf)
+			if n.A != nil {
+				x := b.generateExpression(n.A, block, cf)
 				c := b.autoTypeCast(x, cf.returnType, block)
 				cf.returnIncomings = append(cf.returnIncomings, ir.NewIncoming(c, block))
 			}
 			block.NewBr(cf.returnBlock)
 
-		case parser.IF:
-			block = b.generateIf(block, node, node.Value.(parser.If), cf)
-		case parser.CONDITIONAL_LOOP:
-			block = b.generateConditionalLoop(block, node, cf)
-		case parser.POST_CONDITIONAL_LOOP:
-			block = b.generatePostConditionalLoop(block, node, cf)
-		case parser.LOOP:
+		case node.IF:
+			block = b.generateIf(block, n, n.Value.(parser.If), cf)
+		case node.CONDITIONAL_LOOP:
+			block = b.generateConditionalLoop(block, n, cf)
+		case node.POST_CONDITIONAL_LOOP:
+			block = b.generatePostConditionalLoop(block, n, cf)
+		case node.LOOP:
 			loopBody := b.newBlock(block)
 			block.NewBr(loopBody)
 
-			loopEnd := b.generateCodeBlock(loopBody, node.Value.([]*parser.Node), cf)
+			loopEnd := b.generateCodeBlock(loopBody, n.Value.([]*node.Node), cf)
 			if loopEnd.Term == nil {
 				loopEnd.NewBr(loopBody)
 			}
 
 			block = b.newBlock(block)
 		default:
-			panic("Unknown " + strconv.Itoa(int(node.Type)))
+			panic("Unknown " + strconv.Itoa(int(n.Type)))
 		}
 	}
 	return block
 }
 
-func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunction {
+func (b *LLVM) generateFunction(f *ir.Func, af function.Function) *CompiledFunction {
 	cf := CompiledFunction{
 		variables:       make(map[string]*ir.InstAlloca),
 		returnBlock:     nil,
@@ -401,11 +405,11 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 	declareOnly := false
 	noReturn := false
 
-	if utils.IndexOf(af.Attributes, parser.Assembly) >= 0 {
+	if utils.IndexOf(af.Attributes, function.Assembly) >= 0 {
 		b.error("Unsupported attribute assembly", &cf)
-	} else if utils.IndexOf(af.Attributes, parser.NoReturn) >= 0 {
+	} else if utils.IndexOf(af.Attributes, function.NoReturn) >= 0 {
 		noReturn = true
-	} else if utils.IndexOf(af.Attributes, parser.External) >= 0 {
+	} else if utils.IndexOf(af.Attributes, function.External) >= 0 {
 		declareOnly = true
 	}
 
@@ -441,7 +445,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 				ret.NewRet(nil)
 			} else {
 				slog.Debug("no return in non void function", "function", f.Name())
-				x := b.generateExpression(parser.NewNode(parser.NUMBER, nil, nil, 0), main, &cf)
+				x := b.generateExpression(node.NewNode(node.NUMBER, nil, nil, 0), main, &cf)
 				c := b.autoTypeCast(x, cf.returnType, main)
 				cf.returnIncomings = append(cf.returnIncomings, ir.NewIncoming(c, main))
 				main.NewBr(ret)
@@ -449,9 +453,9 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 		}
 		if noReturn {
 			ret = b.generateCodeBlock(ret, af.Exit, &cf)
-			b.generateFunctionCall(parser.FunctionCall{
+			b.generateFunctionCall(function.FunctionCall{
 				Name:      "unreachable",
-				Arguments: []*parser.Node{},
+				Arguments: []*node.Node{},
 			}, ret, &cf)
 		} else {
 			if len(cf.returnIncomings) > 0 {
@@ -467,7 +471,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 	return &cf
 }
 
-func (b *LLVM) generateFunctionDeclaration(f parser.Function, module *ir.Module) {
+func (b *LLVM) generateFunctionDeclaration(f function.Function, module *ir.Module) {
 
 	parameters := []*ir.Param{}
 	for i := range f.Arguments {
@@ -495,15 +499,15 @@ func (b *LLVM) generateOffset(offset parser.Offset, module *ir.Module) {
 }
 
 func (b *LLVM) Compile() string {
-	tmp := b.global.Value.([]*parser.Node)
+	tmp := b.global.Value.([]*node.Node)
 
 	b.module = ir.NewModule()
 	b.module.TargetTriple = b.target
 
 	for i := range tmp {
 		switch tmp[i].Type {
-		case parser.VARIABLE_DECLARATION:
-			datatype := tmp[i].Value.(parser.NamedDatatype)
+		case node.VARIABLE_DECLARATION:
+			datatype := tmp[i].Value.(datatype.NamedDatatype)
 			d := b.datatypeToLLVM(datatype.UnnamedDatatype)
 
 			var global *ir.Global
@@ -512,7 +516,7 @@ func (b *LLVM) Compile() string {
 				if datatype.IsArray {
 					panic("Global array initializers not supported!")
 				}
-				if tmp[i].A.Type == parser.STRING {
+				if tmp[i].A.Type == node.STRING {
 					s := b.module.NewGlobalDef(datatype.Name+".init", constant.NewCharArrayFromString(tmp[i].A.Value.(string)+"\x00"))
 					global = b.module.NewGlobalDef(datatype.Name, constant.NewIntToPtr(constant.NewPtrToInt(s, types.I64), d))
 				} else {
@@ -535,22 +539,22 @@ func (b *LLVM) Compile() string {
 
 			b.globalVariables[datatype.Name] = GlobalVariable{varivable: global, final: false}
 
-		case parser.OFFSET:
+		case node.OFFSET:
 			b.generateOffset(tmp[i].Value.(parser.Offset), b.module)
 		}
 	}
 
 	for i := range tmp {
 		switch tmp[i].Type {
-		case parser.FUNCTION:
-			b.generateFunctionDeclaration(tmp[i].Value.(parser.Function), b.module)
+		case node.FUNCTION:
+			b.generateFunctionDeclaration(tmp[i].Value.(function.Function), b.module)
 		}
 	}
 
 	for i := range tmp {
 		switch tmp[i].Type {
-		case parser.FUNCTION:
-			b.generateFunction(b.findFunction(tmp[i].Value.(parser.Function).Name, nil), tmp[i].Value.(parser.Function))
+		case node.FUNCTION:
+			b.generateFunction(b.findFunction(tmp[i].Value.(function.Function).Name, nil), tmp[i].Value.(function.Function))
 		}
 	}
 
