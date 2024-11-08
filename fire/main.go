@@ -5,6 +5,7 @@ import (
 	"fire/command"
 	"fire/command/commands"
 	"fmt"
+	"log/slog"
 	"os"
 )
 
@@ -25,6 +26,10 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Expected at least 2 arguments")
 		return
+	}
+
+	if env, ok := os.LookupEnv("DEBUG"); ok && (env == "1" || env == "true") {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
 	subcommand := os.Args[1]

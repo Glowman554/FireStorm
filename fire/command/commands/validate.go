@@ -59,7 +59,7 @@ func (Validate) Execute(parser *arguments.Parser) error {
 				return nil
 			}
 
-			slog.Debug("Running validation", "path", path)
+			slog.Info("Running validation", "path", path)
 
 			data, err := os.ReadFile(path + ".expect")
 			if err != nil {

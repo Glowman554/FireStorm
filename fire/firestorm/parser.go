@@ -342,14 +342,14 @@ func (p *Parser) functionArguments() []parser.NamedDatatype {
 	}
 }
 
-func (p *Parser) parseIf() *parser.Node {
+func (p *Parser) parseIf(f *parser.Function) *parser.Node {
 	p.advance()
 	expression := p.expression()
 	if expression == nil {
 		p.error("Expected expression", p.current.Pos)
 	}
 	p.expect(lexer.LBRACE)
-	codeBlock := p.codeBlock()
+	codeBlock := p.codeBlock(f)
 	p.expect(lexer.RBRACE)
 	p.advance()
 	if p.current.Type == lexer.ID {
@@ -357,7 +357,7 @@ func (p *Parser) parseIf() *parser.Node {
 			p.advance()
 			if p.current.Type == lexer.ID {
 				if p.current.Value == "if" {
-					elseCodeBlock := p.parseIf()
+					elseCodeBlock := p.parseIf(f)
 					p.expect(lexer.RBRACE)
 					return parser.NewNode(parser.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: []*parser.Node{elseCodeBlock}})
 				} else {
@@ -366,7 +366,7 @@ func (p *Parser) parseIf() *parser.Node {
 				}
 			} else {
 				p.expect(lexer.LBRACE)
-				elseCodeBlock := p.codeBlock()
+				elseCodeBlock := p.codeBlock(f)
 				p.expect(lexer.RBRACE)
 				return parser.NewNode(parser.IF, expression, nil, parser.If{TrueBlock: codeBlock, FalseBlock: elseCodeBlock})
 			}
@@ -380,7 +380,7 @@ func (p *Parser) parseIf() *parser.Node {
 	}
 }
 
-func (p *Parser) keyword() []*parser.Node {
+func (p *Parser) keyword(f *parser.Function) []*parser.Node {
 	if p.current.Type != lexer.ID {
 		return nil
 	}
@@ -405,14 +405,14 @@ func (p *Parser) keyword() []*parser.Node {
 			p.error("Expected expression", p.current.Pos)
 		}
 		update := p.codeLine()
-		codeBlock := p.codeBlock()
+		codeBlock := p.codeBlock(f)
 		codeBlock = append(codeBlock, update)
 		forBody = append(forBody, parser.NewNode(parser.CONDITIONAL_LOOP, expression, nil, codeBlock))
 		p.expect(lexer.RBRACE)
 
 		return forBody
 	case "if":
-		return []*parser.Node{p.parseIf()}
+		return []*parser.Node{p.parseIf(f)}
 	case "while":
 		p.advance()
 		expression := p.expression()
@@ -421,12 +421,12 @@ func (p *Parser) keyword() []*parser.Node {
 			p.error("Expected expression", p.current.Pos)
 		}
 
-		codeBlock := p.codeBlock()
+		codeBlock := p.codeBlock(f)
 		p.expect(lexer.RBRACE)
 		return []*parser.Node{parser.NewNode(parser.CONDITIONAL_LOOP, expression, nil, codeBlock)}
 	case "do":
 		p.advanceExpect(lexer.LBRACE)
-		codeBlock := p.codeBlock()
+		codeBlock := p.codeBlock(f)
 		p.expect(lexer.RBRACE)
 		p.advanceExpect(lexer.ID)
 		if p.current.Value != "while" {
@@ -442,15 +442,25 @@ func (p *Parser) keyword() []*parser.Node {
 	case "loop":
 		p.advance()
 		p.expect(lexer.LBRACE)
-		codeBlock := p.codeBlock()
+		codeBlock := p.codeBlock(f)
 		p.expect(lexer.RBRACE)
 		return []*parser.Node{parser.NewNode(parser.LOOP, nil, nil, codeBlock)}
 	case "end":
 		p.advance()
 		p.expect(lexer.LBRACE)
-		codeBlock := p.codeBlock()
+		codeBlock := p.codeBlock(f)
 		p.expect(lexer.RBRACE)
-		return []*parser.Node{parser.NewNode(parser.END_EXEC, nil, nil, codeBlock)}
+
+		endId := "end_" + strconv.Itoa(f.EndId)
+		f.EndId++
+
+		f.Entry = append(f.Entry, parser.NewNode(parser.VARIABLE_DECLARATION, parser.NewNode(parser.NUMBER, nil, nil, 0), nil, parser.NamedDatatype{
+			UnnamedDatatype: parser.UnnamedDatatype{Type: parser.INT, IsArray: false},
+			Name:            endId,
+		}))
+		f.Exit = append(f.Exit, parser.NewNode(parser.IF, parser.NewNode(parser.VARIABLE_LOOKUP, nil, nil, endId), nil, parser.If{TrueBlock: codeBlock}))
+
+		return []*parser.Node{parser.NewNode(parser.VARIABLE_ASSIGN, parser.NewNode(parser.NUMBER, nil, nil, 1), nil, endId)}
 	case "range":
 		p.advance()
 		from := p.expression()
@@ -475,12 +485,12 @@ func (p *Parser) keyword() []*parser.Node {
 		}
 		p.advanceExpect(lexer.LBRACE)
 
-		codeBlock := p.codeBlock()
+		codeBlock := p.codeBlock(f)
 		switch mode {
 		case parser.UP:
-			codeBlock = append(codeBlock, parser.NewNode(parser.VARIABLE_INCREASE, nil, nil, as))
+			codeBlock = append(codeBlock, p.variableSelfModify(as, parser.ADD))
 		case parser.DOWN:
-			codeBlock = append(codeBlock, parser.NewNode(parser.VARIABLE_DECREASE, nil, nil, as))
+			codeBlock = append(codeBlock, p.variableSelfModify(as, parser.SUBTRACT))
 		default:
 			panic("?")
 		}
@@ -513,6 +523,24 @@ func (p *Parser) keyword() []*parser.Node {
 	}
 }
 
+func (p *Parser) variableSelfModify(name string, operation parser.NodeType) *parser.Node {
+	return &parser.Node{
+		Type: parser.VARIABLE_ASSIGN,
+		A: &parser.Node{
+			Type: operation,
+			A: &parser.Node{
+				Type:  parser.VARIABLE_LOOKUP,
+				Value: name,
+			},
+			B: &parser.Node{
+				Type:  parser.NUMBER,
+				Value: 1,
+			},
+		},
+		Value: name,
+	}
+}
+
 func (p *Parser) codeLine() *parser.Node {
 	if p.current.Type == lexer.ID {
 		if parser.IsDatatypeString(p.current.Value.(string)) {
@@ -535,10 +563,10 @@ func (p *Parser) codeLine() *parser.Node {
 				return parser.NewNode(parser.VARIABLE_ASSIGN, expression, nil, possibleVariableName)
 			} else if p.current.Type == lexer.INCREASE {
 				p.advance()
-				return parser.NewNode(parser.VARIABLE_INCREASE, nil, nil, possibleVariableName)
+				return p.variableSelfModify(possibleVariableName, parser.ADD)
 			} else if p.current.Type == lexer.DECREASE {
 				p.advance()
-				return parser.NewNode(parser.VARIABLE_DECREASE, nil, nil, possibleVariableName)
+				return p.variableSelfModify(possibleVariableName, parser.SUBTRACT)
 			} else if p.current.Type == lexer.LBRACKET {
 				p.advance()
 				indexExpression := p.expression()
@@ -568,7 +596,7 @@ func (p *Parser) codeLine() *parser.Node {
 	panic("?")
 }
 
-func (p *Parser) codeBlock() []*parser.Node {
+func (p *Parser) codeBlock(f *parser.Function) []*parser.Node {
 	body := []*parser.Node{}
 	p.expect(lexer.LBRACE)
 	p.advance()
@@ -576,7 +604,7 @@ func (p *Parser) codeBlock() []*parser.Node {
 		if p.current.Type == lexer.RBRACE {
 			return body
 		}
-		keyword := p.keyword()
+		keyword := p.keyword(f)
 		if keyword != nil {
 			body = append(body, keyword...)
 		} else {
@@ -624,6 +652,9 @@ func (p *Parser) Global() *parser.Node {
 						Body:           body,
 						ReturnDatatype: returnDatatype,
 						Arguments:      arguments,
+						EndId:          0,
+						Exit:           []*parser.Node{},
+						Entry:          []*parser.Node{},
 					}))
 				} else if utils.IndexOf(attributes, parser.External) >= 0 {
 					p.expect(lexer.END_OF_LINE)
@@ -633,16 +664,22 @@ func (p *Parser) Global() *parser.Node {
 						Body:           nil,
 						ReturnDatatype: returnDatatype,
 						Arguments:      arguments,
+						EndId:          0,
+						Exit:           []*parser.Node{},
+						Entry:          []*parser.Node{},
 					}))
 				} else {
-					codeBlock := p.codeBlock()
-					global = append(global, parser.NewNode(parser.FUNCTION, nil, nil, parser.Function{
+					function := parser.Function{
 						Name:           name,
 						Attributes:     attributes,
-						Body:           codeBlock,
 						ReturnDatatype: returnDatatype,
 						Arguments:      arguments,
-					}))
+						Exit:           []*parser.Node{},
+						Entry:          []*parser.Node{},
+					}
+					function.Body = p.codeBlock(&function)
+
+					global = append(global, parser.NewNode(parser.FUNCTION, nil, nil, function))
 				}
 			} else if p.current.Value == "offset" {
 				p.advanceExpect(lexer.ID)

@@ -38,4 +38,7 @@ type Function struct {
 	Body           []*Node
 	ReturnDatatype UnnamedDatatype
 	Arguments      []NamedDatatype
+	EndId          int
+	Exit           []*Node
+	Entry          []*Node
 }

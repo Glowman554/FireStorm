@@ -5,6 +5,7 @@ import (
 	"fire/firestorm/parser"
 	"fire/firestorm/utils"
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/llir/llvm/ir"
@@ -262,26 +263,6 @@ func (b *LLVM) newBlock(block *ir.Block) *ir.Block {
 	return new
 }
 
-func (b *LLVM) generateVariableSelfModify(name string, operation parser.NodeType) []*parser.Node {
-	return []*parser.Node{
-		{
-			Type: parser.VARIABLE_ASSIGN,
-			A: &parser.Node{
-				Type: operation,
-				A: &parser.Node{
-					Type:  parser.VARIABLE_LOOKUP,
-					Value: name,
-				},
-				B: &parser.Node{
-					Type:  parser.NUMBER,
-					Value: 1,
-				},
-			},
-			Value: name,
-		},
-	}
-}
-
 func (b *LLVM) generateIf(block *ir.Block, node *parser.Node, iff parser.If, cf *CompiledFunction) *ir.Block {
 	ifTrue := b.newBlock(block)
 	ifFalse := b.newBlock(block)
@@ -370,10 +351,6 @@ func (b *LLVM) generateCodeBlock(block *ir.Block, body []*parser.Node, cf *Compi
 			x := b.generateExpression(node.B, block, cf)
 			c := b.autoTypeCast(x, ptr.ElemType.(*types.PointerType).ElemType, block)
 			block.NewStore(c, indexed)
-		case parser.VARIABLE_INCREASE:
-			block = b.generateCodeBlock(block, b.generateVariableSelfModify(node.Value.(string), parser.ADD), cf)
-		case parser.VARIABLE_DECREASE:
-			block = b.generateCodeBlock(block, b.generateVariableSelfModify(node.Value.(string), parser.SUBTRACT), cf)
 		case parser.FUNCTION_CALL:
 			fc := node.Value.(parser.FunctionCall)
 			b.generateFunctionCall(fc, block, cf)
@@ -405,18 +382,6 @@ func (b *LLVM) generateCodeBlock(block *ir.Block, body []*parser.Node, cf *Compi
 			}
 
 			block = b.newBlock(block)
-		case parser.END_EXEC:
-			hit := cf.entryBlock.NewAlloca(types.I64)
-			endId := "end_" + strconv.Itoa(cf.endId)
-			hit.SetName(endId)
-			cf.endId++
-			cf.entryBlock.NewStore(constant.NewInt(types.I64, 0), hit)
-			cf.variables[endId] = hit
-
-			block.NewStore(constant.NewInt(types.I64, 1), hit)
-			cf.endExec = append(cf.endExec, parser.NewNode(parser.IF, parser.NewNode(parser.VARIABLE_LOOKUP, nil, nil, endId), nil, parser.If{
-				TrueBlock: node.Value.([]*parser.Node),
-			}))
 		default:
 			panic("Unknown " + strconv.Itoa(int(node.Type)))
 		}
@@ -431,8 +396,6 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 		returnIncomings: []*ir.Incoming{},
 		returnType:      f.Sig.RetType,
 		name:            af.Name,
-		endId:           0,
-		endExec:         []*parser.Node{},
 	}
 
 	declareOnly := false
@@ -449,7 +412,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 	if declareOnly {
 		return &cf
 	} else {
-		entry := f.NewBlock("entry")
+		entry := b.generateCodeBlock(f.NewBlock("entry"), af.Entry, &cf)
 		main := f.NewBlock("body")
 
 		for i := range af.Arguments {
@@ -474,10 +437,10 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 		if main.Term == nil {
 			if f.Sig.RetType.Equal(types.Void) {
 				main.NewBr(ret)
-				ret = b.generateCodeBlock(ret, cf.endExec, &cf)
+				ret = b.generateCodeBlock(ret, af.Exit, &cf)
 				ret.NewRet(nil)
 			} else {
-				// fmt.Println("[WARNING] no return in non void function")
+				slog.Debug("no return in non void function", "function", f.Name())
 				x := b.generateExpression(parser.NewNode(parser.NUMBER, nil, nil, 0), main, &cf)
 				c := b.autoTypeCast(x, cf.returnType, main)
 				cf.returnIncomings = append(cf.returnIncomings, ir.NewIncoming(c, main))
@@ -485,7 +448,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 			}
 		}
 		if noReturn {
-			ret = b.generateCodeBlock(ret, cf.endExec, &cf)
+			ret = b.generateCodeBlock(ret, af.Exit, &cf)
 			b.generateFunctionCall(parser.FunctionCall{
 				Name:      "unreachable",
 				Arguments: []*parser.Node{},
@@ -493,13 +456,13 @@ func (b *LLVM) generateFunction(f *ir.Func, af parser.Function) *CompiledFunctio
 		} else {
 			if len(cf.returnIncomings) > 0 {
 				phi := ret.NewPhi(cf.returnIncomings...)
-				ret = b.generateCodeBlock(ret, cf.endExec, &cf)
+				ret = b.generateCodeBlock(ret, af.Exit, &cf)
 				ret.NewRet(phi)
 			}
 		}
 	}
 
-	// fmt.Println("[DEBUG]", f.Name(), "compiled with", len(f.Sig.Params), "arguments and", len(cf.variables), "local variables")
+	slog.Debug(f.Name(), "params", len(f.Sig.Params), "variables", len(cf.variables))
 
 	return &cf
 }
