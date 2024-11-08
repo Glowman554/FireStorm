@@ -24,7 +24,8 @@ var AvailableCommands = map[string]command.Command{
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Expected at least 2 arguments")
+		fmt.Println("Expected at least one argument")
+		fmt.Println("Use '" + os.Args[0] + " help' to get a list of supported commands.")
 		return
 	}
 
