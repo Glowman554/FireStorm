@@ -31,7 +31,7 @@ jobs:
       run: cd fire && GOOS=linux GOARCH=riscv64 go build -o fire.riscv64
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: compiler
         path: fire/fire.*
