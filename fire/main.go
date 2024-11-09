@@ -10,7 +10,7 @@ import (
 )
 
 var AvailableCommands = map[string]command.Command{
-	"create":     commands.Create{},
+	"register":   commands.Register{},
 	"login":      commands.Login{},
 	"delete":     commands.Delete{},
 	"init":       commands.Init{},

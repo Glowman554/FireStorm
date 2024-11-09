@@ -42,7 +42,7 @@ func (Delete) Execute(parser *arguments.Parser) error {
 				return err
 			}
 			fmt.Println("deleting version...")
-			err = c.Remote.DeletePackageVersion(context.Background(), *pkg, client.RemoteDeletePackageVersionProps{Version: *version})
+			err = c.Remote.DeletePackageVersion(context.Background(), *pkg, *version)
 			if err != nil {
 				return err
 			}

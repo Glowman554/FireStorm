@@ -52,9 +52,7 @@ func (Deploy) Execute(parser *arguments.Parser) error {
 				return err
 			}
 
-			return c.Remote.UploadFile(context.Background(), proj.Name, client.RemoteUploadFileProps{
-				Name:    path,
-				Version: proj.Version,
+			return c.Remote.UploadFile(context.Background(), proj.Name, proj.Version, strings.Split(path, "/"), client.RemoteUploadFileProps{
 				Content: string(data),
 			})
 		}

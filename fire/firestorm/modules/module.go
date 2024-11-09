@@ -67,7 +67,7 @@ func loadModule(cachePath string, name string, version string) Module {
 		panic(err)
 	}
 
-	files, err := c.Remote.ListFiles(context.Background(), name, client.RemoteListFilesProps{Version: version})
+	files, err := c.Remote.ListFiles(context.Background(), name, version)
 	if err != nil {
 		panic(err)
 	}
@@ -76,7 +76,7 @@ func loadModule(cachePath string, name string, version string) Module {
 	for i, file := range files.Files {
 		fmt.Println("[" + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(files.Files)) + "] Loading " + file)
 
-		content, err := c.Remote.LoadFile(context.Background(), name, client.RemoteLoadFileProps{Version: version, Name: file})
+		content, err := c.Remote.LoadFile(context.Background(), name, version, strings.Split(file, "/"))
 		if err != nil {
 			panic(err)
 		}

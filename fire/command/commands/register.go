@@ -8,14 +8,14 @@ import (
 	"fmt"
 )
 
-type Create struct{}
+type Register struct{}
 
-func (Create) PopulateParser(parser *arguments.Parser) {
+func (Register) PopulateParser(parser *arguments.Parser) {
 	parser.Allow("username", "Account username")
 	parser.Allow("password", "Password for account")
 }
 
-func (Create) Execute(parser *arguments.Parser) error {
+func (Register) Execute(parser *arguments.Parser) error {
 	username, err := parser.Consume("username", nil)
 	if err != nil {
 		return err
@@ -32,7 +32,7 @@ func (Create) Execute(parser *arguments.Parser) error {
 
 	fmt.Println("Creating account " + *username + "...")
 
-	token, err := c.Authentication.CreateUser(context.Background(), client.AuthenticationAuthenticationParams{Username: *username, Password: *password})
+	token, err := c.Authentication.RegisterUser(context.Background(), client.AuthenticationAuthenticationParams{Username: *username, Password: *password})
 	if err != nil {
 		return err
 	}
@@ -41,6 +41,6 @@ func (Create) Execute(parser *arguments.Parser) error {
 	return err
 }
 
-func (Create) Description() string {
+func (Register) Description() string {
 	return "Create a user account"
 }

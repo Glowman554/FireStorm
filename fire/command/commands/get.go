@@ -31,7 +31,7 @@ func (Get) Execute(parser *arguments.Parser) error {
 		return err
 	}
 
-	files, err := c.Remote.ListFiles(context.Background(), *pkg, client.RemoteListFilesProps{Version: *version})
+	files, err := c.Remote.ListFiles(context.Background(), *pkg, *version)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (Get) Execute(parser *arguments.Parser) error {
 	output := *pkg + "@" + *version + "/"
 
 	for _, file := range files.Files {
-		content, err := c.Remote.LoadFile(context.Background(), *pkg, client.RemoteLoadFileProps{Version: *version, Name: file})
+		content, err := c.Remote.LoadFile(context.Background(), *pkg, *version, strings.Split(file, "/"))
 		if err != nil {
 			return err
 		}
