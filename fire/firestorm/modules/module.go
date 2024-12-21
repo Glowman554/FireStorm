@@ -1,8 +1,6 @@
 package modules
 
 import (
-	"context"
-	"fire/client"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,6 +12,11 @@ type Module struct {
 	Package string
 	Version string
 	Files   map[string]string
+}
+
+type ListEntry struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
 }
 
 func writeToCache(cachePath string, file string, content string) {
@@ -62,27 +65,16 @@ func loadModuleFromCache(cachePath string, name string, version string) Module {
 }
 
 func loadModule(cachePath string, name string, version string) Module {
-	c, err := client.Get()
-	if err != nil {
-		panic(err)
-	}
-
-	files, err := c.Remote.ListFiles(context.Background(), name, version)
-	if err != nil {
-		panic(err)
-	}
+	files := fetchFileList(name, version)
 
 	loaded := make(map[string]string)
-	for i, file := range files.Files {
-		fmt.Println("[" + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(files.Files)) + "] Loading " + file)
+	for i, file := range files {
+		fmt.Println("[" + strconv.Itoa(i+1) + "/" + strconv.Itoa(len(files)) + "] Loading " + file.Name)
 
-		content, err := c.Remote.LoadFile(context.Background(), name, version, strings.Split(file, "/"))
-		if err != nil {
-			panic(err)
-		}
-		loaded[file] = content.Content
+		content := fetchFile(file.URL)
+		loaded[file.Name] = content
 
-		writeToCache(cachePath, file, content.Content)
+		writeToCache(cachePath, file.Name, content)
 	}
 	return Module{
 		Package: name,
