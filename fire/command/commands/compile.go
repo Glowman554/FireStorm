@@ -10,7 +10,7 @@ type Compile struct{}
 
 func (Compile) PopulateParser(parser *arguments.Parser) {
 	parser.Allow("input", "Input file")
-	parser.Allow("outpu", "Output file")
+	parser.Allow("output", "Output file")
 	parser.Allow("target", "Compilation target")
 	parser.Allow("include", "Add file to include path")
 }
@@ -52,5 +52,5 @@ func (Compile) Execute(parser *arguments.Parser) error {
 }
 
 func (Compile) Description() string {
-	return "Compile a file withouth using the build system"
+	return "Compile a file without using the build system"
 }
