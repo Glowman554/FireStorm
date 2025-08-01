@@ -2,6 +2,7 @@
     "files.associations": {
         "vm.h": "c",
         "type_traits": "c",
-        "utility": "c"
+        "utility": "c",
+        "dirent.h": "c"
     }
 }

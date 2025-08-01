@@ -1,10 +1,12 @@
 #include "vm.h"
 
 #include <stdio.h>
-#include <dlfcn.h>
-#include <dirent.h>
 #include <string.h>
 #include <stdlib.h>
+
+#ifndef _WIN32
+#include <dlfcn.h>
+#include <dirent.h>
 
 void load_so(const char* path) {
 	printf("Loading %s...\n", path);
@@ -54,6 +56,7 @@ void load_native_extensions(const char* folder) {
 	
 	closedir(dir);
 }
+#endif
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -61,7 +64,9 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+#ifndef _WIN32
     load_native_extensions("modules");
+#endif
 
     struct vm_instance* vm = vm_load(argv[1]);
     

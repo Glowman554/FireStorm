@@ -37,7 +37,7 @@ jobs:
 
 
     - name: Build windows (amd64) (flvm)
-      run: cd flvm && clang --target=x86_64-w64-windows-gnu -isystem /usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib -o fire.amd64.exe main.c vm.c
+      run: cd flvm && clang --target=x86_64-w64-windows-gnu -D_WIN32 -isystem /usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib -o fire.amd64.exe main.c vm.c
     
     - name: Build linux (amd64) (flvm)
       run: cd flvm && clang --target=x86_64-pc-linux-gnu -o fire.amd64 main.c vm.c
