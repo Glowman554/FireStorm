@@ -51,7 +51,7 @@ func (l *LLVM) error(message string, cf *CompiledFunction) {
 	} else {
 		fmt.Println("error: (in:", cf.name+"):", message)
 	}
-	panic("Parser failed")
+	panic("Compilation failed")
 }
 
 func (l *LLVM) findFunction(name string, cf *CompiledFunction) *ir.Func {

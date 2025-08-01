@@ -1,6 +1,7 @@
 package firestorm
 
 import (
+	"fire/firestorm/target/bytecode"
 	"fire/firestorm/target/llvm"
 	"fmt"
 	"io/fs"
@@ -25,33 +26,72 @@ func Compile(input string, output string, target string, includes []string) {
 	parser := NewParser(tokens, processedCode)
 	global := parser.Global()
 
-	bc := llvm.NewLLVM(global, target)
-	result := bc.Compile()
+	switch target {
+	case "bytecode":
+		bc := bytecode.NewBYTECODE(global)
+		result := bc.Compile()
 
-	tmp := strings.Split(output, ".")
-	ending := tmp[len(tmp)-1]
+		tmp := strings.Split(output, ".")
+		ending := tmp[len(tmp)-1]
 
-	switch ending {
-	case "ll":
-		err = os.WriteFile(output, []byte(result), fs.ModePerm)
-		if err != nil {
-			panic(err)
+		switch ending {
+		case "flb":
+			err = os.WriteFile(output, []byte(result), fs.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+		case "flenc":
+			encoder := bytecode.NewBYTECODEEncoder()
+			encoded := encoder.Encode(result)
+			err = os.WriteFile(output, []byte(encoded), fs.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+		case "flbb":
+			encoder := bytecode.NewBYTECODEEncoder()
+			encoded := encoder.Encode(result)
+
+			linked := bytecode.Link(encoded)
+			err = os.WriteFile(output, linked, fs.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+		default:
+			panic("Unsupported output format " + ending)
 		}
-	case "o":
-		err = os.WriteFile(output+".ll", []byte(result), fs.ModePerm)
-		if err != nil {
-			panic(err)
+
+	default:
+		bc := llvm.NewLLVM(global, target)
+		result := bc.Compile()
+
+		tmp := strings.Split(output, ".")
+		ending := tmp[len(tmp)-1]
+
+		switch ending {
+		case "ll":
+			err = os.WriteFile(output, []byte(result), fs.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+		case "o":
+			err = os.WriteFile(output+".ll", []byte(result), fs.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+			runCommand(fmt.Sprintf("clang -c %s -o %s -target %s", output+".ll", output, target))
+		case "elf":
+			fallthrough
+		case "exe":
+			err = os.WriteFile(output+".ll", []byte(result), fs.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+			runCommand(fmt.Sprintf("clang %s -o %s -target %s", output+".ll", output, target))
+		default:
+			panic("Unsupported output format " + ending)
 		}
-		runCommand(fmt.Sprintf("clang -c %s -o %s -target %s", output+".ll", output, target))
-	case "elf":
-		fallthrough
-	case "exe":
-		err = os.WriteFile(output+".ll", []byte(result), fs.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-		runCommand(fmt.Sprintf("clang %s -o %s -target %s", output+".ll", output, target))
 	}
+
 }
 
 func runCommand(command string) {

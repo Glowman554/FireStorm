@@ -10,11 +10,12 @@ import (
 )
 
 var AvailableCommands = map[string]command.Command{
-	"init":       commands.Init{},
-	"build":      commands.Build{},
-	"validate":   commands.Validate{},
-	"executable": commands.Executable{},
-	"compile":    commands.Compile{},
+	"init":              commands.Init{},
+	"build":             commands.Build{},
+	"validate":          commands.Validate{},
+	"validate_bytecode": commands.ValidateBytecode{},
+	"executable":        commands.Executable{},
+	"compile":           commands.Compile{},
 }
 
 func main() {

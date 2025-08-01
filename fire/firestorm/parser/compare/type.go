@@ -35,3 +35,21 @@ func TokenTypeToCompare(t lexer.TokenType) (Compare, error) {
 		return 0, fmt.Errorf("Invalid compare " + strconv.Itoa(int(t)))
 	}
 }
+
+func CompareToString(compare Compare) string {
+	switch compare {
+	case More:
+		return "more"
+	case Less:
+		return "less"
+	case MoreEquals:
+		return "more_equals"
+	case LessEquals:
+		return "less_equals"
+	case Equals:
+		return "equals"
+	case NotEquals:
+		return "not_equals"
+	}
+	panic("?")
+}

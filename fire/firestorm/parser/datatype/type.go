@@ -38,6 +38,27 @@ func GetDatatypeFromString(t string) (DataType, error) {
 	}
 }
 
+func DatatypeToString(t DataType) string {
+	switch t {
+	case INT:
+		return "int"
+	case STR:
+		return "str"
+	case VOID:
+		return "void"
+	case CHR:
+		return "chr"
+	case PTR:
+		return "ptr"
+	case INT_32:
+		return "i32"
+	case INT_16:
+		return "i16"
+	default:
+		panic("?")
+	}
+}
+
 func IsDatatypeString(t string) bool {
 	return t == "int" || t == "str" || t == "void" || t == "chr" || t == "ptr" || t == "i32" || t == "i16"
 }

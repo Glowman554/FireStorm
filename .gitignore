@@ -6,3 +6,6 @@
 *.vsix
 *.fpic
 .fire
+*.flenc
+*.flb
+*.flbb
