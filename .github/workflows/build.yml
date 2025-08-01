@@ -18,20 +18,40 @@ jobs:
       with:
         go-version: '1.22'
 
-    - name: Build windows (amd64)
+    - name: Install clang
+      run: sudo apt update && sudo apt install -y clang llvm
+
+
+    - name: Build windows (amd64) (fire)
       run: cd fire && GOOS=windows GOARCH=amd64 go build -o fire.amd64.exe
 
-    - name: Build linux (amd64)
+    - name: Build linux (amd64) (fire)
       run: cd fire && GOOS=linux GOARCH=amd64 go build -o fire.amd64
 
-    - name: Build linux (arm64)
+    - name: Build linux (arm64) (fire)
       run: cd fire && GOOS=linux GOARCH=arm64 go build -o fire.arm64
 
-    - name: Build linux (riscv64)
+    - name: Build linux (riscv64) (fire)
       run: cd fire && GOOS=linux GOARCH=riscv64 go build -o fire.riscv64
+
+
+
+    - name: Build windows (amd64) (flvm)
+      run: cd flvm && clang --target=x86_64-w64-windows-gnu -o fire.amd64.exe main.c vm.c
+    
+    - name: Build linux (amd64) (flvm)
+      run: cd flvm && clang --target=x86_64-w64-windows-gnu -o fire.amd64 main.c vm.c
+    
+    - name: Build linux (arm64) (flvm)
+      run: cd flvm && clang --target=x86_64-w64-windows-gnu -o fire.arm64 main.c vm.c
+    
+    - name: Build linux (riscv64) (flvm)
+      run: cd flvm && clang --target=x86_64-w64-windows-gnu -o fire.riscv64 main.c vm.c
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: compiler
-        path: fire/fire.*
+        path: |
+          fire/fire.*
+          flvm/flvm.*
