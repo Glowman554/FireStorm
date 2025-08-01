@@ -25,7 +25,7 @@ jobs:
       run: cd fire && go build && sudo mv fire /usr/bin/fire
 
     - name: Build and install (flvm)
-      run: cd flvm && gcc main.c vm.c && sudo mv flvm /usr/bin/flvm
+      run: cd flvm && gcc main.c vm.c -o flvm && sudo mv flvm /usr/bin/flvm
 
     - name: Run validation
       run: cd validation && fire validate
