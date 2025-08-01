@@ -23,30 +23,30 @@ jobs:
 
 
     - name: Build windows (amd64) (fire)
-      run: cd fire && GOOS=windows GOARCH=amd64 go build -o fire.amd64.exe
+      run: cd fire && GOOS=windows GOARCH=amd64 go build -o fire.amd64.exe -v
 
     - name: Build linux (amd64) (fire)
-      run: cd fire && GOOS=linux GOARCH=amd64 go build -o fire.amd64
+      run: cd fire && GOOS=linux GOARCH=amd64 go build -o fire.amd64 -v
 
     - name: Build linux (arm64) (fire)
-      run: cd fire && GOOS=linux GOARCH=arm64 go build -o fire.arm64
+      run: cd fire && GOOS=linux GOARCH=arm64 go build -o fire.arm64 -v
 
     - name: Build linux (riscv64) (fire)
-      run: cd fire && GOOS=linux GOARCH=riscv64 go build -o fire.riscv64
+      run: cd fire && GOOS=linux GOARCH=riscv64 go build -o fire.riscv64 -v
 
 
 
     - name: Build windows (amd64) (flvm)
-      run: cd flvm && clang --target=x86_64-w64-windows-gnu -D_WIN32 -isystem /usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib -o fire.amd64.exe main.c vm.c
+      run: cd flvm && clang --target=x86_64-w64-windows-gnu -D_WIN32 -isystem /usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib -o flvm.amd64.exe main.c vm.c
     
     - name: Build linux (amd64) (flvm)
-      run: cd flvm && clang --target=x86_64-pc-linux-gnu -o fire.amd64 main.c vm.c
+      run: cd flvm && clang --target=x86_64-pc-linux-gnu -o flvm.amd64 main.c vm.c
     
     - name: Build linux (arm64) (flvm)
-      run: cd flvm && clang --target=aarch64-linux-gnu -o fire.arm64 main.c vm.c
+      run: cd flvm && clang --target=aarch64-linux-gnu -o flvm.arm64 main.c vm.c
     
     - name: Build linux (riscv64) (flvm)
-      run: cd flvm && clang --target=riscv64-linux-gnu -o fire.riscv64 main.c vm.c
+      run: cd flvm && clang --target=riscv64-linux-gnu -o flvm.riscv64 main.c vm.c
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
