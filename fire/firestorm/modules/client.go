@@ -9,7 +9,7 @@ import (
 
 func getBaseUrl() string {
 
-	baseUrl := "https://firepack.glowman554.de"
+	baseUrl := "https://firepack.toxicfox.de"
 
 	if h, ok := os.LookupEnv("PACK_URL"); ok {
 		baseUrl = h
