@@ -1,0 +1,25 @@
+$use <stdlib@1.0.6>
+
+$include <std.fl>
+
+function(assembly) test() -> int {
+"
+    string \"Hello world!\"
+    invoke_native puts
+    delete
+
+    number 128
+    invoke printi
+    delete
+
+    number 69
+    return
+"
+}
+
+function spark(int argc, str[] argv) -> int {
+    int x = test();
+    printi(x);
+
+    return 0;
+}

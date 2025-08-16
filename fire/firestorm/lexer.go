@@ -205,8 +205,14 @@ func (l *Lexer) Tokenize() []lexer.Token {
 			str := ""
 			l.advance()
 			for l.current != '"' {
-				str += string(l.current)
-				l.advance()
+				if l.current == '\\' {
+					l.advance()
+					str += l.escapeCharacter(l.current)
+					l.advance()
+				} else {
+					str += string(l.current)
+					l.advance()
+				}
 			}
 			tokens = append(tokens, lexer.NewToken(lexer.STRING, str, start))
 		default:
@@ -217,4 +223,21 @@ func (l *Lexer) Tokenize() []lexer.Token {
 	}
 
 	return tokens
+}
+
+func (l *Lexer) escapeCharacter(c rune) string {
+	switch c {
+	case '"':
+		return "\""
+	case 'n':
+		return "\n"
+	case 'r':
+		return "\r"
+	case 't':
+		return "\t"
+	case 'b':
+		return "\b"
+	default:
+		panic("Illegal escape character " + string(c))
+	}
 }

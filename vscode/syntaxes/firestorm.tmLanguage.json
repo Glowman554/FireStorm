@@ -32,7 +32,13 @@
         {
           "name": "string.quoted.double.firestorm",
           "begin": "\"",
-          "end": "\""
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.example",
+              "match": "\\\\."
+            }
+          ]
         },
         {
           "name": "string.quoted.single.firestorm",

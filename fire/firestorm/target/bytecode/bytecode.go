@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 )
 
 type BYTECODE struct {
@@ -96,7 +97,7 @@ func (b *BYTECODE) generateExpression(exp *node.Node, cf *CompiledFunction) stri
 	case node.NUMBER:
 		code += "\tnumber " + fmt.Sprint(exp.Value.(int)) + "\n"
 	case node.STRING:
-		code += "\tstring \"" + exp.Value.(string) + "\"\n"
+		code += "\tstring \"" + b.encodeString(exp) + "\"\n"
 	case node.COMPARE:
 		code += genAB()
 		code += "\t" + compare.CompareToString(exp.Value.(compare.Compare)) + "\n"
@@ -176,6 +177,18 @@ func (b *BYTECODE) generateExpression(exp *node.Node, cf *CompiledFunction) stri
 	}
 
 	return code
+}
+
+func (b *BYTECODE) encodeString(node *node.Node) string {
+	s := node.Value.(string)
+
+	s = strings.ReplaceAll(s, "\"", "\\\"")
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	s = strings.ReplaceAll(s, "\r", "\\r")
+	s = strings.ReplaceAll(s, "\t", "\\t")
+	s = strings.ReplaceAll(s, "\b", "\\b")
+
+	return s
 }
 
 func (b *BYTECODE) generateCodeBlock(f function.Function, block []*node.Node, cf *CompiledFunction) string {
@@ -291,7 +304,7 @@ func (b *BYTECODE) generateFunction(f function.Function) *CompiledFunction {
 	precode := ""
 
 	if utils.IndexOf(f.Attributes, function.Assembly) != -1 {
-		if len(f.Body) != 1 || f.Body[0].Type != node.STRING {
+		if len(f.Body) != 1 || f.Body[0].Type != node.ASSEMBLY_CODE {
 			b.error("Invalid assembly function", cf)
 		}
 		code += f.Body[0].Value.(string)
@@ -383,7 +396,7 @@ func (b *BYTECODE) Compile() string {
 					if tmp[i].A.Type != node.STRING {
 						panic("Expected string!")
 					}
-					code += "global " + dt.Name + " " + datatype.DatatypeToString(dt.Type) + " \"" + tmp[i].A.Value.(string) + "\"\n"
+					code += "global " + dt.Name + " " + datatype.DatatypeToString(dt.Type) + " \"" + b.encodeString(tmp[i].A) + "\"\n"
 
 				case datatype.CHR:
 					fallthrough

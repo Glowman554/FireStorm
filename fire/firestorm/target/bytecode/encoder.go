@@ -224,8 +224,27 @@ func (b *BYTECODEEncoder) translateFunction(f *SectionInfo) string {
 
 		case "string":
 			s := is[strings.Index(is, "\"")+1 : strings.LastIndex(is, "\"")]
-			bin += "\t\tdq " + fmt.Sprint(len(s)) + "\n"
-			bin += "\t\tdb \"" + s + "\", 0\n"
+
+			output := []byte{}
+			length := 0
+			for i := 0; i < len(s); i++ {
+				if s[i] == '\\' {
+					i++
+					output = append(output, b.escapeCharacter(s[i]))
+				} else {
+					output = append(output, s[i])
+				}
+
+				length++
+			}
+
+			outputStr := []string{}
+			for _, i := range output {
+				outputStr = append(outputStr, fmt.Sprint(i))
+			}
+
+			bin += "\t\tdq " + fmt.Sprint(length) + "\n"
+			bin += "\t\tdb " + strings.Join(outputStr, ", ") + ", 0\n"
 
 		case "return":
 		case "noreturn":
@@ -370,4 +389,21 @@ func (b *BYTECODEEncoder) Encode(code string) string {
 	}
 
 	return final
+}
+
+func (b *BYTECODEEncoder) escapeCharacter(c byte) byte {
+	switch c {
+	case '"':
+		return '"'
+	case 'n':
+		return '\n'
+	case 'r':
+		return '\r'
+	case 't':
+		return '\t'
+	case 'b':
+		return '\b'
+	default:
+		panic("Illegal escape character " + string(c))
+	}
 }
