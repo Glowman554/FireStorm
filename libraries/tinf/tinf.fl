@@ -1,0 +1,11 @@
+$native <tinf_init 35269>
+function(external) tinf_init() -> void;
+
+$native <tinf_uncompress 35270>
+function(external) tinf_uncompress(int dest, int[] destLen, int source, int sourceLen) -> int;
+
+$native <tinf_gzip_uncompress 35271>
+function(external) tinf_gzip_uncompress(int dest, int[] destLen, int source, int sourceLen) -> int;
+
+$native <tinf_zlib_uncompress 35272>
+function(external) tinf_zlib_uncompress(int dest, int[] destLen, int source, int sourceLen) -> int;

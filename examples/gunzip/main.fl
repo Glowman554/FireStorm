@@ -1,0 +1,88 @@
+$use <stdlib@1.0.6>
+$use <tinf@1.0.0>
+
+$include <std.fl>
+$include <tinf.fl>
+
+function read_le32(chr[] p) -> int {
+    return (p[0]) | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
+}
+
+function print_decompress_message(int dlen) -> void {
+    str dlen_str = string_from_int(dlen, 10);
+    end {
+        string_delete(dlen_str);
+    }
+
+    str result_str_tmp = string_join("decompressed ", dlen_str);
+    end {
+        string_delete(result_str_tmp);
+    }
+
+    str result_str = string_join(result_str_tmp, " bytes!");
+    end {
+        string_delete(result_str);
+    }
+
+    prints(result_str);
+}
+
+function spark(int argc, str[] argv) -> int {
+    if argc != 3 {
+        prints("Usage: gunzip <in> <out>");
+        return 1;
+    }
+
+    tinf_init();
+
+    int fin = file_open(argv[1], "rb");
+    if !fin {
+        prints("unable to open input file");
+        return 1;
+    }
+
+    int fout = file_open(argv[2], "wb");
+    if !fout {
+        prints("unable to open output file");
+        return 1;
+    }
+
+    int slen = file_size(fin);
+    if slen < 18 {
+        prints("input too small to be gzip");
+        return 1;
+    }
+
+    chr[] source = allocate(slen);
+    end {
+        deallocate(source);
+    }
+    file_read(fin, source, slen, 0);
+    file_close(fin);
+
+    int dlen = read_le32(source + slen - 4);
+
+    chr[] dest = allocate(dlen);
+    end {
+        deallocate(dest);
+    }
+
+    int[] outlen = allocate(8);
+    end {
+        deallocate(outlen);
+    }
+    outlen[0] = dlen;
+
+    int res = tinf_gzip_uncompress(dest, outlen, source, slen);
+    if (res != 0) | (outlen[0] != dlen) {
+        prints("decompression failed");
+        return 1;
+    }
+
+
+    file_write(fout, dest, dlen, 0);
+    file_close(fout);
+
+    print_decompress_message(dlen);
+    return 0;
+}

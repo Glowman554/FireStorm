@@ -1,0 +1,10 @@
+{
+	"name": "gunzip",
+	"version": "1.0.0",
+	"compiler": {
+		"includes": [],
+		"target": "bytecode",
+		"input": "main.fl",
+		"output": "main.flbb"
+	}
+}

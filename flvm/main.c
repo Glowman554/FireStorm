@@ -20,6 +20,7 @@ void load_so(const char* path) {
 	void* func = dlsym(handle, "init");
 	if (func == NULL) {
 		printf("Failed to load %s\n", dlerror());
+		dlclose(handle);
 		return;
 	}
 	
@@ -36,13 +37,14 @@ void load_native_extensions(const char* folder) {
 	struct dirent* entry;
 	while ((entry = readdir(dir)) != NULL) {
 
-		int size = strlen(folder) + strlen(entry->d_name) + 1;
+		int size = strlen(folder) + strlen(entry->d_name) + 2;
         char* full_path = (char*) malloc(size);
 		memset(full_path, 0, size);
 		sprintf(full_path, "%s/%s", folder, entry->d_name);
 
 		if (entry->d_type == DT_DIR) {
 			if (strcmp(entry->d_name, ".." ) == 0 || strcmp(entry->d_name, "." ) == 0) {
+				free(full_path);
 				continue;
 			}
             load_native_extensions(full_path);
@@ -65,7 +67,7 @@ int main(int argc, char* argv[]) {
     }
 
 #ifndef _WIN32
-    load_native_extensions("modules");
+    load_native_extensions(".fire");
 #endif
 
     struct vm_instance* vm = vm_load(argv[1]);
