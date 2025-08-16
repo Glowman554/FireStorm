@@ -16,6 +16,11 @@ var AvailableCommands = map[string]command.Command{
 	"validate_bytecode": commands.ValidateBytecode{},
 	"executable":        commands.Executable{},
 	"compile":           commands.Compile{},
+	"status":            commands.Status{},
+	"login":             commands.Login{},
+	"register":          commands.Register{},
+	"delete":            commands.Delete{},
+	"deploy":            commands.Deploy{},
 }
 
 func main() {

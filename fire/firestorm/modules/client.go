@@ -1,48 +1,19 @@
 package modules
 
 import (
-	"encoding/json"
+	"fire/firepack"
 	"io"
 	"net/http"
-	"os"
 )
 
-func getBaseUrl() string {
-
-	baseUrl := "https://firepack.toxicfox.de"
-
-	if h, ok := os.LookupEnv("PACK_URL"); ok {
-		baseUrl = h
-	}
-
-	return baseUrl
-}
-
 func fetchFileList(name string, version string) []ListEntry {
-	url := getBaseUrl() + "/list/" + name + "/" + version
-
-	resp, err := http.Get(url)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	var entries []ListEntry
+	err := firepack.ApiGet("/list/"+name+"/"+version, nil, nil, &entries)
 	if err != nil {
 		panic(err)
 	}
 
-	if resp.StatusCode == 500 {
-		panic(string(body))
-	}
-
-	var items []ListEntry
-	err = json.Unmarshal(body, &items)
-	if err != nil {
-		panic(err)
-	}
-
-	return items
+	return entries
 }
 
 func fetchFile(url string) string {
