@@ -1,0 +1,29 @@
+offset vm_instance {
+    ptr code;
+
+    ptr stack;
+    i32 stack_ptr;
+    i32 max_stack;
+
+    ptr global_variables;
+    ptr global_variable_types;
+    i32 global_variable_size;
+    i32 padding;
+
+    int spark;
+}
+
+$native <stack_push 48327>
+function(external) stack_push(int vm, int value) -> void;
+
+$native <stack_pop 48328>
+function(external) stack_pop(int vm) -> int;
+
+$native <invoke 48329>
+function(external) invoke(int vm, int location) -> void;
+
+$native <vm_load 48330>
+function(external) vm_load(str file) -> ptr;
+
+$native <vm_destroy 48331>
+function(external) vm_destroy(int vm) -> void;

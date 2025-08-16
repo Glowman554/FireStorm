@@ -1,0 +1,33 @@
+$use <stdlib@1.0.6>
+$use <vm@1.0.0>
+
+$include <std.fl>
+$include <vm.fl>
+
+function spark(int argc, str[] argv) -> int {
+	ptr vm = vm_load("../../validation/args.fl.flbb");
+    end {
+        vm_destroy(vm);
+    }
+
+	str arg0 = "args";
+	str arg1 = "hello";
+	str arg2 = "world";
+
+	str[] args = allocate(8 * 4);
+    end {
+        deallocate(args);
+    }
+	args[0] = arg0;
+	args[1] = arg1;
+	args[2] = arg2;
+	args[3] = 0;
+
+	stack_push(vm, 3);
+	stack_push(vm, args);
+
+	int sparkPtr = memory_read_32(vm + vm_instance_spark);
+	invoke(vm, sparkPtr);
+
+	return 0;
+}
