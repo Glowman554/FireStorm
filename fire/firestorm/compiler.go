@@ -41,14 +41,14 @@ func Compile(input string, output string, target string, includes []string) {
 				panic(err)
 			}
 		case "flenc":
-			encoder := bytecode.NewBYTECODEEncoder()
+			encoder := bytecode.NewBYTECODEEncoder(preprocessor.NativeFunctions)
 			encoded := encoder.Encode(result)
 			err = os.WriteFile(output, []byte(encoded), fs.ModePerm)
 			if err != nil {
 				panic(err)
 			}
 		case "flbb":
-			encoder := bytecode.NewBYTECODEEncoder()
+			encoder := bytecode.NewBYTECODEEncoder(preprocessor.NativeFunctions)
 			encoded := encoder.Encode(result)
 
 			linked := bytecode.Link(encoded)

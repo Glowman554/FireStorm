@@ -4,21 +4,25 @@ import (
 	"fire/firestorm/modules"
 	"fire/firestorm/utils"
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 type Preprocessor struct {
-	includePaths  []string
-	includedFiles []string
-	usedPackages  []modules.Module
+	includePaths    []string
+	includedFiles   []string
+	usedPackages    []modules.Module
+	NativeFunctions map[string]int
 }
 
 func NewPreprocessor(includePaths []string) Preprocessor {
 	return Preprocessor{
-		includePaths:  includePaths,
-		includedFiles: []string{},
+		includePaths:    includePaths,
+		includedFiles:   []string{},
+		NativeFunctions: map[string]int{},
 	}
 }
 
@@ -99,6 +103,27 @@ func (preprocessor *Preprocessor) processIncludes(code string) string {
 	return code
 }
 
+func (preprocessor Preprocessor) processNatives(code string) string {
+	expression := regexp.MustCompile(`\$native ?<(\w*) (\d*)>`)
+
+	matches := expression.FindAllString(code, -1)
+	for i := range matches {
+		match := matches[i]
+		native := strings.Split(strings.Split(strings.Split(match, "<")[1], ">")[0], " ")
+
+		if nativeID, err := strconv.Atoi(native[1]); err == nil {
+			preprocessor.NativeFunctions[native[0]] = nativeID
+			slog.Debug("Found native "+native[0], "nativeID", nativeID)
+		} else {
+			panic("Failed to parse native id " + native[1])
+		}
+	}
+
+	code = expression.ReplaceAllString(code, "")
+
+	return code
+}
+
 type Define struct {
 	name  string
 	value string
@@ -131,5 +156,5 @@ func (preprocessor Preprocessor) processDefines(code string) string {
 }
 
 func (preprocessor *Preprocessor) Process(code string) string {
-	return preprocessor.processDefines(preprocessor.processIncludes(preprocessor.processUses(code)))
+	return preprocessor.processDefines(preprocessor.processNatives(preprocessor.processIncludes(preprocessor.processUses(code))))
 }

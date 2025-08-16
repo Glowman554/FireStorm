@@ -1,0 +1,15 @@
+$use <stdlib@1.0.6>
+
+$include <std.fl>
+
+$native <test123 1000>
+function(external) test123() -> void;
+
+
+function spark(int argc, str[] argv) -> int {
+    prints("Hello world!");
+    
+    test123();
+
+    return 0;
+}

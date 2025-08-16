@@ -43,9 +43,11 @@ type BYTECODEEncoder struct {
 	natives      []string
 	globals      []string
 	functions    []string
+
+	customNativeIDs map[string]int
 }
 
-func NewBYTECODEEncoder() *BYTECODEEncoder {
+func NewBYTECODEEncoder(customNativeIDs map[string]int) *BYTECODEEncoder {
 	return &BYTECODEEncoder{
 		instructions: []string{
 			"global_reserve",
@@ -103,8 +105,9 @@ func NewBYTECODEEncoder() *BYTECODEEncoder {
 			"malloc", "free",
 			"fopen", "fclose", "fseek", "fread", "fwrite", "ftell",
 		},
-		globals:   []string{},
-		functions: []string{},
+		globals:         []string{},
+		functions:       []string{},
+		customNativeIDs: customNativeIDs,
 	}
 }
 
@@ -217,10 +220,13 @@ func (b *BYTECODEEncoder) translateFunction(f *SectionInfo) string {
 			bin += "\t\tdq _" + instruction[1] + "\n"
 
 		case "invoke_native":
-			if utils.IndexOf(b.natives, instruction[1]) == -1 {
+			if utils.IndexOf(b.natives, instruction[1]) != -1 {
+				bin += "\t\tdq " + fmt.Sprint(utils.IndexOf(b.natives, instruction[1])) + "\n"
+			} else if nativeID, ok := b.customNativeIDs[instruction[1]]; ok {
+				bin += "\t\tdq " + fmt.Sprint(nativeID) + "\n"
+			} else {
 				panic("Native " + instruction[1] + " not found!")
 			}
-			bin += "\t\tdq " + fmt.Sprint(utils.IndexOf(b.natives, instruction[1])) + "\n"
 
 		case "string":
 			s := is[strings.Index(is, "\"")+1 : strings.LastIndex(is, "\"")]
