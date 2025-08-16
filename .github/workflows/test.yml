@@ -34,4 +34,4 @@ jobs:
       run: cd validation && fire validate_bytecode
 
     - name: Test build
-      run: cd example && fire build && ./main.elf
+      run: cd examples/example && fire build && ./main.elf
