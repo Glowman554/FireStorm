@@ -1,0 +1,68 @@
+
+offset reader {
+    ptr data;
+    ptr current;
+    ptr end;
+    int depth;
+    str error;
+}
+
+function jsonNewReader(ptr data, int size) -> ptr {
+    ptr reader = allocate(reader_size);
+    set_ptr(offset(reader, reader_data), data);
+    set_ptr(offset(reader, reader_current), data);
+    set_ptr(offset(reader, reader_end), data + size);
+
+    set_int(offset(reader, reader_depth), 0);
+    set_str(offset(reader, reader_error), 0);
+
+    return reader;
+}
+
+function jsonDestroyReader(ptr reader) -> void {
+    deallocate(reader);
+}
+
+
+function jsonReaderGetData(ptr reader) -> ptr {
+    return get_ptr(offset(reader, reader_data));
+}
+
+function jsonReaderGetCurrent(ptr reader) -> ptr {
+    return get_ptr(offset(reader, reader_current));
+}
+
+function jsonReaderGetEnd(ptr reader) -> ptr {
+    return get_ptr(offset(reader, reader_end));
+}
+
+function jsonReaderGetDepth(ptr reader) -> int {
+    return get_int(offset(reader, reader_depth));
+}
+
+function jsonReaderGetError(ptr reader) -> str {
+    return get_str(offset(reader, reader_error));
+}
+
+
+function jsonReaderSetData(ptr reader, ptr data) -> void {
+    set_ptr(offset(reader, reader_data), data);
+}
+
+function jsonReaderSetCurrent(ptr reader, ptr current) -> void {
+    set_ptr(offset(reader, reader_current), current);
+}
+
+function jsonReaderSetEnd(ptr reader, ptr end) -> void {
+    set_ptr(offset(reader, reader_end), end);
+}
+
+function jsonReaderSetDepth(ptr reader, int depth) -> void {
+    set_int(offset(reader, reader_depth), depth);
+}
+
+function jsonReaderSetError(ptr reader, str error) -> void {
+    set_str(offset(reader, reader_error), error);
+}
+
+

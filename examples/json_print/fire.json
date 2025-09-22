@@ -1,0 +1,10 @@
+{
+	"name": "json_print",
+	"version": "1.0.0",
+	"compiler": {
+		"includes": [],
+		"target": null,
+		"input": "main.fl",
+		"output": "main.elf"
+	}
+}

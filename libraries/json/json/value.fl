@@ -1,0 +1,65 @@
+
+$define VALUE_ERROR 0
+$define VALUE_END 1
+$define VALUE_ARRAY 2
+$define VALUE_OBJECT 3
+$define VALUE_NUMBER 4
+$define VALUE_STRING 5
+$define VALUE_BOOL 6
+$define VALUE_NULL 7
+
+offset value {
+    int type;
+    ptr start;
+    ptr end;
+    int depth;
+}
+
+function jsonNewValue(int type) -> ptr {
+    ptr value = allocate(value_size);
+    set_int(offset(value, value_type), type);
+    set_ptr(offset(value, value_start), 0);
+    set_ptr(offset(value, value_end), 0);
+    set_int(offset(value, value_depth), 0);
+
+    return value;
+}
+
+function jsonDestroyValue(ptr value) -> void {
+    deallocate(value);
+}
+
+
+function jsonValueGetType(ptr value) -> int {
+    return get_int(offset(value, value_type));
+}
+
+function jsonValueGetStart(ptr value) -> ptr {
+    return get_ptr(offset(value, value_start));
+}
+
+function jsonValueGetEnd(ptr value) -> ptr {
+    return get_ptr(offset(value, value_end));
+}
+
+function jsonValueGetDepth(ptr value) -> int {
+    return get_int(offset(value, value_depth));
+}
+
+
+
+function jsonValueSetType(ptr value, int type) -> void {
+    set_int(offset(value, value_type), type);
+}
+
+function jsonValueSetStart(ptr value, ptr start) -> void {
+    set_ptr(offset(value, value_start), start);
+}
+
+function jsonValueSetEnd(ptr value, ptr end) -> void {
+    set_ptr(offset(value, value_end), end);
+}
+
+function jsonValueSetDepth(ptr value, int depth) -> void {
+    set_int(offset(value, value_depth), depth);
+}

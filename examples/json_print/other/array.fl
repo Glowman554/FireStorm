@@ -1,0 +1,38 @@
+$use <stdlib@1.0.6>
+
+$include <std.fl>
+
+$include <json.fl>
+
+
+
+function spark(int argc, str[] argv) -> int {
+    str jsonTest = "[ \"cat\", \"dog\", \"fox\", \"owl\" ]";
+    prints(jsonTest);
+
+
+    ptr r = jsonNewReader(jsonTest, string_length(jsonTest));
+    end {
+        jsonDestroyReader(r);
+    }
+
+    ptr array = jsonRead(r);
+    end {
+        jsonDestroyValue(array);
+    }
+
+    ptr outValue = allocate(8);
+    end {
+        deallocate(outValue);
+    }
+
+    while jsonIterArray(r, array, outValue) {
+        ptr value = get_ptr(outValue);
+
+        jsonPrintValue(value);
+
+        jsonDestroyValue(value);
+    }
+
+    return 0;
+}

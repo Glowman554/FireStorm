@@ -1,0 +1,67 @@
+$use <stdlib@1.0.6>
+
+$include <std.fl>
+
+$include <json.fl>
+
+
+
+function spark(int argc, str[] argv) -> int {
+    str jsonTest = "{ \"x\": 10, \"y\": 20, \"w\": 30, \"h\": 40 }";
+    prints(jsonTest);
+
+    int x = 0;
+    int y = 0;
+    int w = 0;
+    int h = 0;
+
+    ptr r = jsonNewReader(jsonTest, string_length(jsonTest));
+    end {
+        jsonDestroyReader(r);
+    }
+
+    ptr object = jsonRead(r);
+    end {
+        jsonDestroyValue(object);
+    }
+
+    ptr outKey = allocate(8);
+    ptr outValue = allocate(8);
+    end {
+        deallocate(outKey);
+        deallocate(outValue);
+    }
+
+    while jsonIterObject(r, object, outKey, outValue) {
+        ptr key = get_ptr(outKey);
+        ptr value = get_ptr(outValue);
+
+
+        if jsonIsKey(key, "x") {
+            x = parse_int(jsonValueGetStart(value));
+        }
+
+        if jsonIsKey(key, "y") {
+            y = parse_int(jsonValueGetStart(value));
+        }
+
+        if jsonIsKey(key, "w") {
+            w = parse_int(jsonValueGetStart(value));
+        }
+
+        if jsonIsKey(key, "h") {
+            h = parse_int(jsonValueGetStart(value));
+        }
+
+        jsonDestroyValue(key);
+        jsonDestroyValue(value);
+
+    }
+
+    printi(x);
+    printi(y);
+    printi(w);
+    printi(h);
+
+    return 0;
+}

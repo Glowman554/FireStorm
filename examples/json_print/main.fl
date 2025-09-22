@@ -1,0 +1,134 @@
+$use <stdlib@1.0.6>
+$use <json@1.0.0>
+
+$include <std.fl>
+$include <json.fl>
+
+function outputString(chr[] in) -> void {
+	while in[0] {
+		printc(in[0]);
+		in++;
+	}
+}
+
+function printValue(ptr value) -> void {
+    int size = jsonValueGetEnd(value) - jsonValueGetStart(value);
+
+    chr[] output = allocate(size + 1);
+    memory_area_copy_8(output, jsonValueGetStart(value), size);
+    output[size] = 0;
+    outputString(output);
+    deallocate(output);
+}
+
+function indent(int depth) -> void {
+    for int i = 0; i < depth; i++ {
+        printc(9);
+    }
+}
+
+function error(ptr r) -> void {
+    prints(jsonReaderGetError(r));
+    do_exit(1);
+}
+
+function recursivePrint(ptr r, ptr object, int depth) -> void {
+    ptr outKey = allocate(8);
+    ptr outValue = allocate(8);
+    end {
+        deallocate(outKey);
+        deallocate(outValue);
+    }
+
+    int type = jsonValueGetType(object);
+
+    if type == VALUE_ERROR {
+        error(r);
+    }  else if type == VALUE_ARRAY {
+        outputString("[");
+        while jsonIterArray(r, object, outValue) {
+            ptr arrayValue = get_ptr(outValue);
+            outputString("\n");
+            indent(depth + 1);
+            recursivePrint(r, arrayValue, depth + 1);
+            jsonDestroyValue(arrayValue);
+        }
+
+        if jsonReaderGetError(r) {
+            error(r);
+        }
+
+        outputString("\n");
+        indent(depth);
+        outputString("]");
+    } else if type == VALUE_OBJECT {
+        outputString("{");
+        while jsonIterObject(r, object, outKey, outValue) {
+            ptr objectKey = get_ptr(outKey);
+            ptr objectValue = get_ptr(outValue);
+
+            outputString("\n");
+            indent(depth + 1);
+            recursivePrint(r, objectKey, depth + 1);
+            outputString(": ");
+            recursivePrint(r, objectValue, depth + 1);
+
+            jsonDestroyValue(objectKey);
+            jsonDestroyValue(objectValue);
+        }
+
+        if jsonReaderGetError(r) {
+            error(r);
+        }
+
+        outputString("\n");
+        indent(depth);
+        outputString("}");
+    } else if type == VALUE_NUMBER {
+        printValue(object);
+    } else if type == VALUE_STRING {
+        printValue(object);
+    } else if type == VALUE_NULL {
+        printValue(object);
+    } else if type == VALUE_BOOL {
+        printValue(object);
+    }
+}
+
+function spark(int argc, str[] argv) -> int {
+    if argc != 2 {
+        prints("Usage: printer <.json>");
+        return 1;
+    }
+
+    int file = file_open(argv[1], "r");
+    end {
+        file_close(file);
+    }
+    if !file {
+        prints("Could not open file for read!");
+        return 1;
+    }
+
+    int size = file_size(file);
+
+    chr[] buffer = allocate(size);
+    end {
+        deallocate(buffer);
+    }
+    file_read(file, buffer, size, 0);
+
+    ptr r = jsonNewReader(buffer, size);
+    end {
+        jsonDestroyReader(r);
+    }
+
+    ptr object = jsonRead(r);
+    end {
+        jsonDestroyValue(object);
+    }
+
+    recursivePrint(r, object, 0);
+
+    return 0;
+}

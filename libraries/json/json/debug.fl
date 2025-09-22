@@ -1,0 +1,9 @@
+function jsonPrintValue(ptr value) -> void {
+    int size = jsonValueGetEnd(value) - jsonValueGetStart(value);
+
+    chr[] output = allocate(size + 1);
+    memory_area_copy_8(output, jsonValueGetStart(value), size);
+    output[size] = 0;
+    prints(output);
+    deallocate(output);
+}
