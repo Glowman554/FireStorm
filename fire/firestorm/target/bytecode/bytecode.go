@@ -148,7 +148,7 @@ func (b *BYTECODE) generateExpression(exp *node.Node, cf *CompiledFunction) stri
 		fn := b.resolveFunction(fc.Name)
 		if fn != nil {
 			if len(fn.Value.(function.Function).Arguments) != len(fc.Arguments) {
-				b.error("To manny or not enough arguments!", cf)
+				b.error("Too manny or not enough arguments for function "+fc.Name+"!", cf)
 			}
 
 		} else {
@@ -224,7 +224,7 @@ func (b *BYTECODE) generateCodeBlock(f function.Function, block []*node.Node, cf
 			fn := b.resolveFunction(fc.Name)
 			if fn != nil {
 				if len(fn.Value.(function.Function).Arguments) != len(fc.Arguments) {
-					b.error("To many or not enough arguments!", cf)
+					b.error("Too manny or not enough arguments for function "+fc.Name+"!", cf)
 				}
 
 			} else {
