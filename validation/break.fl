@@ -1,0 +1,27 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+    int outer = 0;
+    int inner = 0;
+
+    for int i = 0; i < 5; i++ {
+        outer++;
+
+        if i == 3 {
+            break;               // stops the outer loop completely
+        }
+
+        for int j = 0; j < 5; j++ {
+            if j == 2 {
+                break;           // stops inner loop only
+            }
+
+            inner++;
+        }
+    }
+
+    printi(outer);
+    printi(inner);
+
+    return 0;
+}

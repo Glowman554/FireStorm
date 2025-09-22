@@ -1,0 +1,24 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+    int i = 0;
+    for int j = 0; j < 10; j++ {
+        if (j == 5) | (j == 6) {
+            continue;
+        }
+
+        for int k = 0; k < 10; k++ {
+            if (k == 5) | (k == 6) {
+                continue;
+            }
+
+            i++;
+        }
+
+        i++;
+    }
+
+    printi(i);
+
+	return 0;
+}

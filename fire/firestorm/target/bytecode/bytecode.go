@@ -191,7 +191,7 @@ func (b *BYTECODE) encodeString(node *node.Node) string {
 	return s
 }
 
-func (b *BYTECODE) generateCodeBlock(f function.Function, block []*node.Node, cf *CompiledFunction) string {
+func (b *BYTECODE) generateCodeBlock(f function.Function, block []*node.Node, cf *CompiledFunction, currentContinue *string, currentBack *string) string {
 	code := ""
 	for i := range block {
 		switch block[i].Type {
@@ -254,14 +254,14 @@ func (b *BYTECODE) generateCodeBlock(f function.Function, block []*node.Node, cf
 			if iff.FalseBlock != nil {
 				label2 := b.label()
 				code += "\tgoto_false " + label + "\n"
-				code += b.generateCodeBlock(f, iff.TrueBlock, cf)
+				code += b.generateCodeBlock(f, iff.TrueBlock, cf, currentContinue, currentBack)
 				code += "\tgoto " + label2 + "\n"
 				code += label + ":\n"
-				code += b.generateCodeBlock(f, iff.FalseBlock, cf)
+				code += b.generateCodeBlock(f, iff.FalseBlock, cf, currentContinue, currentBack)
 				code += label2 + ":\n"
 			} else {
 				code += "\tgoto_false " + label + "\n"
-				code += b.generateCodeBlock(f, iff.TrueBlock, cf)
+				code += b.generateCodeBlock(f, iff.TrueBlock, cf, currentContinue, currentBack)
 				code += label + ":\n"
 			}
 
@@ -271,22 +271,51 @@ func (b *BYTECODE) generateCodeBlock(f function.Function, block []*node.Node, cf
 			code += b.generateExpression(block[i].A, cf)
 			loop_exit_label := b.label()
 			code += "\tgoto_false " + loop_exit_label + "\n"
-			code += b.generateCodeBlock(f, block[i].Value.([]*node.Node), cf)
+			code += b.generateCodeBlock(f, block[i].Value.([]*node.Node), cf, &loop_back_label, &loop_exit_label)
+			code += "\tgoto " + loop_back_label + "\n"
+			code += loop_exit_label + ":\n"
+
+		case node.UPDATE_CONDITIONAL_LOOP:
+			loop_back_label := b.label()
+			code += loop_back_label + ":\n"
+			code += b.generateExpression(block[i].A, cf)
+			loop_exit_label := b.label()
+			loop_update_label := b.label()
+			code += "\tgoto_false " + loop_exit_label + "\n"
+			code += b.generateCodeBlock(f, block[i].Value.([]*node.Node), cf, &loop_update_label, &loop_exit_label)
+			code += loop_update_label + ":\n"
+			code += b.generateCodeBlock(f, []*node.Node{block[i].B}, cf, nil, nil)
 			code += "\tgoto " + loop_back_label + "\n"
 			code += loop_exit_label + ":\n"
 
 		case node.POST_CONDITIONAL_LOOP:
 			loop_back_label := b.label()
+			loop_exit_label := b.label()
 			code += loop_back_label + ":\n"
-			code += b.generateCodeBlock(f, block[i].Value.([]*node.Node), cf)
+			code += b.generateCodeBlock(f, block[i].Value.([]*node.Node), cf, &loop_back_label, &loop_exit_label)
 			code += b.generateExpression(block[i].A, cf)
 			code += "\tgoto_true " + loop_back_label + "\n"
+			code += loop_exit_label + ":\n"
 
 		case node.LOOP:
 			label := b.label()
+			loop_exit_label := b.label()
 			code += label + ":\n"
-			code += b.generateCodeBlock(f, block[i].Value.([]*node.Node), cf)
+			code += b.generateCodeBlock(f, block[i].Value.([]*node.Node), cf, &label, &loop_exit_label)
 			code += "\tgoto " + label + "\n"
+			code += loop_exit_label + ":\n"
+
+		case node.CONTINUE:
+			if currentContinue == nil {
+				b.error("Cannot use 'continue' outside of a loop", cf)
+			}
+			code += "\tgoto " + *currentContinue + "\n"
+
+		case node.BREAK:
+			if currentBack == nil {
+				b.error("Cannot use 'break' outside of a loop", cf)
+			}
+			code += "\tgoto " + *currentBack + "\n"
 
 		default:
 			panic("Unknown " + strconv.Itoa(int(block[i].Type)))
@@ -311,7 +340,7 @@ func (b *BYTECODE) generateFunction(f function.Function) *CompiledFunction {
 	} else if utils.IndexOf(f.Attributes, function.External) != -1 {
 		return nil
 	} else {
-		precode += b.generateCodeBlock(f, f.Entry, cf)
+		precode += b.generateCodeBlock(f, f.Entry, cf, nil, nil)
 
 		for i := len(f.Arguments) - 1; i >= 0; i-- {
 			a := f.Arguments[i]
@@ -326,10 +355,10 @@ func (b *BYTECODE) generateFunction(f function.Function) *CompiledFunction {
 		aftercode += "\tnumber 0\n"
 
 		aftercode += cf.exitLabel + ":\n"
-		aftercode += b.generateCodeBlock(f, f.Exit, cf)
+		aftercode += b.generateCodeBlock(f, f.Exit, cf, nil, nil)
 		aftercode += "\treturn\n"
 
-		code += b.generateCodeBlock(f, f.Body, cf)
+		code += b.generateCodeBlock(f, f.Body, cf, nil, nil)
 	}
 
 	cf.code = "@begin function " + f.Name + "\n" + f.Name + ":\n" + precode + code + aftercode + "@end function\n"

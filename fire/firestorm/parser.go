@@ -410,8 +410,7 @@ func (p *Parser) keyword(f *function.Function) []*node.Node {
 		}
 		update := p.codeLine()
 		codeBlock := p.codeBlock(f)
-		codeBlock = append(codeBlock, update)
-		forBody = append(forBody, node.NewNode(node.CONDITIONAL_LOOP, expression, nil, codeBlock))
+		forBody = append(forBody, node.NewNode(node.UPDATE_CONDITIONAL_LOOP, expression, update, codeBlock))
 		p.expect(lexer.RBRACE)
 
 		return forBody
@@ -522,6 +521,19 @@ func (p *Parser) keyword(f *function.Function) []*node.Node {
 		}
 
 		return ret
+
+	case "continue":
+		p.advance()
+		ret := []*node.Node{node.NewNode(node.CONTINUE, nil, nil, nil)}
+		p.expect(lexer.END_OF_LINE)
+		return ret
+
+	case "break":
+		p.advance()
+		ret := []*node.Node{node.NewNode(node.BREAK, nil, nil, nil)}
+		p.expect(lexer.END_OF_LINE)
+		return ret
+
 	default:
 		return nil
 	}
