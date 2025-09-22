@@ -267,7 +267,7 @@ func (b *LLVM) newBlock(block *ir.Block) *ir.Block {
 	return new
 }
 
-func (b *LLVM) generateIf(block *ir.Block, node *node.Node, iff parser.If, cf *CompiledFunction) *ir.Block {
+func (b *LLVM) generateIf(block *ir.Block, node *node.Node, iff parser.If, cf *CompiledFunction, currentContinue *ir.Block, currentBack *ir.Block) *ir.Block {
 	ifTrue := b.newBlock(block)
 	ifFalse := b.newBlock(block)
 	ifAfter := b.newBlock(block)
@@ -276,12 +276,12 @@ func (b *LLVM) generateIf(block *ir.Block, node *node.Node, iff parser.If, cf *C
 	cmp := block.NewICmp(enum.IPredNE, x, constant.NewInt(types.I64, 0))
 	block.NewCondBr(cmp, ifTrue, ifFalse)
 
-	ifTrue = b.generateCodeBlock(ifTrue, iff.TrueBlock, cf)
+	ifTrue = b.generateCodeBlock(ifTrue, iff.TrueBlock, cf, currentContinue, currentBack)
 	if ifTrue.Term == nil {
 		ifTrue.NewBr(ifAfter)
 	}
 
-	ifFalse = b.generateCodeBlock(ifFalse, iff.FalseBlock, cf)
+	ifFalse = b.generateCodeBlock(ifFalse, iff.FalseBlock, cf, currentContinue, currentBack)
 	if ifFalse.Term == nil {
 		ifFalse.NewBr(ifAfter)
 	}
@@ -300,10 +300,33 @@ func (b *LLVM) generateConditionalLoop(block *ir.Block, n *node.Node, cf *Compil
 	cmp := loopCompare.NewICmp(enum.IPredNE, x, constant.NewInt(types.I64, 0))
 	loopCompare.NewCondBr(cmp, loopBody, loopEnd)
 
-	loopBody = b.generateCodeBlock(loopBody, n.Value.([]*node.Node), cf)
+	loopBody = b.generateCodeBlock(loopBody, n.Value.([]*node.Node), cf, loopCompare, loopEnd)
 	if loopBody.Term == nil {
 		loopBody.NewBr(loopCompare)
 	}
+
+	return loopEnd
+}
+
+func (b *LLVM) generateUpdateConditionalLoop(block *ir.Block, n *node.Node, cf *CompiledFunction) *ir.Block {
+	loopCompare := b.newBlock(block)
+	loopBody := b.newBlock(block)
+	loopUpdate := b.newBlock(block)
+	loopEnd := b.newBlock(block)
+
+	block.NewBr(loopCompare)
+
+	x := b.generateExpression(n.A, loopCompare, cf)
+	cmp := loopCompare.NewICmp(enum.IPredNE, x, constant.NewInt(types.I64, 0))
+	loopCompare.NewCondBr(cmp, loopBody, loopEnd)
+
+	loopBody = b.generateCodeBlock(loopBody, n.Value.([]*node.Node), cf, loopUpdate, loopEnd)
+	if loopBody.Term == nil {
+		loopBody.NewBr(loopUpdate)
+	}
+
+	loopUpdate = b.generateCodeBlock(loopUpdate, []*node.Node{n.B}, cf, nil, nil)
+	loopUpdate.NewBr(loopCompare)
 
 	return loopEnd
 }
@@ -314,7 +337,7 @@ func (b *LLVM) generatePostConditionalLoop(block *ir.Block, n *node.Node, cf *Co
 
 	block.NewBr(loopBody)
 
-	loopBody = b.generateCodeBlock(loopBody, n.Value.([]*node.Node), cf)
+	loopBody = b.generateCodeBlock(loopBody, n.Value.([]*node.Node), cf, loopBody, loopEnd)
 
 	x := b.generateExpression(n.A, loopBody, cf)
 	cmp := loopBody.NewICmp(enum.IPredNE, x, constant.NewInt(types.I64, 0))
@@ -325,7 +348,7 @@ func (b *LLVM) generatePostConditionalLoop(block *ir.Block, n *node.Node, cf *Co
 	return loopEnd
 }
 
-func (b *LLVM) generateCodeBlock(block *ir.Block, body []*node.Node, cf *CompiledFunction) *ir.Block {
+func (b *LLVM) generateCodeBlock(block *ir.Block, body []*node.Node, cf *CompiledFunction, currentContinue *ir.Block, currentBack *ir.Block) *ir.Block {
 
 	for i := range body {
 		n := body[i]
@@ -371,21 +394,37 @@ func (b *LLVM) generateCodeBlock(block *ir.Block, body []*node.Node, cf *Compile
 			block.NewBr(cf.returnBlock)
 
 		case node.IF:
-			block = b.generateIf(block, n, n.Value.(parser.If), cf)
+			block = b.generateIf(block, n, n.Value.(parser.If), cf, currentContinue, currentBack)
 		case node.CONDITIONAL_LOOP:
 			block = b.generateConditionalLoop(block, n, cf)
+		case node.UPDATE_CONDITIONAL_LOOP:
+			block = b.generateUpdateConditionalLoop(block, n, cf)
 		case node.POST_CONDITIONAL_LOOP:
 			block = b.generatePostConditionalLoop(block, n, cf)
 		case node.LOOP:
-			loopBody := b.newBlock(block)
-			block.NewBr(loopBody)
+			origLoopBody := b.newBlock(block)
+			loopEnd := b.newBlock(block)
+			block.NewBr(origLoopBody)
 
-			loopEnd := b.generateCodeBlock(loopBody, n.Value.([]*node.Node), cf)
-			if loopEnd.Term == nil {
-				loopEnd.NewBr(loopBody)
+			loopBody := b.generateCodeBlock(origLoopBody, n.Value.([]*node.Node), cf, origLoopBody, loopEnd)
+			if loopBody.Term == nil {
+				loopBody.NewBr(origLoopBody)
 			}
 
-			block = b.newBlock(block)
+			block = loopEnd
+
+		case node.CONTINUE:
+			if currentContinue == nil {
+				b.error("Cannot use 'continue' outside of a loop", cf)
+			}
+			block.NewBr(currentContinue)
+
+		case node.BREAK:
+			if currentBack == nil {
+				b.error("Cannot use 'break' outside of a loop", cf)
+			}
+			block.NewBr(currentBack)
+
 		default:
 			panic("Unknown " + strconv.Itoa(int(n.Type)))
 		}
@@ -416,7 +455,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af function.Function) *CompiledFunct
 	if declareOnly {
 		return &cf
 	} else {
-		entry := b.generateCodeBlock(f.NewBlock("entry"), af.Entry, &cf)
+		entry := b.generateCodeBlock(f.NewBlock("entry"), af.Entry, &cf, nil, nil)
 		main := f.NewBlock("body")
 
 		for i := range af.Arguments {
@@ -436,12 +475,12 @@ func (b *LLVM) generateFunction(f *ir.Func, af function.Function) *CompiledFunct
 
 		cf.returnBlock = ret
 
-		main = b.generateCodeBlock(main, af.Body, &cf)
+		main = b.generateCodeBlock(main, af.Body, &cf, nil, nil)
 
 		if main.Term == nil {
 			if f.Sig.RetType.Equal(types.Void) {
 				main.NewBr(ret)
-				ret = b.generateCodeBlock(ret, af.Exit, &cf)
+				ret = b.generateCodeBlock(ret, af.Exit, &cf, nil, nil)
 				ret.NewRet(nil)
 			} else {
 				slog.Debug("no return in non void function", "function", f.Name())
@@ -452,7 +491,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af function.Function) *CompiledFunct
 			}
 		}
 		if noReturn {
-			ret = b.generateCodeBlock(ret, af.Exit, &cf)
+			ret = b.generateCodeBlock(ret, af.Exit, &cf, nil, nil)
 			b.generateFunctionCall(function.FunctionCall{
 				Name:      "unreachable",
 				Arguments: []*node.Node{},
@@ -460,7 +499,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af function.Function) *CompiledFunct
 		} else {
 			if len(cf.returnIncomings) > 0 {
 				phi := ret.NewPhi(cf.returnIncomings...)
-				ret = b.generateCodeBlock(ret, af.Exit, &cf)
+				ret = b.generateCodeBlock(ret, af.Exit, &cf, nil, nil)
 				ret.NewRet(phi)
 			}
 		}
