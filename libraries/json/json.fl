@@ -28,13 +28,7 @@ function jsonIsKey(ptr value, chr[] s) -> int {
         return 0;
     }
 
-    for int i = 0; i < len; i++ {
-        if get_chr(start + i) != s[i] {
-            return 0;
-        }
-    }
-
-    return 1;
+    return memory_compare_8(start, s, len);
 }
 
 
@@ -90,17 +84,6 @@ function jsonIterObject(ptr reader, ptr object, ptr outKey, ptr outValue) -> int
 
     return 1;
 }
-
-
-// void sj_location(sj_Reader *r, int *line, int *col) {
-//     int ln = 1, cl = 1;
-//     for (char *p = r->data; p != r->cur; p++) {
-//         if (*p == '\n') { ln++; cl = 0; }
-//         cl++;
-//     }
-//     *line = ln;
-//     *col = cl;
-// }
 
 function jsonRead(ptr r) -> ptr {
     loop {

@@ -1,10 +1,14 @@
+int automatic_new_line = 1;
 
 function prints(chr[] in) -> void {
 	while in[0] {
 		printc(in[0]);
 		in++;
 	}
-	printc(10);
+
+	if automatic_new_line {
+		printc(10);
+	}
 }
 
 function printi_base(int num, int base) -> void {
@@ -46,4 +50,8 @@ function printi(int num) -> void {
 
 function printnl() -> void {
     printc(10);
+}
+
+function set_automatic_new_line(int a) -> void {
+	automatic_new_line = a;
 }

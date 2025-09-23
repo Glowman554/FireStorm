@@ -1,74 +1,74 @@
-function memory_area_set_8(chr[] buffer, chr value, int ammount) -> void {
-    while ammount {
-        ammount--;
-        buffer[ammount] = value;
+function memory_area_set_8(chr[] buffer, chr value, int amount) -> void {
+    while amount {
+        amount--;
+        buffer[amount] = value;
     }
-    buffer[ammount] = value;
+    buffer[amount] = value;
 }
 
-function memory_area_set_16(i16[] buffer, i16 value, int ammount) -> void {
-    ammount = ammount / 2;
-    while ammount {
-        ammount--;
-        buffer[ammount] = value;
+function memory_area_set_16(i16[] buffer, i16 value, int amount) -> void {
+    amount = amount / 2;
+    while amount {
+        amount--;
+        buffer[amount] = value;
     }
-    buffer[ammount] = value;
+    buffer[amount] = value;
 }
 
-function memory_area_set_32(i32[] buffer, i32 value, int ammount) -> void {
-    ammount = ammount / 4;
-    while ammount {
-        ammount--;
-        buffer[ammount] = value;
+function memory_area_set_32(i32[] buffer, i32 value, int amount) -> void {
+    amount = amount / 4;
+    while amount {
+        amount--;
+        buffer[amount] = value;
     }
-    buffer[ammount] = value;
+    buffer[amount] = value;
 }
 
-function memory_area_set_64(int[] buffer, int value, int ammount) -> void {
-    ammount = ammount / 8;
-    while ammount {
-        ammount--;
-        buffer[ammount] = value;
+function memory_area_set_64(int[] buffer, int value, int amount) -> void {
+    amount = amount / 8;
+    while amount {
+        amount--;
+        buffer[amount] = value;
     }
-    buffer[ammount] = value;
+    buffer[amount] = value;
 }
 
 
 
 
-function memory_area_copy_8(chr[] dest, chr[] src, int ammount) -> void {
-    while ammount {
-        ammount--;
-        dest[ammount] = src[ammount];
+function memory_area_copy_8(chr[] dest, chr[] src, int amount) -> void {
+    while amount {
+        amount--;
+        dest[amount] = src[amount];
     }
-    dest[ammount] = src[ammount];
+    dest[amount] = src[amount];
 }
 
-function memory_area_copy_16(i16[] dest, i16[] src, int ammount) -> void {
-    ammount = ammount / 2;
-    while ammount {
-        ammount--;
-        dest[ammount] = src[ammount];
+function memory_area_copy_16(i16[] dest, i16[] src, int amount) -> void {
+    amount = amount / 2;
+    while amount {
+        amount--;
+        dest[amount] = src[amount];
     }
-    dest[ammount] = src[ammount];
+    dest[amount] = src[amount];
 }
 
-function memory_area_copy_32(i32[] dest, i32[] src, int ammount) -> void {
-    ammount = ammount / 4;
-    while ammount {
-        ammount--;
-        dest[ammount] = src[ammount];
+function memory_area_copy_32(i32[] dest, i32[] src, int amount) -> void {
+    amount = amount / 4;
+    while amount {
+        amount--;
+        dest[amount] = src[amount];
     }
-    dest[ammount] = src[ammount];
+    dest[amount] = src[amount];
 }
 
-function memory_area_copy_64(int[] dest, int[] src, int ammount) -> void {
-    ammount = ammount / 8;
-    while ammount {
-        ammount--;
-        dest[ammount] = src[ammount];
+function memory_area_copy_64(int[] dest, int[] src, int amount) -> void {
+    amount = amount / 8;
+    while amount {
+        amount--;
+        dest[amount] = src[amount];
     }
-    dest[ammount] = src[ammount];
+    dest[amount] = src[amount];
 }
 
 
@@ -112,4 +112,49 @@ function memory_write_64(int ptr, int value) -> void {
 function memory_read_64(int ptr) -> int {
     int[] tmp = ptr;
     return tmp[0];
+}
+
+
+
+function memory_compare_8(chr[] buffer1, chr[] buffer2, int amount) -> int {
+    while amount {
+        amount--;
+        if buffer1[amount] != buffer2[amount] {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+function memory_compare_16(i16[] buffer1, i16[] buffer2, int amount) -> int {
+    amount = amount / 2;
+    while amount {
+        amount--;
+        if buffer1[amount] != buffer2[amount] {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+function memory_compare_32(i32[] buffer1, i32[] buffer2, int amount) -> int {
+    amount = amount / 4;
+    while amount {
+        amount--;
+        if buffer1[amount] != buffer2[amount] {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+function memory_compare_64(int[] buffer1, int[] buffer2, int amount) -> int {
+    amount = amount / 8;
+    while amount {
+        amount--;
+        if buffer1[amount] != buffer2[amount] {
+            return 0;
+        }
+    }
+    return 1;
 }
