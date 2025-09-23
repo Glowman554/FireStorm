@@ -4,26 +4,9 @@ $use <json@1.0.1>
 $include <std.fl>
 $include <json.fl>
 
-function outputString(chr[] in) -> void {
-	while in[0] {
-		printc(in[0]);
-		in++;
-	}
-}
-
-function printValue(ptr value) -> void {
-    int size = jsonValueGetEnd(value) - jsonValueGetStart(value);
-
-    chr[] output = allocate(size + 1);
-    memory_area_copy_8(output, jsonValueGetStart(value), size);
-    output[size] = 0;
-    outputString(output);
-    deallocate(output);
-}
-
 function indent(int depth) -> void {
     for int i = 0; i < depth; i++ {
-        printc(9);
+        prints("  ");
     }
 }
 
@@ -45,10 +28,10 @@ function recursivePrint(ptr r, ptr object, int depth) -> void {
     if type == VALUE_ERROR {
         error(r);
     }  else if type == VALUE_ARRAY {
-        outputString("[");
+        prints("[");
         while jsonIterArray(r, object, outValue) {
             ptr arrayValue = get_ptr(outValue);
-            outputString("\n");
+            prints("\n");
             indent(depth + 1);
             recursivePrint(r, arrayValue, depth + 1);
             jsonDestroyValue(arrayValue);
@@ -58,19 +41,19 @@ function recursivePrint(ptr r, ptr object, int depth) -> void {
             error(r);
         }
 
-        outputString("\n");
+        prints("\n");
         indent(depth);
-        outputString("]");
+        prints("]");
     } else if type == VALUE_OBJECT {
-        outputString("{");
+        prints("{");
         while jsonIterObject(r, object, outKey, outValue) {
             ptr objectKey = get_ptr(outKey);
             ptr objectValue = get_ptr(outValue);
 
-            outputString("\n");
+            prints("\n");
             indent(depth + 1);
             recursivePrint(r, objectKey, depth + 1);
-            outputString(": ");
+            prints(": ");
             recursivePrint(r, objectValue, depth + 1);
 
             jsonDestroyValue(objectKey);
@@ -81,17 +64,17 @@ function recursivePrint(ptr r, ptr object, int depth) -> void {
             error(r);
         }
 
-        outputString("\n");
+        prints("\n");
         indent(depth);
-        outputString("}");
+        prints("}");
     } else if type == VALUE_NUMBER {
-        printValue(object);
+        jsonPrintValue(object);
     } else if type == VALUE_STRING {
-        printValue(object);
+        jsonPrintValue(object);
     } else if type == VALUE_NULL {
-        printValue(object);
+        jsonPrintValue(object);
     } else if type == VALUE_BOOL {
-        printValue(object);
+        jsonPrintValue(object);
     }
 }
 
@@ -128,6 +111,7 @@ function spark(int argc, str[] argv) -> int {
         jsonDestroyValue(object);
     }
 
+    set_automatic_new_line(0);
     recursivePrint(r, object, 0);
 
     return 0;
