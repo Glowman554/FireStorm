@@ -95,6 +95,12 @@ func (l *Lexer) Tokenize() []lexer.Token {
 		case '\'':
 			l.advance()
 			chr := l.current
+
+			if l.current == '\\' {
+				l.advance()
+				chr = []rune(l.escapeCharacter(l.current))[0]
+			}
+
 			l.advance()
 			if l.current != '\'' {
 				panic("Expected '")
@@ -237,6 +243,8 @@ func (l *Lexer) escapeCharacter(c rune) string {
 		return "\t"
 	case 'b':
 		return "\b"
+	case '\\':
+		return "\\"
 	default:
 		panic("Illegal escape character " + string(c))
 	}

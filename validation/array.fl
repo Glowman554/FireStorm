@@ -18,7 +18,7 @@ function spark(int argc, str[] argv) -> int {
 		prints(test[idx]);
 		printi(test2[idx]);
 		printc(test3[idx]);
-		printc(10);
+		printc('\n');
 		idx++;
 	}
 

@@ -61,14 +61,14 @@ function spark(int argc, str[] argv) -> int {
                 jsonDestroyValue(keyAddress);
                 jsonDestroyValue(valueValue);
 
-                printc(10);
+                printc('\n');
             }
         }
 
         jsonDestroyValue(key);
         jsonDestroyValue(value);
 
-        printc(10);
+        printc('\n');
     }
 
     return 0;

@@ -7,7 +7,7 @@ function prints(chr[] in) -> void {
 	}
 
 	if automatic_new_line {
-		printc(10);
+		printc('\n');
 	}
 }
 
@@ -49,7 +49,7 @@ function printi(int num) -> void {
 }
 
 function printnl() -> void {
-    printc(10);
+    printc('\n');
 }
 
 function set_automatic_new_line(int a) -> void {

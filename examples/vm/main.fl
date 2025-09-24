@@ -1,4 +1,4 @@
-$use <stdlib@1.0.7>
+$use <stdlib@1.0.8>
 $use <vm@1.0.0>
 
 $include <std.fl>

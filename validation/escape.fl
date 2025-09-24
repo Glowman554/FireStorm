@@ -3,5 +3,7 @@ $include <std.fl>
 function spark(int argc, str[] argv) -> int {
 	prints("Hello \"world\"!");
 	prints("Hello world!\nHello world!");
+	printc('\n');
+	prints("Hello world!");
 	return 0;
 }

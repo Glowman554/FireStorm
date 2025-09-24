@@ -105,7 +105,7 @@ function jsonRead(ptr r) -> ptr {
         chr c = get_chr(jsonReaderGetCurrent(r));
 
         // Skip whitespace and separators
-        if (c == ' ') | (c == 10) | (c == 13) | (c == 9) | (c == ':') | (c == ',') {
+        if (c == ' ') | (c == '\n') | (c == '\r') | (c == '\t') | (c == ':') | (c == ',') {
             jsonReaderSetCurrent(r, jsonReaderGetCurrent(r) + 1);
             continue;
         }
@@ -141,7 +141,7 @@ function jsonRead(ptr r) -> ptr {
                     jsonReaderSetCurrent(r, jsonReaderGetCurrent(r) + 1);
                     return res;
                 }
-                if ch == '\' {
+                if ch == '\\' {
                     jsonReaderSetCurrent(r, jsonReaderGetCurrent(r) + 1);
                 }
                 jsonReaderSetCurrent(r, jsonReaderGetCurrent(r) + 1);

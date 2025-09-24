@@ -37,7 +37,7 @@ function testFileRead() -> void {
         printc(buffer[idx]);
         idx++;
     }
-    printc(10);
+    printc('\n');
 }
 
 function testFile() -> void {

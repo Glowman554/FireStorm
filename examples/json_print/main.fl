@@ -1,5 +1,5 @@
-$use <stdlib@1.0.7>
-$use <json@1.0.1>
+$use <stdlib@1.0.8>
+$use <json@1.0.2>
 
 $include <std.fl>
 $include <json.fl>
