@@ -10,6 +10,13 @@ import (
 	"strings"
 )
 
+func isOptionActive(option string) bool {
+	if env, ok := os.LookupEnv(option); ok && (env == "1" || env == "true") {
+		return true
+	}
+	return false
+}
+
 func Compile(input string, output string, target string, includes []string) {
 
 	code, err := os.ReadFile(input)
@@ -19,6 +26,12 @@ func Compile(input string, output string, target string, includes []string) {
 
 	preprocessor := NewPreprocessor(includes)
 	processedCode := preprocessor.Process(string(code))
+	if isOptionActive("DEBUG_PROCESSED_CODE") {
+		err = os.WriteFile(output+".processed", []byte(processedCode), fs.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	lexer := NewLexer(processedCode)
 	tokens := lexer.Tokenize()
