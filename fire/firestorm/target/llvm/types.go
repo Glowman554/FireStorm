@@ -15,10 +15,10 @@ type CompiledFunction struct {
 	name            string
 }
 
-func (cf *CompiledFunction) findVariable(name string, err func(string, *CompiledFunction)) (value.Value, types.Type) {
+func (cf *CompiledFunction) findVariable(name string, pos int, err func(string, int, *CompiledFunction)) (value.Value, types.Type) {
 	if v, ok := cf.variables[name]; ok {
 		return v, v.ElemType
 	}
-	err("Variable "+name+" not found!", cf)
+	err("Variable "+name+" not found!", pos, cf)
 	panic("?")
 }

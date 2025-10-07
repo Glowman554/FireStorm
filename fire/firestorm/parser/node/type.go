@@ -55,13 +55,15 @@ type Node struct {
 	A     *Node
 	B     *Node
 	Value any
+	Pos   int
 }
 
-func NewNode(nodeType NodeType, a *Node, b *Node, value any) *Node {
+func NewNode(nodeType NodeType, a *Node, b *Node, value any, pos int) *Node {
 	return &Node{
 		Type:  nodeType,
 		A:     a,
 		B:     b,
 		Value: value,
+		Pos:   pos,
 	}
 }

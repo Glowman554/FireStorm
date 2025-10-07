@@ -2,13 +2,13 @@ package llvm
 
 import (
 	"fire/firestorm/constexpr"
+	"fire/firestorm/lineerror"
 	"fire/firestorm/parser"
 	"fire/firestorm/parser/compare"
 	"fire/firestorm/parser/datatype"
 	"fire/firestorm/parser/function"
 	"fire/firestorm/parser/node"
 	"fire/firestorm/utils"
-	"fmt"
 	"log/slog"
 	"strconv"
 
@@ -32,9 +32,10 @@ type LLVM struct {
 	globalId        int
 	ptrType         types.Type
 	target          string
+	code            string
 }
 
-func NewLLVM(global *node.Node, target string) *LLVM {
+func NewLLVM(global *node.Node, target string, code string) *LLVM {
 	return &LLVM{
 		global:          global,
 		globalVariables: make(map[string]GlobalVariable),
@@ -42,34 +43,34 @@ func NewLLVM(global *node.Node, target string) *LLVM {
 		globalId:        0,
 		ptrType:         types.I64,
 		target:          target,
+		code:            code,
 	}
 }
 
-func (l *LLVM) error(message string, cf *CompiledFunction) {
+func (l *LLVM) error(message string, pos int, cf *CompiledFunction) {
 	if cf == nil {
-		fmt.Println("error:", message)
+		lineerror.Error(l.code, message, pos)
 	} else {
-		fmt.Println("error: (in:", cf.name+"):", message)
+		lineerror.Error(l.code, message+" (in: "+cf.name+")", pos)
 	}
-	panic("Compilation failed")
 }
 
-func (l *LLVM) findFunction(name string, cf *CompiledFunction) *ir.Func {
+func (l *LLVM) findFunction(name string, pos int, cf *CompiledFunction) *ir.Func {
 	if f, ok := l.functions[name]; ok {
 		return f
 	}
-	l.error("Function "+name+" not found!", cf)
+	l.error("Function "+name+" not found!", pos, cf)
 	panic("?")
 }
 
-func (l *LLVM) findVariable(name string, cf *CompiledFunction, assign bool) (value.Value, types.Type) {
+func (l *LLVM) findVariable(name string, pos int, cf *CompiledFunction, assign bool) (value.Value, types.Type) {
 	if v, ok := l.globalVariables[name]; ok {
 		if assign && v.final {
 			panic("Cannot assign to final varibale " + name)
 		}
 		return v.varivable, v.varivable.ContentType
 	}
-	return cf.findVariable(name, l.error)
+	return cf.findVariable(name, pos, l.error)
 }
 
 func (b *LLVM) newGlobalString(v string) value.Value {
@@ -192,9 +193,9 @@ func (b *LLVM) generateExpressionRaw(exp *node.Node, block *ir.Block, cf *Compil
 		return block.NewLShr(b.generateExpression(exp.A, block, cf), b.generateExpression(exp.B, block, cf))
 	case node.FUNCTION_CALL:
 		fc := exp.Value.(function.FunctionCall)
-		return b.generateFunctionCall(fc, block, cf)
+		return b.generateFunctionCall(fc, exp.Pos, block, cf)
 	case node.VARIABLE_LOOKUP:
-		v, t := b.findVariable(exp.Value.(string), cf, false)
+		v, t := b.findVariable(exp.Value.(string), exp.Pos, cf, false)
 		// if _, ok := v.ElemType.(*types.PointerType); ok {
 		// 	l := block.NewLoad(v.ElemType, v)
 		// 	return b.autoTypeCast(l, b.ptrType, block)
@@ -202,7 +203,7 @@ func (b *LLVM) generateExpressionRaw(exp *node.Node, block *ir.Block, cf *Compil
 		return block.NewLoad(t, v)
 
 	case node.VARIABLE_LOOKUP_ARRAY:
-		v, t := b.findVariable(exp.Value.(string), cf, false)
+		v, t := b.findVariable(exp.Value.(string), exp.Pos, cf, false)
 		ptr := block.NewLoad(t, v)
 		i := b.generateExpression(exp.A, block, cf)
 
@@ -219,7 +220,8 @@ func (b *LLVM) generateExpressionRaw(exp *node.Node, block *ir.Block, cf *Compil
 	case node.MINUS:
 		return block.NewMul(b.generateExpression(exp.A, block, cf), constant.NewInt(types.I64, -1))
 	default:
-		panic("Unknown " + strconv.Itoa(int(exp.Type)))
+		b.error("Unknown "+strconv.Itoa(int(exp.Type)), exp.Pos, cf)
+		panic("?")
 	}
 
 }
@@ -228,11 +230,11 @@ func (b *LLVM) generateExpression(exp *node.Node, block *ir.Block, cf *CompiledF
 	return b.autoTypeCast(b.generateExpressionRaw(exp, block, cf), types.I64, block)
 }
 
-func (b *LLVM) generateFunctionCall(fc function.FunctionCall, block *ir.Block, cf *CompiledFunction) *ir.InstCall {
-	f := b.findFunction(fc.Name, cf)
+func (b *LLVM) generateFunctionCall(fc function.FunctionCall, pos int, block *ir.Block, cf *CompiledFunction) *ir.InstCall {
+	f := b.findFunction(fc.Name, pos, cf)
 
 	if len(fc.Arguments) != len(f.Sig.Params) {
-		panic("Argument count mismatch in call to " + f.GlobalName)
+		b.error("Argument count mismatch in call to "+f.GlobalName, pos, cf)
 	}
 
 	arguments := []value.Value{}
@@ -366,12 +368,12 @@ func (b *LLVM) generateCodeBlock(block *ir.Block, body []*node.Node, cf *Compile
 				block.NewStore(c, v)
 			}
 		case node.VARIABLE_ASSIGN:
-			v, t := b.findVariable(n.Value.(string), cf, true)
+			v, t := b.findVariable(n.Value.(string), n.Pos, cf, true)
 			x := b.generateExpression(n.A, block, cf)
 			c := b.autoTypeCast(x, t, block)
 			block.NewStore(c, v)
 		case node.VARIABLE_ASSIGN_ARRAY:
-			v, t := b.findVariable(n.Value.(string), cf, true)
+			v, t := b.findVariable(n.Value.(string), n.Pos, cf, true)
 			ptr := block.NewLoad(t, v)
 			i := b.generateExpression(n.A, block, cf)
 			indexed := block.NewGetElementPtr(ptr.ElemType.(*types.PointerType).ElemType, ptr, i)
@@ -380,10 +382,10 @@ func (b *LLVM) generateCodeBlock(block *ir.Block, body []*node.Node, cf *Compile
 			block.NewStore(c, indexed)
 		case node.FUNCTION_CALL:
 			fc := n.Value.(function.FunctionCall)
-			b.generateFunctionCall(fc, block, cf)
+			b.generateFunctionCall(fc, n.Pos, block, cf)
 		case node.RETURN:
 			if block.Term != nil {
-				b.error("Block already terminated", cf)
+				b.error("Block already terminated", n.Pos, cf)
 			}
 
 			if n.A != nil {
@@ -415,24 +417,24 @@ func (b *LLVM) generateCodeBlock(block *ir.Block, body []*node.Node, cf *Compile
 
 		case node.CONTINUE:
 			if currentContinue == nil {
-				b.error("Cannot use 'continue' outside of a loop", cf)
+				b.error("Cannot use 'continue' outside of a loop", n.Pos, cf)
 			}
 			block.NewBr(currentContinue)
 
 		case node.BREAK:
 			if currentBack == nil {
-				b.error("Cannot use 'break' outside of a loop", cf)
+				b.error("Cannot use 'break' outside of a loop", n.Pos, cf)
 			}
 			block.NewBr(currentBack)
 
 		default:
-			panic("Unknown " + strconv.Itoa(int(n.Type)))
+			b.error("Unknown "+strconv.Itoa(int(n.Type)), n.Pos, cf)
 		}
 	}
 	return block
 }
 
-func (b *LLVM) generateFunction(f *ir.Func, af function.Function) *CompiledFunction {
+func (b *LLVM) generateFunction(f *ir.Func, pos int, af function.Function) *CompiledFunction {
 	cf := CompiledFunction{
 		variables:       make(map[string]*ir.InstAlloca),
 		returnBlock:     nil,
@@ -445,7 +447,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af function.Function) *CompiledFunct
 	noReturn := false
 
 	if utils.IndexOf(af.Attributes, function.Assembly) >= 0 {
-		b.error("Unsupported attribute assembly", &cf)
+		b.error("Unsupported attribute assembly", pos, &cf)
 	} else if utils.IndexOf(af.Attributes, function.NoReturn) >= 0 {
 		noReturn = true
 	} else if utils.IndexOf(af.Attributes, function.External) >= 0 {
@@ -484,7 +486,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af function.Function) *CompiledFunct
 				ret.NewRet(nil)
 			} else {
 				slog.Debug("no return in non void function", "function", f.Name())
-				x := b.generateExpression(node.NewNode(node.NUMBER, nil, nil, 0), main, &cf)
+				x := b.generateExpression(node.NewNode(node.NUMBER, nil, nil, 0, 0), main, &cf)
 				c := b.autoTypeCast(x, cf.returnType, main)
 				cf.returnIncomings = append(cf.returnIncomings, ir.NewIncoming(c, main))
 				main.NewBr(ret)
@@ -495,7 +497,7 @@ func (b *LLVM) generateFunction(f *ir.Func, af function.Function) *CompiledFunct
 			b.generateFunctionCall(function.FunctionCall{
 				Name:      "unreachable",
 				Arguments: []*node.Node{},
-			}, ret, &cf)
+			}, pos, ret, &cf)
 		} else {
 			if len(cf.returnIncomings) > 0 {
 				phi := ret.NewPhi(cf.returnIncomings...)
@@ -553,7 +555,7 @@ func (b *LLVM) Compile() string {
 
 			if tmp[i].A != nil {
 				if datatype.IsArray {
-					panic("Global array initializers not supported!")
+					b.error("Global array initializers not supported!", tmp[i].Pos, nil)
 				}
 				if tmp[i].A.Type == node.STRING {
 					s := b.module.NewGlobalDef(datatype.Name+".init", constant.NewCharArrayFromString(tmp[i].A.Value.(string)+"\x00"))
@@ -562,7 +564,7 @@ func (b *LLVM) Compile() string {
 					if inttype, ok := d.(*types.IntType); ok {
 						global = b.module.NewGlobalDef(datatype.Name, constant.NewInt(inttype, int64(constexpr.Evaluate(tmp[i].A))))
 					} else {
-						panic("Expected int type when using constant expression")
+						b.error("Expected int type when using constant expression", tmp[i].Pos, nil)
 					}
 				}
 			} else {
@@ -572,7 +574,7 @@ func (b *LLVM) Compile() string {
 				case *types.IntType:
 					global = b.module.NewGlobalDef(datatype.Name, constant.NewInt(d, 0))
 				default:
-					panic("?")
+					b.error("?", tmp[i].Pos, nil)
 				}
 			}
 
@@ -593,7 +595,7 @@ func (b *LLVM) Compile() string {
 	for i := range tmp {
 		switch tmp[i].Type {
 		case node.FUNCTION:
-			b.generateFunction(b.findFunction(tmp[i].Value.(function.Function).Name, nil), tmp[i].Value.(function.Function))
+			b.generateFunction(b.findFunction(tmp[i].Value.(function.Function).Name, tmp[i].Pos, nil), tmp[i].Pos, tmp[i].Value.(function.Function))
 		}
 	}
 

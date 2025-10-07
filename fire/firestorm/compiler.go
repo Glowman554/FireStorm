@@ -61,7 +61,7 @@ func Compile(input string, output string, target string, includes []string) {
 		}
 
 	default:
-		bc := llvm.NewLLVM(global, target)
+		bc := llvm.NewLLVM(global, target, processedCode)
 		result := bc.Compile()
 
 		tmp := strings.Split(output, ".")
