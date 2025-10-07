@@ -2,6 +2,7 @@ package firestorm
 
 import (
 	"fire/firestorm/lexer"
+	"fire/firestorm/lineerror"
 	"fire/firestorm/utils"
 	"strconv"
 	"unicode"
@@ -35,6 +36,10 @@ func (l *Lexer) advance() {
 func (l *Lexer) reverse() {
 	l.pos--
 	l.current = rune(l.code[l.pos])
+}
+
+func (l *Lexer) error(message string, pos int) {
+	lineerror.Error(l.code, message, pos)
 }
 
 func (l *Lexer) Tokenize() []lexer.Token {
@@ -71,7 +76,7 @@ func (l *Lexer) Tokenize() []lexer.Token {
 
 			value, err := strconv.ParseInt(num, base, 64)
 			if err != nil {
-				panic(err)
+				l.error(err.Error(), start)
 			}
 			tokens = append(tokens, lexer.NewToken(lexer.NUMBER, int(value), start))
 		}
@@ -98,12 +103,12 @@ func (l *Lexer) Tokenize() []lexer.Token {
 
 			if l.current == '\\' {
 				l.advance()
-				chr = []rune(l.escapeCharacter(l.current))[0]
+				chr = []rune(l.escapeCharacter(l.current, l.pos))[0]
 			}
 
 			l.advance()
 			if l.current != '\'' {
-				panic("Expected '")
+				l.error("Expected '", l.pos)
 			}
 			tokens = append(tokens, lexer.NewToken(lexer.NUMBER, int(chr), l.pos))
 		case '(':
@@ -165,7 +170,7 @@ func (l *Lexer) Tokenize() []lexer.Token {
 			if l.current == '.' {
 				tokens = append(tokens, lexer.NewToken(lexer.RANGE_DOT, nil, l.pos))
 			} else {
-				panic("Illegal token " + string(l.current))
+				l.error("Illegal token "+string(l.current), l.pos)
 			}
 		case '<':
 			l.advance()
@@ -213,7 +218,7 @@ func (l *Lexer) Tokenize() []lexer.Token {
 			for l.current != '"' {
 				if l.current == '\\' {
 					l.advance()
-					str += l.escapeCharacter(l.current)
+					str += l.escapeCharacter(l.current, l.pos)
 					l.advance()
 				} else {
 					str += string(l.current)
@@ -222,7 +227,7 @@ func (l *Lexer) Tokenize() []lexer.Token {
 			}
 			tokens = append(tokens, lexer.NewToken(lexer.STRING, str, start))
 		default:
-			panic("Illegal token " + string(l.current))
+			l.error("Illegal token "+string(l.current), l.pos)
 		}
 
 		l.advance()
@@ -231,7 +236,7 @@ func (l *Lexer) Tokenize() []lexer.Token {
 	return tokens
 }
 
-func (l *Lexer) escapeCharacter(c rune) string {
+func (l *Lexer) escapeCharacter(c rune, pos int) string {
 	switch c {
 	case '"':
 		return "\""
@@ -246,6 +251,7 @@ func (l *Lexer) escapeCharacter(c rune) string {
 	case '\\':
 		return "\\"
 	default:
-		panic("Illegal escape character " + string(c))
+		l.error("Illegal escape character "+string(c), pos)
+		panic("?")
 	}
 }

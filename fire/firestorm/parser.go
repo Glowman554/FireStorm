@@ -2,15 +2,14 @@ package firestorm
 
 import (
 	"fire/firestorm/lexer"
+	"fire/firestorm/lineerror"
 	"fire/firestorm/parser"
 	"fire/firestorm/parser/compare"
 	"fire/firestorm/parser/datatype"
 	"fire/firestorm/parser/function"
 	"fire/firestorm/parser/node"
 	"fire/firestorm/utils"
-	"fmt"
 	"strconv"
-	"strings"
 )
 
 type Parser struct {
@@ -46,17 +45,7 @@ func (p *Parser) reverse() {
 }
 
 func (p *Parser) error(message string, pos int) {
-	errorLine := parser.FindErrorLineFile(p.code, pos)
-	fmt.Println("error:", message, "(at", errorLine.File+":"+strconv.Itoa(errorLine.Line)+":"+strconv.Itoa(errorLine.Char)+")")
-
-	fmt.Println(strings.ReplaceAll(strings.ReplaceAll(errorLine.LineString, "\t", " "), "\r", " "))
-
-	for i := 0; i < errorLine.Char; i++ {
-		fmt.Print(" ")
-	}
-	fmt.Println("^")
-
-	panic("Parser failed")
+	lineerror.Error(p.code, message, pos)
 }
 
 func (p *Parser) expect(tokenType lexer.TokenType) {

@@ -1,7 +1,9 @@
-package parser
+package lineerror
 
 import (
 	"fire/firestorm/utils"
+	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -74,4 +76,18 @@ func FindErrorLineFile(code string, index int) ErrorLineFile {
 		File:       *fileStack[len(fileStack)-1].Name,
 		LineString: lines[line.Line-1],
 	}
+}
+
+func Error(code string, message string, pos int) {
+	errorLine := FindErrorLineFile(code, pos)
+	fmt.Println("error:", message, "(at", errorLine.File+":"+strconv.Itoa(errorLine.Line)+":"+strconv.Itoa(errorLine.Char)+")")
+
+	fmt.Println(strings.ReplaceAll(strings.ReplaceAll(errorLine.LineString, "\t", " "), "\r", " "))
+
+	for i := 0; i < errorLine.Char; i++ {
+		fmt.Print(" ")
+	}
+	fmt.Println("^")
+
+	panic("Compilation failed")
 }
