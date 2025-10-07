@@ -66,7 +66,7 @@ func (l *LLVM) findFunction(name string, pos int, cf *CompiledFunction) *ir.Func
 func (l *LLVM) findVariable(name string, pos int, cf *CompiledFunction, assign bool) (value.Value, types.Type) {
 	if v, ok := l.globalVariables[name]; ok {
 		if assign && v.final {
-			panic("Cannot assign to final varibale " + name)
+			panic("Cannot assign to final variable " + name)
 		}
 		return v.varivable, v.varivable.ContentType
 	}

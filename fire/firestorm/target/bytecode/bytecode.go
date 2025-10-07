@@ -2,6 +2,7 @@ package bytecode
 
 import (
 	"fire/firestorm/constexpr"
+	"fire/firestorm/lineerror"
 	"fire/firestorm/parser"
 	"fire/firestorm/parser/compare"
 	"fire/firestorm/parser/datatype"
@@ -18,13 +19,15 @@ type BYTECODE struct {
 	global            *node.Node
 	clabel            int
 	compiledFunctions []*CompiledFunction
+	code              string
 }
 
-func NewBYTECODE(global *node.Node) *BYTECODE {
+func NewBYTECODE(global *node.Node, code string) *BYTECODE {
 	return &BYTECODE{
 		global:            global,
 		clabel:            0,
 		compiledFunctions: []*CompiledFunction{},
+		code:              code,
 	}
 }
 
@@ -52,16 +55,15 @@ func (b *BYTECODE) emitNativeCall(fc function.FunctionCall) string {
 	return "\tinvoke_native " + fc.Name + "\n"
 }
 
-func (b *BYTECODE) error(message string, cf *CompiledFunction) {
+func (b *BYTECODE) error(message string, pos int, cf *CompiledFunction) {
 	if cf == nil {
-		fmt.Println("error:", message)
+		lineerror.Error(b.code, message, pos)
 	} else {
-		fmt.Println("error: (in:", cf.name+"):", message)
+		lineerror.Error(b.code, message+" (in: "+cf.name+")", pos)
 	}
-	panic("Compilation failed")
 }
 
-func (b *BYTECODE) datatypeToSize(d datatype.UnnamedDatatype) int {
+func (b *BYTECODE) datatypeToSize(d datatype.UnnamedDatatype, pos int, cf *CompiledFunction) int {
 	if d.IsArray {
 		return 8
 	}
@@ -82,7 +84,8 @@ func (b *BYTECODE) datatypeToSize(d datatype.UnnamedDatatype) int {
 	case datatype.INT_16:
 		return 2
 	default:
-		panic("Invalid datatype")
+		b.error("Invalid datatype", pos, cf)
+		panic("?")
 	}
 }
 
@@ -148,11 +151,11 @@ func (b *BYTECODE) generateExpression(exp *node.Node, cf *CompiledFunction) stri
 		fn := b.resolveFunction(fc.Name)
 		if fn != nil {
 			if len(fn.Value.(function.Function).Arguments) != len(fc.Arguments) {
-				b.error("Too manny or not enough arguments for function "+fc.Name+"!", cf)
+				b.error("Too many or not enough arguments for function "+fc.Name+"!", exp.Pos, cf)
 			}
 
 		} else {
-			b.error("Function "+fc.Name+" not found!", cf)
+			b.error("Function "+fc.Name+" not found!", exp.Pos, cf)
 		}
 
 		f := fn.Value.(function.Function)
@@ -164,6 +167,7 @@ func (b *BYTECODE) generateExpression(exp *node.Node, cf *CompiledFunction) stri
 
 	case node.VARIABLE_LOOKUP:
 		code += "\tload " + exp.Value.(string) + "\n"
+
 	case node.VARIABLE_LOOKUP_ARRAY:
 		code += b.generateExpression(exp.A, cf)
 		code += "\tload_indexed " + exp.Value.(string) + "\n"
@@ -173,7 +177,7 @@ func (b *BYTECODE) generateExpression(exp *node.Node, cf *CompiledFunction) stri
 		code += "\tchange_sign\n"
 
 	default:
-		panic("Unknown " + strconv.Itoa(int(exp.Type)))
+		b.error("Unknown "+strconv.Itoa(int(exp.Type)), exp.Pos, cf)
 	}
 
 	return code
@@ -224,11 +228,11 @@ func (b *BYTECODE) generateCodeBlock(f function.Function, block []*node.Node, cf
 			fn := b.resolveFunction(fc.Name)
 			if fn != nil {
 				if len(fn.Value.(function.Function).Arguments) != len(fc.Arguments) {
-					b.error("Too manny or not enough arguments for function "+fc.Name+"!", cf)
+					b.error("Too many or not enough arguments for function "+fc.Name+"!", block[i].Pos, cf)
 				}
 
 			} else {
-				b.error("Function "+fc.Name+" not found!", cf)
+				b.error("Function "+fc.Name+" not found!", block[i].Pos, cf)
 			}
 
 			f := fn.Value.(function.Function)
@@ -307,25 +311,25 @@ func (b *BYTECODE) generateCodeBlock(f function.Function, block []*node.Node, cf
 
 		case node.CONTINUE:
 			if currentContinue == nil {
-				b.error("Cannot use 'continue' outside of a loop", cf)
+				b.error("Cannot use 'continue' outside of a loop", block[i].Pos, cf)
 			}
 			code += "\tgoto " + *currentContinue + "\n"
 
 		case node.BREAK:
 			if currentBack == nil {
-				b.error("Cannot use 'break' outside of a loop", cf)
+				b.error("Cannot use 'break' outside of a loop", block[i].Pos, cf)
 			}
 			code += "\tgoto " + *currentBack + "\n"
 
 		default:
-			panic("Unknown " + strconv.Itoa(int(block[i].Type)))
+			b.error("Unknown "+strconv.Itoa(int(block[i].Type)), block[i].Pos, cf)
 		}
 	}
 
 	return code
 }
 
-func (b *BYTECODE) generateFunction(f function.Function) *CompiledFunction {
+func (b *BYTECODE) generateFunction(f function.Function, pos int) *CompiledFunction {
 	cf := NewCompiledFunction(f.Name, b.label())
 
 	code := ""
@@ -334,7 +338,7 @@ func (b *BYTECODE) generateFunction(f function.Function) *CompiledFunction {
 
 	if utils.IndexOf(f.Attributes, function.Assembly) != -1 {
 		if len(f.Body) != 1 || f.Body[0].Type != node.ASSEMBLY_CODE {
-			b.error("Invalid assembly function", cf)
+			b.error("Invalid assembly function", pos, cf)
 		}
 		code += f.Body[0].Value.(string)
 	} else if utils.IndexOf(f.Attributes, function.External) != -1 {
@@ -384,12 +388,12 @@ func (b *BYTECODE) keepFunction(name string) {
 	}
 }
 
-func (b *BYTECODE) generateOffset(offset parser.Offset) string {
+func (b *BYTECODE) generateOffset(offset parser.Offset, pos int) string {
 	current := 0
 	code := ""
 
 	for _, entry := range offset.Entries {
-		size := b.datatypeToSize(entry.UnnamedDatatype)
+		size := b.datatypeToSize(entry.UnnamedDatatype, pos, nil)
 		name := offset.Name + "_" + entry.Name
 		code += "global " + name + " " + datatype.DatatypeToString(datatype.INT) + " " + fmt.Sprint(current) + "\n"
 		current += size
@@ -416,14 +420,15 @@ func (b *BYTECODE) Compile() string {
 		case node.VARIABLE_DECLARATION:
 			if tmp[i].A != nil {
 				if (tmp[i].Value.(datatype.NamedDatatype)).IsArray {
-					panic("Global array inizializers not supported!")
+					b.error("Global array initializers not supported!", tmp[i].Pos, nil)
 				}
 
 				dt := tmp[i].Value.(datatype.NamedDatatype)
+
 				switch dt.Type {
 				case datatype.STR:
 					if tmp[i].A.Type != node.STRING {
-						panic("Expected string!")
+						b.error("Expected string!", tmp[i].Pos, nil)
 					}
 					code += "global " + dt.Name + " " + datatype.DatatypeToString(dt.Type) + " \"" + b.encodeString(tmp[i].A) + "\"\n"
 
@@ -436,18 +441,19 @@ func (b *BYTECODE) Compile() string {
 				case datatype.INT:
 					code += "global " + dt.Name + " " + datatype.DatatypeToString(dt.Type) + " " + fmt.Sprint(constexpr.Evaluate(tmp[i].A)) + "\n"
 				default:
-					panic("Unknown " + datatype.DatatypeToString(dt.Type))
+					b.error("Unknown "+datatype.DatatypeToString(dt.Type), tmp[i].Pos, nil)
 				}
 			} else {
 				dt := tmp[i].Value.(datatype.NamedDatatype)
+
 				code += "global_reserve " + dt.Name + " " + datatype.DatatypeToString(dt.Type) + " " + fmt.Sprint(dt.IsArray) + "\n"
 			}
 
 		case node.OFFSET:
-			code += b.generateOffset(tmp[i].Value.(parser.Offset))
+			code += b.generateOffset(tmp[i].Value.(parser.Offset), tmp[i].Pos)
 
 		default:
-			panic("Unsupported " + strconv.Itoa(int(tmp[i].Type)))
+			b.error("Unsupported "+strconv.Itoa(int(tmp[i].Type)), tmp[i].Pos, nil)
 		}
 	}
 	code += "@end global\n"
@@ -455,7 +461,7 @@ func (b *BYTECODE) Compile() string {
 	for i := range tmp {
 		switch tmp[i].Type {
 		case node.FUNCTION:
-			f := b.generateFunction(tmp[i].Value.(function.Function))
+			f := b.generateFunction(tmp[i].Value.(function.Function), tmp[i].Pos)
 			if f != nil {
 				b.compiledFunctions = append(b.compiledFunctions, f)
 			}
@@ -463,7 +469,7 @@ func (b *BYTECODE) Compile() string {
 		case node.VARIABLE_DECLARATION:
 		case node.OFFSET:
 		default:
-			panic("Unsupported " + strconv.Itoa(int(tmp[i].Type)))
+			b.error("Unsupported "+strconv.Itoa(int(tmp[i].Type)), tmp[i].Pos, nil)
 		}
 	}
 

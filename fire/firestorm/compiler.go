@@ -28,7 +28,7 @@ func Compile(input string, output string, target string, includes []string) {
 
 	switch target {
 	case "bytecode":
-		bc := bytecode.NewBYTECODE(global)
+		bc := bytecode.NewBYTECODE(global, processedCode)
 		result := bc.Compile()
 
 		tmp := strings.Split(output, ".")
