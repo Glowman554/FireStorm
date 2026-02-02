@@ -150,8 +150,8 @@ static Node *parse_factor(Parser *p) {
     }
     
     if (tok->type == TOKEN_NUMBER) {
-        int *value = malloc(sizeof(int));
-        *value = atoi(tok->value);
+        long long *value = malloc(sizeof(long long));
+        *value = strtoll(tok->value, NULL, 10);
         advance(p);
         return node_new(NODE_NUMBER, NULL, NULL, value, tok->pos);
     }
@@ -644,7 +644,7 @@ static Node *parse_statement(Parser *p) {
             *compare_type = is_up ? TOKEN_LESS : TOKEN_MORE;
             Node *condition = node_new(NODE_COMPARE, var_lookup, end, compare_type, pos);
             
-            int *one_val = malloc(sizeof(int));
+            long long *one_val = malloc(sizeof(long long));
             *one_val = 1;
             Node *one = node_new(NODE_NUMBER, NULL, NULL, one_val, pos);
             Node *var_lookup2 = node_new(NODE_VARIABLE_LOOKUP, NULL, NULL, strdup(var_name), pos);
@@ -732,7 +732,7 @@ static Node *parse_statement(Parser *p) {
         
         if (tok->type == TOKEN_INCREASE) {
             advance(p);
-            int *one = malloc(sizeof(int));
+            long long *one = malloc(sizeof(long long));
             *one = 1;
             Node *one_node = node_new(NODE_NUMBER, NULL, NULL, one, pos);
             Node *lookup = node_new(NODE_VARIABLE_LOOKUP, NULL, NULL, strdup(var_name), pos);
@@ -742,7 +742,7 @@ static Node *parse_statement(Parser *p) {
         
         if (tok->type == TOKEN_DECREASE) {
             advance(p);
-            int *one = malloc(sizeof(int));
+            long long *one = malloc(sizeof(long long));
             *one = 1;
             Node *one_node = node_new(NODE_NUMBER, NULL, NULL, one, pos);
             Node *lookup = node_new(NODE_VARIABLE_LOOKUP, NULL, NULL, strdup(var_name), pos);
@@ -1017,7 +1017,7 @@ Node *parser_global(Parser *parser) {
                         const_var->datatype = DATATYPE_INT;
                         const_var->is_array = 0;
                         
-                        int *offset_value = malloc(sizeof(int));
+                        long long *offset_value = malloc(sizeof(long long));
                         *offset_value = current_offset;
                         Node *offset_node = node_new(NODE_NUMBER, NULL, NULL, offset_value, pos);
                         
@@ -1056,7 +1056,7 @@ Node *parser_global(Parser *parser) {
                 size_var->datatype = DATATYPE_INT;
                 size_var->is_array = 0;
                 
-                int *size_value = malloc(sizeof(int));
+                long long *size_value = malloc(sizeof(long long));
                 *size_value = current_offset;
                 Node *size_node = node_new(NODE_NUMBER, NULL, NULL, size_value, pos);
                 

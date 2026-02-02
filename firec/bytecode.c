@@ -176,7 +176,7 @@ static int eval_const_expr(Node *expr, long long *result) {
     
     switch (expr->type) {
         case NODE_NUMBER: {
-            *result = *(int*)expr->value;
+            *result = *(long long*)expr->value;
             return 1;
         }
         
@@ -281,7 +281,7 @@ static void generate_expression(BytecodeInternal *bi, Node *exp, CompiledFunctio
     
     switch (exp->type) {
         case NODE_NUMBER:
-            snprintf(buffer, sizeof(buffer), "\tnumber %d\n", *(int*)exp->value);
+            snprintf(buffer, sizeof(buffer), "\tnumber %lld\n", *(long long*)exp->value);
             sb_append(sb, buffer);
             break;
             
