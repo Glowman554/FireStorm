@@ -459,6 +459,53 @@ static void generate_code_block(BytecodeInternal *bi, Node **block, int count, C
                 free(loop_exit);
                 break;
             }
+            
+            case NODE_UPDATE_CONDITIONAL_LOOP: {
+                // For loop: init; condition; update { body }
+                char *loop_back = get_label(bi);
+                char *loop_continue = get_label(bi);  // Continue goes to update
+                char *loop_exit = get_label(bi);
+                
+                // Execute init (first node in loop_data)
+                void *loop_data = node->value;
+                int loop_count = *(int*)loop_data;
+                Node **loop_nodes = (Node**)((char*)loop_data + sizeof(int));
+                
+                // Generate init statement (call code_block with single statement)
+                if (loop_nodes[0]) {
+                    Node *init_nodes[1] = {loop_nodes[0]};
+                    generate_code_block(bi, init_nodes, 1, cf, NULL, NULL, sb);
+                }
+                
+                // Loop start: check condition
+                snprintf(buffer, sizeof(buffer), "%s:\n", loop_back);
+                sb_append(sb, buffer);
+                generate_expression(bi, node->a, cf, sb);  // condition
+                snprintf(buffer, sizeof(buffer), "\tgoto_false %s\n", loop_exit);
+                sb_append(sb, buffer);
+                
+                // Generate loop body (nodes after init)
+                generate_code_block(bi, &loop_nodes[1], loop_count - 1, cf, loop_continue, loop_exit, sb);
+                
+                // Continue label: execute update and jump back
+                snprintf(buffer, sizeof(buffer), "%s:\n", loop_continue);
+                sb_append(sb, buffer);
+                if (node->b) {  // update statement
+                    Node *update_nodes[1] = {node->b};
+                    generate_code_block(bi, update_nodes, 1, cf, NULL, NULL, sb);
+                }
+                snprintf(buffer, sizeof(buffer), "\tgoto %s\n", loop_back);
+                sb_append(sb, buffer);
+                
+                // Exit label
+                snprintf(buffer, sizeof(buffer), "%s:\n", loop_exit);
+                sb_append(sb, buffer);
+                
+                free(loop_back);
+                free(loop_continue);
+                free(loop_exit);
+                break;
+            }
                 
             case NODE_POST_CONDITIONAL_LOOP: {
                 char *loop_back = get_label(bi);

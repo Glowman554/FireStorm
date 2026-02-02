@@ -641,7 +641,7 @@ static Node *parse_statement(Parser *p) {
             
             Node *var_lookup = node_new(NODE_VARIABLE_LOOKUP, NULL, NULL, strdup(var_name), pos);
             int *compare_type = malloc(sizeof(int));
-            *compare_type = is_up ? 4 : 5;  // 4=LE, 5=GE
+            *compare_type = is_up ? TOKEN_LESS_EQUALS : TOKEN_MORE_EQUALS;
             Node *condition = node_new(NODE_COMPARE, var_lookup, end, compare_type, pos);
             
             int *one_val = malloc(sizeof(int));
