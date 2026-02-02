@@ -22,7 +22,6 @@ func (ValidateBytecodeExternal) PopulateParser(parser *arguments.Parser) {
 func (ValidateBytecodeExternal) Execute(parser *arguments.Parser) error {
 	passed := 0
 	notPassed := 0
-	textExtension := "flb"
 	binaryExtension := "flbb"
 
 	defaultFirec := "firec"
@@ -67,12 +66,13 @@ func (ValidateBytecodeExternal) Execute(parser *arguments.Parser) error {
 				}
 			}()
 
-			// Step 1: Compile using firec to text bytecode format
-			textOutput := path + "." + textExtension
+			// Compile using firec with encoding to binary format
+			binaryOutput := path + "." + binaryExtension
 			compileArgs := []string{
 				"--input=" + path,
-				"--output=" + textOutput,
+				"--output=" + binaryOutput,
 				"--include=../libraries/stdlib/",
+				"--encode",
 			}
 			
 			// Capture output even on error
@@ -93,31 +93,7 @@ func (ValidateBytecodeExternal) Execute(parser *arguments.Parser) error {
 				return nil
 			}
 
-			// Step 2: Encode and link text bytecode to binary format
-			textBytecode, err := os.ReadFile(textOutput)
-			if err != nil {
-				slog.Error("Failed to read text bytecode", "path", path, "error", err)
-				notPassed++
-				return nil
-			}
-
-			// Encode using the bytecode encoder (no custom natives for validation tests)
-			encoder := bytecode.NewBYTECODEEncoder(map[string]int{})
-			encoded := encoder.Encode(string(textBytecode))
-
-			// Link to create final binary
-			linked := bytecode.Link(encoded)
-
-			// Write binary bytecode
-			binaryOutput := path + "." + binaryExtension
-			err = os.WriteFile(binaryOutput, linked, 0755)
-			if err != nil {
-				slog.Error("Failed to write binary bytecode", "path", path, "error", err)
-				notPassed++
-				return nil
-			}
-
-			// Step 3: Run with flvm
+			// Run with flvm
 			arguments := []string{binaryOutput}
 			arguments = append(arguments, expected.Arguments...)
 
