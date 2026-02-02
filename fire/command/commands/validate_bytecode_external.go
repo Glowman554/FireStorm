@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fire/arguments"
-	"fire/firestorm"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
@@ -15,20 +15,21 @@ import (
 type ValidateBytecodeExternal struct{}
 
 func (ValidateBytecodeExternal) PopulateParser(parser *arguments.Parser) {
-	parser.Allow("flvm", "Path to flvm binary (default: flvm)")
+	parser.Allow("firec", "Path to firec binary (default: firec)")
 }
 
 func (ValidateBytecodeExternal) Execute(parser *arguments.Parser) error {
 	passed := 0
 	notPassed := 0
 	extension := "flbb"
-	target := "bytecode"
 
-	defaultFlvm := "flvm"
-	flvmPath, err := parser.Consume("flvm", &defaultFlvm)
+	defaultFirec := "firec"
+	firecPath, err := parser.Consume("firec", &defaultFirec)
 	if err != nil {
 		return err
 	}
+
+	slog.Info("NOTE: firec is a simplified C compiler that does not support advanced features like function attributes (external, noreturn, keep) used in stdlib. Tests using stdlib will fail to compile.")
 
 	err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err == nil {
@@ -65,12 +66,36 @@ func (ValidateBytecodeExternal) Execute(parser *arguments.Parser) error {
 					notPassed++
 				}
 			}()
-			firestorm.Compile(path, path+"."+extension, target, []string{"../libraries/stdlib/"})
+
+			// Compile using firec (external C compiler)
+			compileArgs := []string{
+				"--input=" + path,
+				"--output=" + path + "." + extension,
+				"--include=../libraries/stdlib/",
+			}
+			
+			// Capture output even on error
+			cmd := exec.Command(*firecPath, compileArgs...)
+			var out strings.Builder
+			cmd.Stdout = &out
+			cmd.Stderr = &out
+			err = cmd.Run()
+			
+			if err != nil {
+				output := out.String()
+				if output != "" {
+					slog.Error("Compilation failed", "path", path, "error", err, "output", output)
+				} else {
+					slog.Error("Compilation failed", "path", path, "error", err)
+				}
+				notPassed++
+				return nil
+			}
 
 			arguments := []string{path + "." + extension}
 			arguments = append(arguments, expected.Arguments...)
 
-			output, err := run(*flvmPath, arguments)
+			output, err := run("flvm", arguments)
 			if err != nil {
 				if expected.ShouldFail {
 					slog.Debug("TEST PASSED", "path", path)
@@ -113,5 +138,5 @@ func (ValidateBytecodeExternal) Execute(parser *arguments.Parser) error {
 }
 
 func (ValidateBytecodeExternal) Description() string {
-	return "Run the tests using external flvm binary"
+	return "Run the tests using external firec compiler (C implementation)"
 }
