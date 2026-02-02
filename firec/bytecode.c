@@ -519,6 +519,19 @@ static void generate_code_block(BytecodeInternal *bi, Node **block, int count, C
                 }
                 break;
                 
+            case NODE_END:
+                // End block - for now, just generate the code inline
+                // (not implementing full defer semantics)
+                if (block[i]->value) {
+                    Node **end_body = (Node**)block[i]->value;
+                    int end_count = 0;
+                    while (end_body[end_count] != NULL) {
+                        end_count++;
+                    }
+                    generate_code_block(bi, end_body, end_count, cf, current_continue, current_break, sb);
+                }
+                break;
+                
             default:
                 break;
         }
@@ -607,6 +620,12 @@ char *bytecode_compile(Bytecode *bc) {
     for (int i = 0; nodes[i] != NULL; i++) {
         if (nodes[i]->type == NODE_FUNCTION) {
             Function *f = (Function*)nodes[i]->value;
+            
+            // Skip external functions (they're provided by the runtime)
+            if (f->is_external) {
+                continue;
+            }
+            
             CompiledFunction *cf = generate_function(&bi, f);
             
             if (bi.cf_count >= bi.cf_capacity) {

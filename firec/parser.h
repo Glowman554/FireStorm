@@ -38,7 +38,8 @@ typedef enum {
     NODE_BIT_NOT,
     NODE_OFFSET,
     NODE_CONTINUE,
-    NODE_BREAK
+    NODE_BREAK,
+    NODE_END
 } NodeType;
 
 typedef enum {
@@ -73,6 +74,7 @@ typedef struct {
     int return_is_array;
     Node **body;
     int body_count;
+    int is_external;  // External function (no body)
 } Function;
 
 typedef struct {

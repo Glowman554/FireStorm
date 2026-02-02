@@ -65,7 +65,9 @@ static int is_datatype_string(const char *str) {
            strcmp(str, "chr") == 0 ||
            strcmp(str, "ptr") == 0 ||
            strcmp(str, "int32") == 0 ||
-           strcmp(str, "int16") == 0;
+           strcmp(str, "int16") == 0 ||
+           strcmp(str, "i32") == 0 ||
+           strcmp(str, "i16") == 0;
 }
 
 static Datatype string_to_datatype(const char *str) {
@@ -74,8 +76,8 @@ static Datatype string_to_datatype(const char *str) {
     if (strcmp(str, "void") == 0) return DATATYPE_VOID;
     if (strcmp(str, "chr") == 0) return DATATYPE_CHR;
     if (strcmp(str, "ptr") == 0) return DATATYPE_PTR;
-    if (strcmp(str, "int32") == 0) return DATATYPE_INT_32;
-    if (strcmp(str, "int16") == 0) return DATATYPE_INT_16;
+    if (strcmp(str, "int32") == 0 || strcmp(str, "i32") == 0) return DATATYPE_INT_32;
+    if (strcmp(str, "int16") == 0 || strcmp(str, "i16") == 0) return DATATYPE_INT_16;
     return DATATYPE_INT;
 }
 
@@ -95,9 +97,10 @@ static Variable parse_datatype_named(Parser *p) {
         advance(p);
         expect(p, TOKEN_RBRACKET);
         advance(p);
+        tok = current_token(p);
         expect(p, TOKEN_ID);
         var.is_array = 1;
-        var.name = strdup(current_token(p)->value);
+        var.name = strdup(tok->value);
         advance(p);
     } else {
         expect(p, TOKEN_ID);
@@ -591,6 +594,25 @@ static Node *parse_statement(Parser *p) {
             return node_new(NODE_CONTINUE, NULL, NULL, NULL, pos);
         }
         
+        // end block (defer-like construct)
+        if (strcmp(tok->value, "end") == 0) {
+            advance(p);
+            // parse_code_block will expect and advance past '{'
+            int body_count = 0;
+            Node **body = parse_code_block(p, &body_count);
+            expect(p, TOKEN_RBRACE);
+            
+            // Store body in a node array
+            Node **body_array = malloc(sizeof(Node*) * (body_count + 1));
+            for (int i = 0; i < body_count; i++) {
+                body_array[i] = body[i];
+            }
+            body_array[body_count] = NULL;
+            free(body);
+            
+            return node_new(NODE_END, NULL, NULL, body_array, pos);
+        }
+        
         // Variable declaration
         if (is_datatype_string(tok->value)) {
             Variable var = parse_datatype_named(p);
@@ -707,9 +729,37 @@ static void parse_function_params(Parser *p, Variable **params, int *param_count
 // Parse a function
 static Node *parse_function(Parser *p) {
     int pos = current_token(p)->pos;
+    int is_external = 0;
     
     // Skip 'function' keyword
     advance(p);
+    
+    // Check for function attributes in parentheses
+    if (current_token(p)->type == TOKEN_LPAREN) {
+        advance(p);  // skip '('
+        
+        // Parse attribute list (comma-separated identifiers)
+        while (current_token(p)->type == TOKEN_ID) {
+            char *attr = current_token(p)->value;
+            
+            // Check if it's 'external' attribute
+            if (strcmp(attr, "external") == 0) {
+                is_external = 1;
+            }
+            // Ignore other attributes like 'noreturn', 'keep', etc.
+            
+            advance(p);
+            
+            if (current_token(p)->type == TOKEN_COMMA) {
+                advance(p);
+            } else if (current_token(p)->type == TOKEN_RPAREN) {
+                break;
+            }
+        }
+        
+        expect(p, TOKEN_RPAREN);
+        advance(p);  // skip ')'
+    }
     
     // Function name
     expect(p, TOKEN_ID);
@@ -729,10 +779,20 @@ static Node *parse_function(Parser *p) {
     int return_is_array;
     parse_datatype_unnamed(p, &return_type, &return_is_array);
     
-    // Function body
+    // Function body or semicolon for external functions
+    Node **body = NULL;
     int body_count = 0;
-    Node **body = parse_code_block(p, &body_count);
-    expect(p, TOKEN_RBRACE);
+    
+    if (is_external) {
+        // External function - expect semicolon (don't advance past it)
+        expect(p, TOKEN_END_OF_LINE);
+        // Don't advance - let the global parser handle it
+    } else {
+        // Regular function - parse body
+        body = parse_code_block(p, &body_count);
+        expect(p, TOKEN_RBRACE);
+        // Don't advance - let the global parser handle it
+    }
     
     // Create function structure
     Function *func = malloc(sizeof(Function));
@@ -743,6 +803,7 @@ static Node *parse_function(Parser *p) {
     func->return_is_array = return_is_array;
     func->body = body;
     func->body_count = body_count;
+    func->is_external = is_external;
     
     return node_new(NODE_FUNCTION, NULL, NULL, func, pos);
 }
