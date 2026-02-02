@@ -139,6 +139,7 @@ static const char *compare_to_string(int token_type) {
 
 static char *encode_string(const char *str) {
     size_t len = strlen(str);
+    // Allocate worst case: each character could become 2 chars, plus null terminator
     char *result = malloc(len * 2 + 1);
     char *p = result;
     
