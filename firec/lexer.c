@@ -1,14 +1,12 @@
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "lexer.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
-
-static const char *keywords[] = {
-    "function", "return", "if", "else", "for", "while", "break", "continue",
-    "int", "str", "void", "chr", "ptr", "int32", "int16"
-};
-static const int num_keywords = 15;
 
 static void lexer_advance(Lexer *lexer) {
     lexer->pos++;
@@ -22,15 +20,6 @@ static void lexer_advance(Lexer *lexer) {
 static void lexer_reverse(Lexer *lexer) {
     lexer->pos--;
     lexer->current = lexer->code[lexer->pos];
-}
-
-static int is_keyword(const char *str) {
-    for (int i = 0; i < num_keywords; i++) {
-        if (strcmp(str, keywords[i]) == 0) {
-            return 1;
-        }
-    }
-    return 0;
 }
 
 static char escape_character(char c) {
