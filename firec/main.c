@@ -22,6 +22,11 @@ char *read_file(const char *filename) {
     
     fseek(f, 0, SEEK_END);
     long size = ftell(f);
+    if (size < 0) {
+        fprintf(stderr, "Error: Could not determine file size for %s\n", filename);
+        fclose(f);
+        return NULL;
+    }
     fseek(f, 0, SEEK_SET);
     
     char *buffer = malloc(size + 1);

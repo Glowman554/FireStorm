@@ -335,6 +335,7 @@ TokenList *lexer_tokenize(Lexer *lexer) {
                     break;
                 }
                 int idx = 0;
+                int error = 0;
                 lexer_advance(lexer);
                 
                 while (lexer->current != '"' && lexer->current != '\0') {
@@ -344,6 +345,7 @@ TokenList *lexer_tokenize(Lexer *lexer) {
                         if (!new_str) {
                             fprintf(stderr, "Error: Failed to allocate memory for string\n");
                             free(str);
+                            error = 1;
                             break;
                         }
                         str = new_str;
@@ -359,9 +361,11 @@ TokenList *lexer_tokenize(Lexer *lexer) {
                     }
                 }
                 
-                str[idx] = '\0';
-                token_list_add(list, create_token(TOKEN_STRING, str, start));
-                free(str);
+                if (!error) {
+                    str[idx] = '\0';
+                    token_list_add(list, create_token(TOKEN_STRING, str, start));
+                    free(str);
+                }
                 break;
             }
             default:
