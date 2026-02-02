@@ -15,6 +15,7 @@ typedef struct {
     int used_capacity;
     int keep;
     char *exit_label;
+    int end_block_counter;  // Counter for end block flags
 } CompiledFunction;
 
 typedef struct {
@@ -58,6 +59,7 @@ static CompiledFunction *cf_new(const char *name, const char *exit_label) {
     cf->used_count = 0;
     cf->used_capacity = 0;
     cf->keep = 0;
+    cf->end_block_counter = 0;
     return cf;
 }
 
@@ -652,15 +654,9 @@ static void generate_code_block(BytecodeInternal *bi, Node **block, int count, C
                 break;
                 
             case NODE_END:
-                // End block - for now, just generate the code inline
-                // (not implementing full defer semantics)
+                // Collect end block for deferred execution
                 if (block[i]->value) {
-                    Node **end_body = (Node**)block[i]->value;
-                    int end_count = 0;
-                    while (end_body[end_count] != NULL) {
-                        end_count++;
-                    }
-                    generate_code_block(bi, end_body, end_count, cf, current_continue, current_break, sb);
+                    cf_add_end_block(cf, (Node**)block[i]->value);
                 }
                 break;
                 
