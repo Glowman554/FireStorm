@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "bytecode.h"
 #include "lexer.h"
 #include <stdio.h>
@@ -591,7 +592,6 @@ char *bytecode_compile(Bytecode *bc) {
     bi.cf_capacity = 0;
     
     StringBuilder *sb = sb_new();
-    char buffer[256];
     
     if (bi.global->type != NODE_GLOBAL) {
         return sb_to_string(sb);
