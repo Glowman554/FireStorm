@@ -13,3 +13,5 @@
 *.processed
 firec/firec
 firec/*.o
+flvm/flvm
+validation/*.flbb

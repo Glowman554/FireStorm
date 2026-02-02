@@ -10,17 +10,18 @@ import (
 )
 
 var AvailableCommands = map[string]command.Command{
-	"init":              commands.Init{},
-	"build":             commands.Build{},
-	"validate":          commands.Validate{},
-	"validate_bytecode": commands.ValidateBytecode{},
-	"executable":        commands.Executable{},
-	"compile":           commands.Compile{},
-	"status":            commands.Status{},
-	"login":             commands.Login{},
-	"register":          commands.Register{},
-	"delete":            commands.Delete{},
-	"deploy":            commands.Deploy{},
+	"init":                       commands.Init{},
+	"build":                      commands.Build{},
+	"validate":                   commands.Validate{},
+	"validate_bytecode":          commands.ValidateBytecode{},
+	"validate_bytecode_external": commands.ValidateBytecodeExternal{},
+	"executable":                 commands.Executable{},
+	"compile":                    commands.Compile{},
+	"status":                     commands.Status{},
+	"login":                      commands.Login{},
+	"register":                   commands.Register{},
+	"delete":                     commands.Delete{},
+	"deploy":                     commands.Deploy{},
 }
 
 func main() {
