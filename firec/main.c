@@ -73,7 +73,13 @@ int main(int argc, char **argv) {
         } else if (strncmp(argv[i], "--output=", 9) == 0) {
             output = argv[i] + 9;
         } else if (strncmp(argv[i], "--include=", 10) == 0) {
-            include_paths = realloc(include_paths, (include_path_count + 1) * sizeof(char*));
+            char **new_paths = realloc(include_paths, (include_path_count + 1) * sizeof(char*));
+            if (!new_paths) {
+                fprintf(stderr, "Error: Failed to allocate memory\n");
+                free(include_paths);
+                return 1;
+            }
+            include_paths = new_paths;
             include_paths[include_path_count] = argv[i] + 10;
             include_path_count++;
         }

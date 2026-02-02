@@ -60,15 +60,28 @@ static Token create_token(TokenType type, const char *value, int pos) {
 
 static void token_list_add(TokenList *list, Token token) {
     if (list->count >= list->capacity) {
-        list->capacity *= 2;
-        list->tokens = realloc(list->tokens, list->capacity * sizeof(Token));
+        int new_capacity = list->capacity * 2;
+        Token *new_tokens = realloc(list->tokens, new_capacity * sizeof(Token));
+        if (!new_tokens) {
+            fprintf(stderr, "Error: Failed to allocate memory for tokens\n");
+            return;
+        }
+        list->tokens = new_tokens;
+        list->capacity = new_capacity;
     }
     list->tokens[list->count++] = token;
 }
 
 Lexer *lexer_new(char *code) {
     Lexer *lexer = malloc(sizeof(Lexer));
+    if (!lexer) {
+        return NULL;
+    }
     lexer->code = strdup(code);
+    if (!lexer->code) {
+        free(lexer);
+        return NULL;
+    }
     lexer->length = strlen(code);
     lexer->pos = -1;
     lexer->current = '\0';
@@ -85,9 +98,16 @@ void lexer_free(Lexer *lexer) {
 
 TokenList *lexer_tokenize(Lexer *lexer) {
     TokenList *list = malloc(sizeof(TokenList));
+    if (!list) {
+        return NULL;
+    }
     list->capacity = 16;
     list->count = 0;
     list->tokens = malloc(list->capacity * sizeof(Token));
+    if (!list->tokens) {
+        free(list);
+        return NULL;
+    }
 
     while (lexer->current != '\0') {
         if (isdigit(lexer->current)) {
@@ -135,11 +155,18 @@ TokenList *lexer_tokenize(Lexer *lexer) {
             char id[256] = {0};
             int idx = 0;
             
-            while (isalnum(lexer->current) || lexer->current == '_') {
+            while ((isalnum(lexer->current) || lexer->current == '_') && idx < 255) {
                 id[idx++] = lexer->current;
                 lexer_advance(lexer);
             }
             id[idx] = '\0';
+            
+            if (isalnum(lexer->current) || lexer->current == '_') {
+                fprintf(stderr, "Error: Identifier too long at position %d\n", start);
+                while (isalnum(lexer->current) || lexer->current == '_') {
+                    lexer_advance(lexer);
+                }
+            }
             
             token_list_add(list, create_token(TOKEN_ID, id, start));
             continue;
@@ -248,6 +275,7 @@ TokenList *lexer_tokenize(Lexer *lexer) {
                     token_list_add(list, create_token(TOKEN_RANGE_DOT, NULL, start));
                 } else {
                     fprintf(stderr, "Illegal token at position %d\n", lexer->pos);
+                    lexer_reverse(lexer);
                 }
                 break;
             case '<':
@@ -311,11 +339,27 @@ TokenList *lexer_tokenize(Lexer *lexer) {
                 }
                 break;
             case '"': {
-                char str[1024] = {0};
+                int capacity = 256;
+                char *str = malloc(capacity);
+                if (!str) {
+                    fprintf(stderr, "Error: Failed to allocate memory for string\n");
+                    break;
+                }
                 int idx = 0;
                 lexer_advance(lexer);
                 
                 while (lexer->current != '"' && lexer->current != '\0') {
+                    if (idx >= capacity - 1) {
+                        capacity *= 2;
+                        char *new_str = realloc(str, capacity);
+                        if (!new_str) {
+                            fprintf(stderr, "Error: Failed to allocate memory for string\n");
+                            free(str);
+                            break;
+                        }
+                        str = new_str;
+                    }
+                    
                     if (lexer->current == '\\') {
                         lexer_advance(lexer);
                         str[idx++] = escape_character(lexer->current);
@@ -328,6 +372,7 @@ TokenList *lexer_tokenize(Lexer *lexer) {
                 
                 str[idx] = '\0';
                 token_list_add(list, create_token(TOKEN_STRING, str, start));
+                free(str);
                 break;
             }
             default:
