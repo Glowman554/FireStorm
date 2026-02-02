@@ -682,12 +682,18 @@ char *bytecode_compile(Bytecode *bc) {
             
             if (nodes[i]->a != NULL) {
                 // Global with initialization
-                // For now, only support simple integer/chr initialization
                 if (nodes[i]->a->type == NODE_NUMBER) {
                     int value = *(int*)nodes[i]->a->value;
                     snprintf(buffer, sizeof(buffer), "global %s %s %d\n", 
                             var->name, type_name, value);
                     sb_append(sb, buffer);
+                } else if (nodes[i]->a->type == NODE_STRING) {
+                    // String initialization
+                    char *str_value = encode_string((char*)nodes[i]->a->value);
+                    snprintf(buffer, sizeof(buffer), "global %s %s \"%s\"\n", 
+                            var->name, type_name, str_value);
+                    sb_append(sb, buffer);
+                    free(str_value);
                 } else {
                     // Complex initialization - just reserve
                     snprintf(buffer, sizeof(buffer), "global_reserve %s %s false\n", 
@@ -695,9 +701,16 @@ char *bytecode_compile(Bytecode *bc) {
                     sb_append(sb, buffer);
                 }
             } else {
-                // Global without initialization - reserve with default value
-                snprintf(buffer, sizeof(buffer), "global %s %s 0\n", 
-                        var->name, type_name);
+                // Global without initialization
+                if (var->is_array) {
+                    // Arrays must be reserved, not initialized with 0
+                    snprintf(buffer, sizeof(buffer), "global_reserve %s %s true\n", 
+                            var->name, type_name);
+                } else {
+                    // Non-arrays get default value 0
+                    snprintf(buffer, sizeof(buffer), "global %s %s 0\n", 
+                            var->name, type_name);
+                }
                 sb_append(sb, buffer);
             }
         }
