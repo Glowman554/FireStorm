@@ -885,6 +885,26 @@ Node *parser_global(Parser *parser) {
                 }
                 global[count++] = func;
             }
+            // Offset (struct) declaration - skip for now
+            else if (strcmp(tok->value, "offset") == 0) {
+                // Skip offset name
+                advance(parser);
+                expect(parser, TOKEN_ID);
+                advance(parser);
+                
+                // Skip the body
+                expect(parser, TOKEN_LBRACE);
+                advance(parser);
+                int brace_depth = 1;
+                while (brace_depth > 0 && current_token(parser) != NULL) {
+                    Token *t = current_token(parser);
+                    if (t->type == TOKEN_LBRACE) brace_depth++;
+                    if (t->type == TOKEN_RBRACE) brace_depth--;
+                    advance(parser);
+                }
+                // Don't advance past the closing brace - let the main loop handle it
+                reverse(parser);
+            }
             else {
                 parser_error(parser, "Unexpected identifier at global scope", tok->pos);
             }
