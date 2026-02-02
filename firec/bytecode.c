@@ -128,12 +128,12 @@ static const char *datatype_to_string(Datatype dt) {
 
 static const char *compare_to_string(int token_type) {
     switch (token_type) {
-        case TOKEN_MORE: return "gt";
-        case TOKEN_LESS: return "lt";
-        case TOKEN_MORE_EQUALS: return "ge";
-        case TOKEN_LESS_EQUALS: return "le";
-        case TOKEN_EQUALS: return "eq";
-        case TOKEN_NOT_EQUALS: return "ne";
+        case TOKEN_MORE: return "more";
+        case TOKEN_LESS: return "less";
+        case TOKEN_MORE_EQUALS: return "more_equals";
+        case TOKEN_LESS_EQUALS: return "less_equals";
+        case TOKEN_EQUALS: return "equals";
+        case TOKEN_NOT_EQUALS: return "not_equals";
         default: return "unknown";
     }
 }
@@ -614,6 +614,48 @@ char *bytecode_compile(Bytecode *bc) {
     
     // Generate global section
     sb_append(sb, "@begin global global\n");
+    
+    // Generate global variable declarations
+    for (int i = 0; nodes[i] != NULL; i++) {
+        if (nodes[i]->type == NODE_VARIABLE_DECLARATION) {
+            Variable *var = (Variable*)nodes[i]->value;
+            char buffer[256];
+            
+            // Get datatype name
+            const char *type_name;
+            switch (var->datatype) {
+                case DATATYPE_INT: type_name = "int"; break;
+                case DATATYPE_CHR: type_name = "chr"; break;
+                case DATATYPE_STR: type_name = "str"; break;
+                case DATATYPE_PTR: type_name = "ptr"; break;
+                case DATATYPE_INT_32: type_name = "int"; break;
+                case DATATYPE_INT_16: type_name = "int"; break;
+                default: type_name = "int"; break;
+            }
+            
+            if (nodes[i]->a != NULL) {
+                // Global with initialization
+                // For now, only support simple integer/chr initialization
+                if (nodes[i]->a->type == NODE_NUMBER) {
+                    int value = *(int*)nodes[i]->a->value;
+                    snprintf(buffer, sizeof(buffer), "global %s %s %d\n", 
+                            var->name, type_name, value);
+                    sb_append(sb, buffer);
+                } else {
+                    // Complex initialization - just reserve
+                    snprintf(buffer, sizeof(buffer), "global_reserve %s %s false\n", 
+                            var->name, type_name);
+                    sb_append(sb, buffer);
+                }
+            } else {
+                // Global without initialization - reserve with default value
+                snprintf(buffer, sizeof(buffer), "global %s %s 0\n", 
+                        var->name, type_name);
+                sb_append(sb, buffer);
+            }
+        }
+    }
+    
     sb_append(sb, "@end global\n");
     
     // Generate functions
@@ -621,8 +663,12 @@ char *bytecode_compile(Bytecode *bc) {
         if (nodes[i]->type == NODE_FUNCTION) {
             Function *f = (Function*)nodes[i]->value;
             
-            // Skip external functions (they're provided by the runtime)
+            // For external functions, generate a stub that calls invoke_native
             if (f->is_external) {
+                char buffer[1024];
+                snprintf(buffer, sizeof(buffer), "@begin function %s\n%s:\n\tinvoke_native %s\n\treturn\n@end function\n",
+                        f->name, f->name, f->name);
+                sb_append(sb, buffer);
                 continue;
             }
             
@@ -640,11 +686,9 @@ char *bytecode_compile(Bytecode *bc) {
     // Mark functions to keep
     keep_function(&bi, "spark");
     
-    // Append kept functions
+    // Append all functions (dead code elimination disabled for compatibility)
     for (int i = 0; i < bi.cf_count; i++) {
-        if (bi.compiled_functions[i]->keep) {
-            sb_append(sb, bi.compiled_functions[i]->code);
-        }
+        sb_append(sb, bi.compiled_functions[i]->code);
     }
     
     // Clean up

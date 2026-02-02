@@ -971,25 +971,98 @@ Node *parser_global(Parser *parser) {
                 }
                 global[count++] = func;
             }
-            // Offset (struct) declaration - skip for now
+            // Offset (struct) declaration - parse and generate field offset constants
             else if (strcmp(tok->value, "offset") == 0) {
-                // Skip offset name
+                // Skip 'offset' keyword
                 advance(parser);
                 expect(parser, TOKEN_ID);
+                char *offset_name = strdup(current_token(parser)->value);
                 advance(parser);
                 
-                // Skip the body
+                // Parse the body to extract field names
                 expect(parser, TOKEN_LBRACE);
                 advance(parser);
-                int brace_depth = 1;
-                while (brace_depth > 0 && current_token(parser) != NULL) {
-                    Token *t = current_token(parser);
-                    if (t->type == TOKEN_LBRACE) brace_depth++;
-                    if (t->type == TOKEN_RBRACE) brace_depth--;
-                    advance(parser);
+                
+                int current_offset = 0;
+                while (current_token(parser) != NULL && current_token(parser)->type != TOKEN_RBRACE) {
+                    Token *field_tok = current_token(parser);
+                    
+                    if (field_tok->type == TOKEN_ID && is_datatype_string(field_tok->value)) {
+                        // Parse field declaration
+                        Variable field_var = parse_datatype_named(parser);
+                        
+                        // Calculate size (simplified - assume all types are pointer-sized)
+                        int field_size = 8;  // Assuming 64-bit pointers/ints
+                        
+                        // Create global constant for this field offset
+                        char *field_const_name = malloc(strlen(offset_name) + strlen(field_var.name) + 2);
+                        sprintf(field_const_name, "%s_%s", offset_name, field_var.name);
+                        
+                        Variable *const_var = malloc(sizeof(Variable));
+                        const_var->name = field_const_name;
+                        const_var->datatype = DATATYPE_INT;
+                        const_var->is_array = 0;
+                        
+                        int *offset_value = malloc(sizeof(int));
+                        *offset_value = current_offset;
+                        Node *offset_node = node_new(NODE_NUMBER, NULL, NULL, offset_value, pos);
+                        
+                        Node *decl = node_new(NODE_VARIABLE_DECLARATION, offset_node, NULL, const_var, pos);
+                        
+                        if (count >= capacity) {
+                            capacity = capacity == 0 ? 8 : capacity * 2;
+                            Node **new_global = realloc(global, capacity * sizeof(Node*));
+                            if (!new_global) {
+                                fprintf(stderr, "Fatal: memory allocation failed\n");
+                                exit(1);
+                            }
+                            global = new_global;
+                        }
+                        global[count++] = decl;
+                        
+                        current_offset += field_size;
+                        
+                        // Expect semicolon
+                        expect(parser, TOKEN_END_OF_LINE);
+                        advance(parser);
+                        
+                        free(field_var.name);
+                    } else {
+                        // Skip unknown tokens
+                        advance(parser);
+                    }
                 }
+                
+                // Generate _size constant
+                char *size_const_name = malloc(strlen(offset_name) + 6);  // "_size" + null
+                sprintf(size_const_name, "%s_size", offset_name);
+                
+                Variable *size_var = malloc(sizeof(Variable));
+                size_var->name = size_const_name;
+                size_var->datatype = DATATYPE_INT;
+                size_var->is_array = 0;
+                
+                int *size_value = malloc(sizeof(int));
+                *size_value = current_offset;
+                Node *size_node = node_new(NODE_NUMBER, NULL, NULL, size_value, pos);
+                
+                Node *size_decl = node_new(NODE_VARIABLE_DECLARATION, size_node, NULL, size_var, pos);
+                
+                if (count >= capacity) {
+                    capacity = capacity == 0 ? 8 : capacity * 2;
+                    Node **new_global = realloc(global, capacity * sizeof(Node*));
+                    if (!new_global) {
+                        fprintf(stderr, "Fatal: memory allocation failed\n");
+                        exit(1);
+                    }
+                    global = new_global;
+                }
+                global[count++] = size_decl;
+                
+                expect(parser, TOKEN_RBRACE);
                 // Don't advance past the closing brace - let the main loop handle it
-                reverse(parser);
+                
+                free(offset_name);
             }
             else {
                 parser_error(parser, "Unexpected identifier at global scope", tok->pos);
