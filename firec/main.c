@@ -30,7 +30,13 @@ char *read_file(const char *filename) {
         return NULL;
     }
     
-    fread(buffer, 1, size, f);
+    size_t bytes_read = fread(buffer, 1, size, f);
+    if (bytes_read != (size_t)size) {
+        fprintf(stderr, "Error: Failed to read complete file %s\n", filename);
+        free(buffer);
+        fclose(f);
+        return NULL;
+    }
     buffer[size] = '\0';
     fclose(f);
     

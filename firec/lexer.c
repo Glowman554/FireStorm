@@ -220,22 +220,10 @@ TokenList *lexer_tokenize(Lexer *lexer) {
                 token_list_add(list, create_token(TOKEN_XOR, NULL, start));
                 break;
             case '|':
-                lexer_advance(lexer);
-                if (lexer->current == '|') {
-                    token_list_add(list, create_token(TOKEN_OR, NULL, start));
-                } else {
-                    lexer_reverse(lexer);
-                    token_list_add(list, create_token(TOKEN_OR, NULL, start));
-                }
+                token_list_add(list, create_token(TOKEN_OR, NULL, start));
                 break;
             case '&':
-                lexer_advance(lexer);
-                if (lexer->current == '&') {
-                    token_list_add(list, create_token(TOKEN_AND, NULL, start));
-                } else {
-                    lexer_reverse(lexer);
-                    token_list_add(list, create_token(TOKEN_AND, NULL, start));
-                }
+                token_list_add(list, create_token(TOKEN_AND, NULL, start));
                 break;
             case '~':
                 token_list_add(list, create_token(TOKEN_BIT_NOT, NULL, start));
