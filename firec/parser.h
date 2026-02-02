@@ -39,7 +39,8 @@ typedef enum {
     NODE_OFFSET,
     NODE_CONTINUE,
     NODE_BREAK,
-    NODE_END
+    NODE_END,
+    NODE_RANGE
 } NodeType;
 
 typedef enum {

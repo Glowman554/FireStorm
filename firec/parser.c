@@ -580,6 +580,92 @@ static Node *parse_statement(Parser *p) {
             return node_new(NODE_LOOP, NULL, NULL, loop_data, pos);
         }
         
+        // range
+        if (strcmp(tok->value, "range") == 0) {
+            advance(p);
+            
+            // Parse start expression
+            Node *start = parse_expression(p);
+            
+            // Expect ..
+            expect(p, TOKEN_RANGE_DOT);
+            advance(p);
+            
+            // Parse end expression
+            Node *end = parse_expression(p);
+            
+            // Expect 'as'
+            expect(p, TOKEN_ID);
+            if (strcmp(current_token(p)->value, "as") != 0) {
+                parser_error(p, "Expected 'as'", current_token(p)->pos);
+            }
+            advance(p);
+            
+            // Parse variable name
+            expect(p, TOKEN_ID);
+            char *var_name = strdup(current_token(p)->value);
+            advance(p);
+            
+            // Parse direction (up or down)
+            expect(p, TOKEN_ID);
+            int is_up = 1;  // default to up
+            if (strcmp(current_token(p)->value, "up") == 0) {
+                is_up = 1;
+            } else if (strcmp(current_token(p)->value, "down") == 0) {
+                is_up = 0;
+            } else {
+                parser_error(p, "Expected 'up' or 'down'", current_token(p)->pos);
+            }
+            advance(p);
+            
+            // Parse body
+            int body_count = 0;
+            Node **body = parse_code_block(p, &body_count);
+            expect(p, TOKEN_RBRACE);
+            
+            // Store: [is_up][body_count][var_name][body...]
+            // We'll use the value field to store var_name and a/b for start/end
+            // For simplicity, convert to a for loop equivalent
+            // range start .. end as i up {} becomes:
+            // for i = start; i <= end; i++ {}
+            
+            // Create a for loop equivalent
+            Variable var;
+            var.name = var_name;
+            var.datatype = DATATYPE_INT;
+            var.is_array = 0;
+            Variable *var_ptr = malloc(sizeof(Variable));
+            *var_ptr = var;
+            
+            Node *init = node_new(NODE_VARIABLE_DECLARATION, start, NULL, var_ptr, pos);
+            
+            Node *var_lookup = node_new(NODE_VARIABLE_LOOKUP, NULL, NULL, strdup(var_name), pos);
+            int *compare_type = malloc(sizeof(int));
+            *compare_type = is_up ? 4 : 5;  // 4=LE, 5=GE
+            Node *condition = node_new(NODE_COMPARE, var_lookup, end, compare_type, pos);
+            
+            int *one_val = malloc(sizeof(int));
+            *one_val = 1;
+            Node *one = node_new(NODE_NUMBER, NULL, NULL, one_val, pos);
+            Node *var_lookup2 = node_new(NODE_VARIABLE_LOOKUP, NULL, NULL, strdup(var_name), pos);
+            Node *update_expr = is_up ? 
+                node_new(NODE_ADD, var_lookup2, one, NULL, pos) :
+                node_new(NODE_SUBTRACT, var_lookup2, one, NULL, pos);
+            Node *update = node_new(NODE_VARIABLE_ASSIGN, update_expr, NULL, strdup(var_name), pos);
+            
+            // Store count + init + nodes: [count][init][node0][node1]...[nodeN]
+            void **loop_data = malloc(sizeof(int) + sizeof(Node*) * (body_count + 1));
+            *(int*)loop_data = body_count + 1;
+            Node **nodes_ptr = (Node**)((char*)loop_data + sizeof(int));
+            nodes_ptr[0] = init;
+            for (int i = 0; i < body_count; i++) {
+                nodes_ptr[i + 1] = body[i];
+            }
+            free(body);
+            
+            return node_new(NODE_UPDATE_CONDITIONAL_LOOP, condition, update, loop_data, pos);
+        }
+        
         // break
         if (strcmp(tok->value, "break") == 0) {
             advance(p);
