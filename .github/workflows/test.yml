@@ -27,11 +27,17 @@ jobs:
     - name: Build and install (flvm)
       run: cd flvm && gcc main.c vm.c -o flvm && sudo mv flvm /usr/bin/flvm
 
+    - name: Build and install (flc)
+      run: cd flc && make && sudo mv flc /usr/bin/flc
+
     - name: Run validation
       run: cd validation && fire validate
 
     - name: Run validation (bytecode)
       run: cd validation && fire validate_bytecode
+
+    - name: Run validation (bytecode flc)
+      run: cd validation && fire validate_bytecode_flc 
 
     - name: Test build
       run: cd examples/example && fire build && ./main.elf

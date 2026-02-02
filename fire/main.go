@@ -14,6 +14,7 @@ var AvailableCommands = map[string]command.Command{
 	"build":             commands.Build{},
 	"validate":          commands.Validate{},
 	"validate_bytecode": commands.ValidateBytecode{},
+    "validate_bytecode_flc": commands.ValidateBytecodeFlc{},
 	"executable":        commands.Executable{},
 	"compile":           commands.Compile{},
 	"status":            commands.Status{},
