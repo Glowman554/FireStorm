@@ -641,7 +641,7 @@ static Node *parse_statement(Parser *p) {
             
             Node *var_lookup = node_new(NODE_VARIABLE_LOOKUP, NULL, NULL, strdup(var_name), pos);
             int *compare_type = malloc(sizeof(int));
-            *compare_type = is_up ? TOKEN_LESS_EQUALS : TOKEN_MORE_EQUALS;
+            *compare_type = is_up ? TOKEN_LESS : TOKEN_MORE;
             Node *condition = node_new(NODE_COMPARE, var_lookup, end, compare_type, pos);
             
             int *one_val = malloc(sizeof(int));
@@ -991,8 +991,22 @@ Node *parser_global(Parser *parser) {
                         // Parse field declaration
                         Variable field_var = parse_datatype_named(parser);
                         
-                        // Calculate size (simplified - assume all types are pointer-sized)
-                        int field_size = 8;  // Assuming 64-bit pointers/ints
+                        // Calculate size based on datatype
+                        int field_size;
+                        switch (field_var.datatype) {
+                            case DATATYPE_CHR:
+                                field_size = 1;
+                                break;
+                            case DATATYPE_INT:
+                            case DATATYPE_STR:
+                            case DATATYPE_PTR:
+                            case DATATYPE_INT_32:
+                            case DATATYPE_INT_16:
+                            case DATATYPE_VOID:
+                            default:
+                                field_size = 8;  // 64-bit
+                                break;
+                        }
                         
                         // Create global constant for this field offset
                         char *field_const_name = malloc(strlen(offset_name) + strlen(field_var.name) + 2);
