@@ -169,6 +169,91 @@ static char *encode_string(const char *str) {
     return result;
 }
 
+// Evaluate a constant expression at compile time
+// Returns 1 if successful, 0 if expression is not constant
+static int eval_const_expr(Node *expr, long long *result) {
+    if (!expr) return 0;
+    
+    switch (expr->type) {
+        case NODE_NUMBER: {
+            *result = *(int*)expr->value;
+            return 1;
+        }
+        
+        case NODE_ADD:
+        case NODE_SUBTRACT:
+        case NODE_MULTIPLY:
+        case NODE_DIVIDE:
+        case NODE_MODULO:
+        case NODE_AND:
+        case NODE_OR:
+        case NODE_XOR:
+        case NODE_SHIFT_LEFT:
+        case NODE_SHIFT_RIGHT: {
+            long long left, right;
+            if (!eval_const_expr(expr->a, &left)) return 0;
+            if (!eval_const_expr(expr->b, &right)) return 0;
+            
+            switch (expr->type) {
+                case NODE_ADD: *result = left + right; return 1;
+                case NODE_SUBTRACT: *result = left - right; return 1;
+                case NODE_MULTIPLY: *result = left * right; return 1;
+                case NODE_DIVIDE:
+                    if (right == 0) return 0;
+                    *result = left / right;
+                    return 1;
+                case NODE_MODULO:
+                    if (right == 0) return 0;
+                    *result = left % right;
+                    return 1;
+                case NODE_AND: *result = left & right; return 1;
+                case NODE_OR: *result = left | right; return 1;
+                case NODE_XOR: *result = left ^ right; return 1;
+                case NODE_SHIFT_LEFT: *result = left << right; return 1;
+                case NODE_SHIFT_RIGHT: *result = left >> right; return 1;
+                default: return 0;
+            }
+        }
+        
+        case NODE_COMPARE: {
+            long long left, right;
+            if (!eval_const_expr(expr->a, &left)) return 0;
+            if (!eval_const_expr(expr->b, &right)) return 0;
+            
+            int *op = (int*)expr->value;
+            switch (*op) {
+                case TOKEN_LESS: *result = left < right ? 1 : 0; return 1;
+                case TOKEN_LESS_EQUALS: *result = left <= right ? 1 : 0; return 1;
+                case TOKEN_MORE: *result = left > right ? 1 : 0; return 1;
+                case TOKEN_MORE_EQUALS: *result = left >= right ? 1 : 0; return 1;
+                case TOKEN_EQUALS: *result = left == right ? 1 : 0; return 1;
+                case TOKEN_NOT_EQUALS: *result = left != right ? 1 : 0; return 1;
+                default: return 0;
+            }
+        }
+        
+        case NODE_PLUS:
+        case NODE_MINUS:
+        case NODE_NOT:
+        case NODE_BIT_NOT: {
+            // Unary operators
+            long long operand;
+            if (!eval_const_expr(expr->a, &operand)) return 0;
+            
+            switch (expr->type) {
+                case NODE_PLUS: *result = operand; return 1;
+                case NODE_MINUS: *result = -operand; return 1;
+                case NODE_NOT: *result = !operand ? 1 : 0; return 1;
+                case NODE_BIT_NOT: *result = ~operand; return 1;
+                default: return 0;
+            }
+        }
+        
+        default:
+            return 0;
+    }
+}
+
 static Node *resolve_function(BytecodeInternal *bi, const char *name) {
     if (bi->global->type != NODE_GLOBAL) {
         return NULL;
@@ -682,10 +767,11 @@ char *bytecode_compile(Bytecode *bc) {
             
             if (nodes[i]->a != NULL) {
                 // Global with initialization
-                if (nodes[i]->a->type == NODE_NUMBER) {
-                    int value = *(int*)nodes[i]->a->value;
-                    snprintf(buffer, sizeof(buffer), "global %s %s %d\n", 
-                            var->name, type_name, value);
+                long long const_value;
+                if (eval_const_expr(nodes[i]->a, &const_value)) {
+                    // Constant expression successfully evaluated
+                    snprintf(buffer, sizeof(buffer), "global %s %s %lld\n", 
+                            var->name, type_name, const_value);
                     sb_append(sb, buffer);
                 } else if (nodes[i]->a->type == NODE_STRING) {
                     // String initialization
@@ -695,7 +781,7 @@ char *bytecode_compile(Bytecode *bc) {
                     sb_append(sb, buffer);
                     free(str_value);
                 } else {
-                    // Complex initialization - just reserve
+                    // Complex non-constant initialization - just reserve
                     snprintf(buffer, sizeof(buffer), "global_reserve %s %s false\n", 
                             var->name, type_name);
                     sb_append(sb, buffer);
