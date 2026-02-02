@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,6 +79,8 @@ int main(int argc, char **argv) {
         } else if (strncmp(argv[i], "--output=", 9) == 0) {
             output = argv[i] + 9;
         } else if (strncmp(argv[i], "--include=", 10) == 0) {
+            char *path = argv[i] + 10;
+            int len = strlen(path);
             char **new_paths = realloc(include_paths, (include_path_count + 1) * sizeof(char*));
             if (!new_paths) {
                 fprintf(stderr, "Error: Failed to allocate memory\n");
@@ -85,7 +88,16 @@ int main(int argc, char **argv) {
                 return 1;
             }
             include_paths = new_paths;
-            include_paths[include_path_count] = argv[i] + 10;
+            
+            // Add trailing slash if not present
+            if (len > 0 && path[len - 1] != '/') {
+                char *path_with_slash = malloc(len + 2);
+                strcpy(path_with_slash, path);
+                strcat(path_with_slash, "/");
+                include_paths[include_path_count] = path_with_slash;
+            } else {
+                include_paths[include_path_count] = strdup(path);
+            }
             include_path_count++;
         }
     }

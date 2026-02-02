@@ -1,19 +1,41 @@
 # FireStorm
 
+## Overview
+
+FireStorm is a programming language with two compiler implementations:
+- **fire** - Full-featured Go implementation with build system, package manager, and multiple targets
+- **firec** - Lightweight C implementation focusing on core compilation to bytecode
+
 ## Getting started
 
 ### Prerequisites
 
-- Clang / LLVM
-- Go (1.22 or newer)
+- Clang / LLVM (for LLVM target in Go compiler)
+- Go (1.22 or newer) (for Go compiler)
+- GCC or Clang (for C compiler)
 
-### Instalation
+### Installation
+
+#### Go Compiler (fire)
 
 1. `git clone https://github.com/Glowman554/FireStorm`
 2. `cd FireStorm/fire`
 3. `go install`
 
-### Creating a project
+#### C Compiler (firec)
+
+1. `git clone https://github.com/Glowman554/FireStorm`
+2. `cd FireStorm/firec`
+3. `make`
+
+The C compiler is a simplified implementation that:
+- Only supports the `compile` command
+- Ignores module loading (`$use` directives)
+- Only supports bytecode target (no LLVM)
+
+See [firec/README.md](firec/README.md) for more details on the C compiler.
+
+### Creating a project (Go compiler only)
 
 1. `mkdir <project name>`
 2. `cd <project name>`

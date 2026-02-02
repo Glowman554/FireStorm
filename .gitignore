@@ -11,3 +11,5 @@
 *.flbb
 *.so
 *.processed
+firec/firec
+firec/*.o
