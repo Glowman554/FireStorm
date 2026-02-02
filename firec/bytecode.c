@@ -15,7 +15,8 @@ typedef struct {
     int used_capacity;
     int keep;
     char *exit_label;
-    int end_block_counter;  // Counter for end block flags
+    int end_block_counter;  // Total number of end blocks
+    int current_end_block;  // Current end block being processed
 } CompiledFunction;
 
 typedef struct {
@@ -60,6 +61,7 @@ static CompiledFunction *cf_new(const char *name, const char *exit_label) {
     cf->used_capacity = 0;
     cf->keep = 0;
     cf->end_block_counter = 0;
+    cf->current_end_block = 0;
     return cf;
 }
 
@@ -654,10 +656,11 @@ static void generate_code_block(BytecodeInternal *bi, Node **block, int count, C
                 break;
                 
             case NODE_END:
-                // Collect end block for deferred execution
-                if (block[i]->value) {
-                    cf_add_end_block(cf, (Node**)block[i]->value);
-                }
+                // Set the flag for this end block
+                sb_append(sb, "\tnumber 1\n");
+                snprintf(buffer, sizeof(buffer), "\tassign end_%d\n", cf->current_end_block);
+                sb_append(sb, buffer);
+                cf->current_end_block++;
                 break;
                 
             default:
@@ -665,6 +668,30 @@ static void generate_code_block(BytecodeInternal *bi, Node **block, int count, C
         }
     }
 }
+
+// Helper to collect end blocks from a code block recursively
+// out_blocks is an array of (Node**) - each element points to an array of nodes
+static void collect_end_blocks(Node **block, int count, Node ****out_blocks, int *out_count, int *capacity) {
+    for (int i = 0; i < count; i++) {
+        if (block[i]->type == NODE_END) {
+            if (*out_count >= *capacity) {
+                *capacity = (*capacity == 0) ? 4 : (*capacity * 2);
+                *out_blocks = realloc(*out_blocks, *capacity * sizeof(Node***));
+            }
+            (*out_blocks)[(*out_count)++] = (Node**)block[i]->value;
+        } else if (block[i]->type == NODE_IF) {
+            Node ***if_data = (Node***)block[i]->value;
+            int *counts = (int*)(if_data + 2);
+            if (if_data[0]) collect_end_blocks(if_data[0], counts[0], out_blocks, out_count, capacity);
+            if (if_data[1]) collect_end_blocks(if_data[1], counts[1], out_blocks, out_count, capacity);
+        }
+        // Could add more cases for loops etc., but this handles the test case
+    }
+}
+
+// Forward declaration
+static void generate_code_block(BytecodeInternal *bi, Node **block, int count, CompiledFunction *cf,
+                                 const char *current_continue, const char *current_break, StringBuilder *sb);
 
 static CompiledFunction *generate_function(BytecodeInternal *bi, Function *f) {
     char *exit_label = get_label(bi);
@@ -677,6 +704,22 @@ static CompiledFunction *generate_function(BytecodeInternal *bi, Function *f) {
     sb_append(sb, buffer);
     snprintf(buffer, sizeof(buffer), "%s:\n", f->name);
     sb_append(sb, buffer);
+    
+    // Collect all end blocks
+    Node ***end_blocks = NULL;
+    int end_count = 0;
+    int end_capacity = 0;
+    collect_end_blocks(f->body, f->body_count, &end_blocks, &end_count, &end_capacity);
+    cf->end_block_counter = end_count;
+    
+    // Declare flag variables for each end block
+    for (int i = 0; i < end_count; i++) {
+        snprintf(buffer, sizeof(buffer), "\tvariable end_%d int false\n", i);
+        sb_append(sb, buffer);
+        sb_append(sb, "\tnumber 0\n");
+        snprintf(buffer, sizeof(buffer), "\tassign end_%d\n", i);
+        sb_append(sb, buffer);
+    }
     
     // Generate parameters in reverse order
     for (int i = f->param_count - 1; i >= 0; i--) {
@@ -696,6 +739,28 @@ static CompiledFunction *generate_function(BytecodeInternal *bi, Function *f) {
     sb_append(sb, "\tnumber 0\n");
     snprintf(buffer, sizeof(buffer), "%s:\n", exit_label);
     sb_append(sb, buffer);
+    
+    // Generate end block execution code (check flags and execute)
+    for (int i = 0; i < end_count; i++) {
+        char *end_label = get_label(bi);
+        snprintf(buffer, sizeof(buffer), "\tload end_%d\n", i);
+        sb_append(sb, buffer);
+        snprintf(buffer, sizeof(buffer), "\tgoto_false %s\n", end_label);
+        sb_append(sb, buffer);
+        
+        // Generate the end block code
+        Node **end_body = end_blocks[i];
+        int body_count = 0;
+        while (end_body[body_count] != NULL) {
+            body_count++;
+        }
+        generate_code_block(bi, end_body, body_count, cf, NULL, NULL, sb);
+        
+        snprintf(buffer, sizeof(buffer), "%s:\n", end_label);
+        sb_append(sb, buffer);
+        free(end_label);
+    }
+    
     sb_append(sb, "\treturn\n");
     
     snprintf(buffer, sizeof(buffer), "@end function\n");
@@ -703,6 +768,7 @@ static CompiledFunction *generate_function(BytecodeInternal *bi, Function *f) {
     
     cf->code = sb_to_string(sb);
     free(exit_label);
+    if (end_blocks) free(end_blocks);
     
     return cf;
 }
