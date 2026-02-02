@@ -7,7 +7,11 @@
 static char *string_duplicate(const char *str) {
     if (!str) return NULL;
     char *result = malloc(strlen(str) + 1);
-    if (result) strcpy(result, str);
+    if (!result) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    strcpy(result, str);
     return result;
 }
 
@@ -20,10 +24,13 @@ static char *read_file(const char *filename) {
     fseek(file, 0, SEEK_SET);
     
     char *buffer = malloc(length + 1);
-    if (buffer) {
-        size_t bytes_read = fread(buffer, 1, length, file);
-        buffer[bytes_read] = '\0';
+    if (!buffer) {
+        fclose(file);
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
     }
+    size_t bytes_read = fread(buffer, 1, length, file);
+    buffer[bytes_read] = '\0';
     fclose(file);
     return buffer;
 }
@@ -38,8 +45,13 @@ static int is_file_included(Preprocessor *preprocessor, const char *filename) {
 }
 
 static void add_included_file(Preprocessor *preprocessor, const char *filename) {
-    preprocessor->included_files = realloc(preprocessor->included_files, 
+    char **new_files = realloc(preprocessor->included_files, 
         (preprocessor->included_file_count + 1) * sizeof(char *));
+    if (!new_files) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    preprocessor->included_files = new_files;
     preprocessor->included_files[preprocessor->included_file_count] = string_duplicate(filename);
     preprocessor->included_file_count++;
 }
@@ -74,6 +86,10 @@ static char *find_pattern(const char *str, const char *pattern_start, const char
     
     size_t content_len = end - content_start;
     *content = malloc(content_len + 1);
+    if (!*content) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
     strncpy(*content, content_start, content_len);
     (*content)[content_len] = '\0';
     
@@ -87,6 +103,10 @@ static char *string_replace_first(const char *str, int start, int end, const cha
     size_t new_len = prefix_len + replace_len + suffix_len;
     
     char *result = malloc(new_len + 1);
+    if (!result) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
     strncpy(result, str, prefix_len);
     if (replacement) {
         strcpy(result + prefix_len, replacement);
@@ -100,6 +120,10 @@ static char *string_append(const char *str1, const char *str2) {
     size_t len1 = str1 ? strlen(str1) : 0;
     size_t len2 = str2 ? strlen(str2) : 0;
     char *result = malloc(len1 + len2 + 1);
+    if (!result) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
     if (str1) strcpy(result, str1);
     else result[0] = '\0';
     if (str2) strcpy(result + len1, str2);
@@ -123,6 +147,10 @@ static char *string_replace_all(const char *str, const char *find, const char *r
     
     size_t new_len = strlen(str) + count * (replace_len - find_len);
     char *result = malloc(new_len + 1);
+    if (!result) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
     
     char *dst = result;
     const char *src = str;
@@ -208,6 +236,10 @@ static char *process_includes_impl(Preprocessor *preprocessor, char *code) {
             if (processed_use != processed) free(processed_use);
             
             char *file_marker = malloc(strlen(filename) + 20);
+            if (!file_marker) {
+                fprintf(stderr, "Memory allocation failed\n");
+                exit(1);
+            }
             sprintf(file_marker, "\n//@file %s\n", filename);
             
             char *replacement = string_append(file_marker, processed);
@@ -274,6 +306,10 @@ static char *process_defines(char *code) {
             if (space < line_start + line_len) {
                 size_t name_len = space - define_content;
                 char *name = malloc(name_len + 1);
+                if (!name) {
+                    fprintf(stderr, "Memory allocation failed\n");
+                    exit(1);
+                }
                 strncpy(name, define_content, name_len);
                 name[name_len] = '\0';
                 
@@ -284,10 +320,22 @@ static char *process_defines(char *code) {
                 
                 size_t value_len = line_start + line_len - value_start;
                 char *value = malloc(value_len + 1);
+                if (!value) {
+                    free(name);
+                    fprintf(stderr, "Memory allocation failed\n");
+                    exit(1);
+                }
                 strncpy(value, value_start, value_len);
                 value[value_len] = '\0';
                 
-                defines.items = realloc(defines.items, (defines.count + 1) * sizeof(Define));
+                Define *new_items = realloc(defines.items, (defines.count + 1) * sizeof(Define));
+                if (!new_items) {
+                    free(name);
+                    free(value);
+                    fprintf(stderr, "Memory allocation failed\n");
+                    exit(1);
+                }
+                defines.items = new_items;
                 defines.items[defines.count].name = name;
                 defines.items[defines.count].value = value;
                 defines.count++;
@@ -310,6 +358,11 @@ static char *process_defines(char *code) {
     
     size_t result_capacity = strlen(result) + 256;
     char *filtered = malloc(result_capacity);
+    if (!filtered) {
+        free(result);
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
     size_t filtered_len = 0;
     
     line_start = result;
@@ -347,9 +400,18 @@ static char *process_defines(char *code) {
 
 Preprocessor *preprocessor_new(char **include_paths, int include_path_count) {
     Preprocessor *preprocessor = malloc(sizeof(Preprocessor));
+    if (!preprocessor) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
     
     preprocessor->include_path_count = include_path_count;
     preprocessor->include_paths = malloc(include_path_count * sizeof(char *));
+    if (!preprocessor->include_paths && include_path_count > 0) {
+        free(preprocessor);
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
     for (int i = 0; i < include_path_count; i++) {
         preprocessor->include_paths[i] = string_duplicate(include_paths[i]);
     }
