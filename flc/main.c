@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 void print_usage(char* program_name) {
     printf("Usage: %s --input=<file> --output=<file> [--include=<path>]\n", program_name);
@@ -133,32 +134,59 @@ int main(int argc, char** argv) {
     Parser* parser = parser_new(tokens, processed_code);
     Node* global = parser_global(parser);
 
+    bool shouldEncodeAndLink = true;
+    if (output) {
+        int outputLen = strlen(output);
+        if (output[outputLen - 4] == 'f' &&
+            output[outputLen - 3] == 'l' && 
+            output[outputLen - 2] == 'b' && 
+            output[outputLen - 1] == 'b') {
+            shouldEncodeAndLink = true;
+        } else if (output[outputLen - 3] == 'f' &&
+            output[outputLen - 2] == 'l' && 
+            output[outputLen - 1] == 'b') {
+            shouldEncodeAndLink = false;
+        } else {
+            printf("WARNING: could not identify output type\n");
+        }
+    }
+
+
+
     // Compile to bytecode
     Bytecode* bc = bytecode_new(global, processed_code);
     char* result = bytecode_compile(bc);
+    
+    unsigned char* binary = NULL;
+    size_t binary_size;
 
     // Encode and link if requested
-    char* encoded = encode_bytecode(result);
-    free(result);
+    if (shouldEncodeAndLink) {
+        char* encoded = encoded = encode_bytecode(result);
+        free(result);
+        
+        binary = link_bytecode(encoded, &binary_size);
+        free(encoded);
+    }
 
-    size_t binary_size;
-    unsigned char* binary = link_bytecode(encoded, &binary_size);
-    free(encoded);
+    int exitCode = 0;
 
     if (output) { 
-        if (!write_binary_file(output, binary, binary_size)) {
-            free(binary);
-            bytecode_free(bc);
-            node_free(global);
-            parser_free(parser);
-            token_list_free(tokens);
-            lexer_free(lexer);
-            free(processed_code);
-            preprocessor_free(preprocessor);
-            free(include_paths);
-            return 1;
+        if (shouldEncodeAndLink) {
+            if (!write_binary_file(output, binary, binary_size)) {
+                exitCode = 1;
+                goto cleanup;
+            }
+        } else {
+            if (!write_file(output, result)) {
+                free(result);
+                exitCode = 1;
+                goto cleanup;
+            }
+            
+            free(result);
         }
-        printf("Successfully compiled and encoded %s to %s (%zu bytes)\n", input, output, binary_size);
+        printf("Successfully compiled %s to %s\n", input, output);
     } else {
         printf("Successfully compiled and encoded %s (%zu bytes)\n", input, binary_size);
         
@@ -170,9 +198,11 @@ int main(int argc, char** argv) {
         invoke(vm, vm->spark);
     }
 
-    free(binary);
-
+cleanup:
     // Cleanup
+    if (binary) {
+        free(binary);
+    }
     bytecode_free(bc);
     node_free(global);
     parser_free(parser);
@@ -182,5 +212,5 @@ int main(int argc, char** argv) {
     preprocessor_free(preprocessor);
     free(include_paths);
 
-    return 0;
+    return exitCode;
 }
