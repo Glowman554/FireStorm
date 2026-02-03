@@ -1,6 +1,7 @@
 package firestorm
 
 import (
+	"fire/firestorm/parser/node"
 	"fire/firestorm/target/bytecode"
 	"fire/firestorm/target/llvm"
 	"fmt"
@@ -17,17 +18,11 @@ func isOptionActive(option string) bool {
 	return false
 }
 
-func Compile(input string, output string, target string, includes []string) {
-
-	code, err := os.ReadFile(input)
-	if err != nil {
-		panic(err)
-	}
-
-	preprocessor := NewPreprocessor(includes)
+func prepareCompilation(output string, code []byte, includes []string) (*node.Node, string, Preprocessor) {
+    preprocessor := NewPreprocessor(includes)
 	processedCode := preprocessor.Process(string(code))
 	if isOptionActive("DEBUG_PROCESSED_CODE") {
-		err = os.WriteFile(output+".processed", []byte(processedCode), fs.ModePerm)
+        err := os.WriteFile(output+".processed", []byte(processedCode), fs.ModePerm)
 		if err != nil {
 			panic(err)
 		}
@@ -39,9 +34,22 @@ func Compile(input string, output string, target string, includes []string) {
 	parser := NewParser(tokens, processedCode)
 	global := parser.Global()
 
+    return global, processedCode, preprocessor
+}
+
+func Compile(input string, output string, target string, includes []string) {
+
+	code, err := os.ReadFile(input)
+	if err != nil {
+		panic(err)
+	}
+
+
 	switch target {
 	case "bytecode":
-		bc := bytecode.NewBYTECODE(global, processedCode)
+        global, processedCode, preprocessor := prepareCompilation(output, code, includes)
+		
+        bc := bytecode.NewBYTECODE(global, processedCode)
 		result := bc.Compile()
 
 		tmp := strings.Split(output, ".")
@@ -73,7 +81,32 @@ func Compile(input string, output string, target string, includes []string) {
 			panic("Unsupported output format " + ending)
 		}
 
+    case "bytecode_flc":
+        tmp := strings.Split(output, ".")
+		ending := tmp[len(tmp)-1]
+
+        preprocessor := NewPreprocessor(includes)
+        preprocessor.Process(string(code))
+
+        for i := range preprocessor.usedPackages {
+            includes = append(includes, fmt.Sprintf(".fire/%s@%s", preprocessor.usedPackages[i].Package, preprocessor.usedPackages[i].Version))
+        }
+
+        includeCommand := ""
+        for i := range includes {
+            includeCommand += fmt.Sprintf(" --include=%s", includes[i])
+        }
+
+		switch ending {
+		case "flbb":
+            runCommand(fmt.Sprintf("flc --input=%s --output=%s%s", input, output, includeCommand))
+		default:
+			panic("Unsupported output format " + ending)
+		}
+
 	default:
+        global, processedCode, _ := prepareCompilation(output, code, includes)
+
 		bc := llvm.NewLLVM(global, target, processedCode)
 		result := bc.Compile()
 
@@ -108,6 +141,7 @@ func Compile(input string, output string, target string, includes []string) {
 }
 
 func runCommand(command string) {
+    // fmt.Println(command)
 	tmp := strings.Split(command, " ")
 
 	cmd := exec.Command(tmp[0], tmp[1:]...)
