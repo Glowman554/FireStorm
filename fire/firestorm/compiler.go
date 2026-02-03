@@ -98,6 +98,8 @@ func Compile(input string, output string, target string, includes []string) {
         }
 
 		switch ending {
+        case "flb":
+            fallthrough
 		case "flbb":
             runCommand(fmt.Sprintf("flc --input=%s --output=%s%s", input, output, includeCommand))
 		default:
