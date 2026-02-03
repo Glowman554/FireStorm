@@ -49,6 +49,9 @@ jobs:
       run: cd flvm && clang --target=riscv64-linux-gnu -o flvm.riscv64 main.c vm.c
 
 
+    - name: Build windows (amd64) (flc)
+      run: cd flc && make CC="clang --target=x86_64-w64-windows-gnu -D_WIN32 -isystem /usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib" PROGRAM=flc.amd64.exe -B
+
     - name: Build linux (amd64) (flc)
       run: cd flc && make CC="clang --target=x86_64-pc-linux-gnu" PROGRAM=flc.amd64 -B
  
