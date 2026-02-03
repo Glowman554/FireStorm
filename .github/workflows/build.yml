@@ -48,6 +48,18 @@ jobs:
     - name: Build linux (riscv64) (flvm)
       run: cd flvm && clang --target=riscv64-linux-gnu -o flvm.riscv64 main.c vm.c
 
+
+    - name: Build linux (amd64) (flc)
+      run: cd flc && make CC="clang --target=x86_64-pc-linux-gnu" PROGRAM=flc.amd64 -B
+ 
+    - name: Build linux (arm64) (flc)
+      run: cd flc && make CC="clang --target=aarch64-linux-gnu" PROGRAM=flc.arm64 -B
+ 
+    - name: Build linux (riscv64) (flc)
+      run: cd flc && make CC="clang --target=riscv64-linux-gnu" PROGRAM=flc.riscv64 -B
+ 
+ 
+
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -55,3 +67,4 @@ jobs:
         path: |
           fire/fire.*
           flvm/flvm.*
+          flc/flc.*

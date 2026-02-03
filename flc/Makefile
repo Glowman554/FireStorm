@@ -4,17 +4,17 @@ OBJS = $(addsuffix .o,$(basename $(SRCS)))
 
 CFLAGS = -O2 -Wall -Iinclude -g
 LDFLAGS =
-PROGRAM = flc
+PROGRAM ?= flc
 
 $(PROGRAM): $(OBJS)
-	gcc $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 install: $(PROGRAM)
 	cp $(PROGRAM) ~/go/bin/$(PROGRAM)
 
 %.o: %.c
 	@echo CC $^
-	@gcc $(CFLAGS) -c -o $@ $^
+	@$(CC) $(CFLAGS) -c -o $@ $^
 
 clean:
 	rm -f $(OBJS) $(PROGRAM) compile_flags.txt
