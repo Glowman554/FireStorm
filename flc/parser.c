@@ -808,6 +808,7 @@ void parse_function_params(Parser* p, Variable** params, int* param_count) {
 Node* parse_function(Parser* p) {
     int pos = current_token(p)->pos;
     int is_external = 0;
+    int is_noreturn = 0;
 
     // Skip 'function' keyword
     advance(p);
@@ -824,7 +825,10 @@ Node* parse_function(Parser* p) {
             if (strcmp(attr, "external") == 0) {
                 is_external = 1;
             }
-            // Ignore other attributes like 'noreturn', 'keep', etc.
+            // Check if it's 'noreturn' attribute
+            if (strcmp(attr, "noreturn") == 0) {
+                is_noreturn = 1;
+            }
 
             advance(p);
 
@@ -882,7 +886,7 @@ Node* parse_function(Parser* p) {
     func->body = body;
     func->body_count = body_count;
     func->is_external = is_external;
-
+    func->is_noreturn = is_noreturn;
     return node_new(NODE_FUNCTION, NULL, NULL, func, pos);
 }
 

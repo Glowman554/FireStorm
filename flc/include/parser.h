@@ -76,6 +76,7 @@ typedef struct {
     Node** body;
     int body_count;
     int is_external; // External function (no body)
+    int is_noreturn; // Function marked as noreturn
 } Function;
 
 typedef struct {

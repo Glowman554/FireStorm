@@ -766,6 +766,9 @@ CompiledFunction* generate_function(BytecodeInternal* bi, Function* f) {
     sb_append(sb, buffer);
     snprintf(buffer, sizeof(buffer), "%s:\n", f->name);
     sb_append(sb, buffer);
+    if (f->is_noreturn) {
+        sb_append(sb, "\tnoreturn\n");
+    }
 
     // Collect all end blocks
     Node*** end_blocks = NULL;
