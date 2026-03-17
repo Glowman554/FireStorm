@@ -486,11 +486,14 @@ struct vm_instance* vm_load(const char* file) {
     int codeSize = ftell(codeFile);
     fseek(codeFile, 0, SEEK_SET);
 
+    vm->code_size = codeSize;
+
     vm->code = malloc(codeSize);
     fread(vm->code, codeSize, 1, codeFile);
     fclose(codeFile);
 
     invoke(vm, read_i64(vm->code, 8)); // globals
+    stack_pop(vm);
     vm->spark = read_i64(vm->code, 0);
 
     return vm;

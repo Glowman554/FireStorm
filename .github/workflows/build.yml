@@ -61,6 +61,16 @@ jobs:
     - name: Build linux (riscv64) (flc)
       run: cd flc && make CC="clang --target=riscv64-linux-gnu" PROGRAM=flc.riscv64 -B
  
+
+
+    - name: Build linux (amd64) (flvmd)
+      run: cd flvmd && make CC="clang --target=x86_64-pc-linux-gnu" PROGRAM=flvmd.amd64 -B
+ 
+    - name: Build linux (arm64) (flvmd)
+      run: cd flvmd && make CC="clang --target=aarch64-linux-gnu" PROGRAM=flvmd.arm64 -B
+ 
+    - name: Build linux (riscv64) (flvmd)
+      run: cd flvmd && make CC="clang --target=riscv64-linux-gnu" PROGRAM=flvmd.riscv64 -B
  
 
     - name: Upload Artifacts
@@ -71,3 +81,4 @@ jobs:
           fire/fire.*
           flvm/flvm.*
           flc/flc.*
+          flvmd/flvmd.*

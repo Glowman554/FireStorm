@@ -15,6 +15,7 @@ struct vm_instance {
 	int global_variable_size;
 
     int64_t spark;
+    int64_t code_size;
 };
 
 typedef void (*NativeFunction)(struct vm_instance* vm);
