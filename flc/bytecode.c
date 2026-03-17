@@ -442,6 +442,10 @@ void generate_expression(BytecodeInternal* bi, Node* exp, CompiledFunction* cf, 
 
             snprintf(buffer, sizeof(buffer), "\tinvoke %s\n", func_name);
             sb_append(sb, buffer);
+        } else {
+            // Function not found
+            fprintf(stderr, "Error: Function not found: %s\n", func_name);
+            abort();
         }
         break;
     }
@@ -524,6 +528,9 @@ void generate_code_block(BytecodeInternal* bi, Node** block, int count, Compiled
 
                 snprintf(buffer, sizeof(buffer), "\tinvoke %s\n", func_name);
                 sb_append(sb, buffer);
+            } else {
+                fprintf(stderr, "Error: Function not found: %s\n", func_name);
+                abort();
             }
             sb_append(sb, "\tdelete\n");
             break;
