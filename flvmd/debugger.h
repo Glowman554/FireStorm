@@ -31,37 +31,29 @@
 #define ANSI_HIDE_CURSOR "\033[?25l"
 #define ANSI_SHOW_CURSOR "\033[?25h"
 
-#define TERM_WIDTH  80
-#define TERM_HEIGHT 25
+// #define TERM_WIDTH  80
+// #define TERM_HEIGHT 25
 
-#define CODE_PANEL_WIDTH    50
-#define CODE_PANEL_HEIGHT   14
-#define STACK_PANEL_WIDTH   29
-#define STACK_PANEL_HEIGHT  14
-#define VARS_PANEL_WIDTH    50
-#define VARS_PANEL_HEIGHT   9
-#define STATUS_HEIGHT       1
-
-#define MAX_CALL_DEPTH 256
-
-struct call_frame {
-    uint64_t return_address;
-    int64_t variables[256];
-    uint8_t variable_types[256];
-    bool noreturn;
-};
+// #define CODE_PANEL_WIDTH    50
+// #define CODE_PANEL_HEIGHT   14
+// #define STACK_PANEL_WIDTH   29
+// #define STACK_PANEL_HEIGHT  14
+// #define VARS_PANEL_WIDTH    50
+// #define VARS_PANEL_HEIGHT   9
+// #define STATUS_HEIGHT       1
 
 struct debugger_state {
     struct vm_instance* vm;
-    uint64_t counter;
-    int64_t variables[256];
-    uint8_t variable_types[256];
-    bool noreturn;
-    bool running;
-    bool step_mode;
-    int call_depth;
-    
-    struct call_frame call_stack[MAX_CALL_DEPTH];
+
+    int width;
+    int height;
+
+    int code_panel_width;
+    int code_panel_height;
+    int stack_panel_width;
+    int stack_panel_height;
+    int vars_panel_width;
+    int vars_panel_height;
 };
 
 struct instruction_info {
@@ -75,7 +67,7 @@ void debugger_init(struct debugger_state* state, struct vm_instance* vm);
 void debugger_draw(struct debugger_state* state);
 void debugger_step(struct debugger_state* state);
 bool debugger_handle_input(struct debugger_state* state);
-void debugger_run(struct debugger_state* state);
+void debugger_run(struct debugger_state* state, uint64_t location);
 
 const char* instruction_name(uint8_t opcode);
 int instruction_length(struct debugger_state* state, uint64_t addr);

@@ -1,7 +1,16 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
+#define MAX_CALL_DEPTH 256
+
+struct call_frame {
+    uint64_t return_address;
+    int64_t variables[256];
+    uint8_t variable_types[256];
+    bool noreturn;
+};
 
 struct vm_instance {
 	void* code;
@@ -14,6 +23,12 @@ struct vm_instance {
 	uint8_t* global_variable_types;
 	int global_variable_size;
 
+    uint64_t counter;
+    struct call_frame call_stack[MAX_CALL_DEPTH];
+    int call_depth;
+    bool running;
+
+    int64_t globals;
     int64_t spark;
     int64_t code_size;
 };
@@ -112,8 +127,10 @@ int64_t stack_pop(struct vm_instance* vm);
 
 
 void invoke(struct vm_instance* vm, uint64_t location);
+void step(struct vm_instance* vm);
 
 struct vm_instance* vm_load(const char* file);
+struct vm_instance* vm_create(void* code, int64_t code_size);
 void vm_destroy(struct vm_instance* vm);
 
 void vm_native_register(int id, NativeFunction function);

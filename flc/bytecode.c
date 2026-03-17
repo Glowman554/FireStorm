@@ -440,8 +440,13 @@ void generate_expression(BytecodeInternal* bi, Node* exp, CompiledFunction* cf, 
                 generate_expression(bi, call_data[i + 1], cf, sb);
             }
 
-            snprintf(buffer, sizeof(buffer), "\tinvoke %s\n", func_name);
-            sb_append(sb, buffer);
+            if (fn->type == NODE_FUNCTION && ((Function*)fn->value)->is_external) {
+                snprintf(buffer, sizeof(buffer), "\tinvoke_native %s\n", func_name);
+                sb_append(sb, buffer);
+            } else {
+                snprintf(buffer, sizeof(buffer), "\tinvoke %s\n", func_name);
+                sb_append(sb, buffer);
+            }
         } else {
             // Function not found
             fprintf(stderr, "Error: Function not found: %s\n", func_name);
@@ -526,8 +531,13 @@ void generate_code_block(BytecodeInternal* bi, Node** block, int count, Compiled
                     generate_expression(bi, call_data[j + 1], cf, sb);
                 }
 
-                snprintf(buffer, sizeof(buffer), "\tinvoke %s\n", func_name);
-                sb_append(sb, buffer);
+                if (fn->type == NODE_FUNCTION && ((Function*)fn->value)->is_external) {
+                    snprintf(buffer, sizeof(buffer), "\tinvoke_native %s\n", func_name);
+                    sb_append(sb, buffer);
+                } else {
+                    snprintf(buffer, sizeof(buffer), "\tinvoke %s\n", func_name);
+                    sb_append(sb, buffer);
+                }
             } else {
                 fprintf(stderr, "Error: Function not found: %s\n", func_name);
                 abort();
@@ -954,10 +964,10 @@ char* bytecode_compile(Bytecode* bc) {
 
             // For external functions, generate a stub that calls invoke_native
             if (f->is_external) {
-                char buffer[1024];
-                snprintf(buffer, sizeof(buffer), "@begin function %s\n%s:\n\tinvoke_native %s\n\treturn\n@end function\n",
-                         f->name, f->name, f->name);
-                sb_append(sb, buffer);
+                // char buffer[1024];
+                // snprintf(buffer, sizeof(buffer), "@begin function %s\n%s:\n\tinvoke_native %s\n\treturn\n@end function\n",
+                //          f->name, f->name, f->name);
+                // sb_append(sb, buffer);
                 continue;
             }
 

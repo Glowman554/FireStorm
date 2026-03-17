@@ -4,7 +4,7 @@
 #include "linker.h"
 #include "parser.h"
 #include "preprocessor.h"
-#include "vm.h"
+#include "../flvm/vm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -190,10 +190,13 @@ int main(int argc, char** argv) {
     } else {
         printf("Successfully compiled and encoded %s (%zu bytes)\n", input, binary_size);
         
-        struct vm_instance* vm = vm_create(binary);
+        struct vm_instance* vm = vm_create(binary, binary_size);
 
         stack_push(vm, argc);
         stack_push(vm, (int64_t)argv);
+
+        invoke(vm, vm->globals);
+        stack_pop(vm);
 
         invoke(vm, vm->spark);
     }

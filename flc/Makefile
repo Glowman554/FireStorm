@@ -1,4 +1,4 @@
-SRCS = $(shell find -name '*.[c]')
+SRCS = $(shell find -name '*.[c]') ../flvm/vm.c
 OBJS = $(addsuffix .o,$(basename $(SRCS)))
 
 

@@ -93,6 +93,10 @@ func (Validate) Execute(parser *arguments.Parser) error {
 					notPassed++
 				}
 				return nil
+			} else if expected.ShouldFail {
+				slog.Error("TEST NOT PASSED", "path", path, "error", "expected to fail but passed")
+				notPassed++
+				return nil
 			}
 
 			split := strings.Split(*output, "\n")

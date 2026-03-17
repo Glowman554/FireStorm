@@ -72,6 +72,9 @@ int main(int argc, char* argv[]) {
 
     struct vm_instance* vm = vm_load(argv[1]);
     
+	invoke(vm, vm->globals);
+	stack_pop(vm);
+
     stack_push(vm, argc - 1);
     stack_push(vm, (int64_t)&argv[1]);
     invoke(vm, vm->spark);

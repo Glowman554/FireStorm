@@ -11,3 +11,8 @@
 *.flbb
 *.so
 *.processed
+
+flvm/flvm
+flvmd/flvmd
+flc/flc
+compile_flags.txt
