@@ -28,18 +28,18 @@ func NewParser() *Parser {
 	}
 }
 
-func (p *Parser) Parse(args []string) error {
+func (p *Parser) Parse(args []string) (bool, error) {
 	for i := range args {
 		arg := args[i]
 
 		if option, ok := strings.CutPrefix(arg, "--"); ok {
 			if option == "help" {
 				p.help()
-				continue
+				return false, nil
 			}
 			split := strings.SplitN(option, "=", 2)
 			if !p.isValid(split[0]) {
-				return errors.New("encountered invalid option " + split[0])
+				return false, errors.New("encountered invalid option " + split[0])
 			}
 
 			if len(split) > 1 {
@@ -48,10 +48,10 @@ func (p *Parser) Parse(args []string) error {
 				p.Nodes = append(p.Nodes, Node{Name: split[0], Value: nil})
 			}
 		} else {
-			return errors.New("No -- prefix " + arg)
+			return false, errors.New("No -- prefix " + arg)
 		}
 	}
-	return nil
+	return true, nil
 }
 
 func (p *Parser) isValid(arg string) bool {

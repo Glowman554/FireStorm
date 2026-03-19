@@ -1,6 +1,7 @@
 package llvm
 
 import (
+	"fire/firestorm/analyzer"
 	"fire/firestorm/constexpr"
 	"fire/firestorm/lineerror"
 	"fire/firestorm/parser"
@@ -33,9 +34,10 @@ type LLVM struct {
 	ptrType         types.Type
 	target          string
 	code            string
+	analyzer        *analyzer.Analyzer
 }
 
-func NewLLVM(global *node.Node, target string, code string) *LLVM {
+func NewLLVM(global *node.Node, target string, code string, analyzer *analyzer.Analyzer) *LLVM {
 	return &LLVM{
 		global:          global,
 		globalVariables: make(map[string]GlobalVariable),
@@ -44,6 +46,7 @@ func NewLLVM(global *node.Node, target string, code string) *LLVM {
 		ptrType:         types.I64,
 		target:          target,
 		code:            code,
+		analyzer:        analyzer,
 	}
 }
 
@@ -588,6 +591,10 @@ func (b *LLVM) Compile() string {
 	for i := range tmp {
 		switch tmp[i].Type {
 		case node.FUNCTION:
+			if !b.analyzer.IsFunctionUsed((tmp[i].Value.(function.Function)).Name) {
+				continue
+			}
+
 			b.generateFunctionDeclaration(tmp[i].Value.(function.Function), b.module)
 		}
 	}
@@ -595,6 +602,10 @@ func (b *LLVM) Compile() string {
 	for i := range tmp {
 		switch tmp[i].Type {
 		case node.FUNCTION:
+			if !b.analyzer.IsFunctionUsed((tmp[i].Value.(function.Function)).Name) {
+				continue
+			}
+
 			b.generateFunction(b.findFunction(tmp[i].Value.(function.Function).Name, tmp[i].Pos, nil), tmp[i].Pos, tmp[i].Value.(function.Function))
 		}
 	}

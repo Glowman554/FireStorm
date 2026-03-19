@@ -10,19 +10,16 @@ import (
 )
 
 var AvailableCommands = map[string]command.Command{
-	"init":                  commands.Init{},
-	"build":                 commands.Build{},
-	"validate":              commands.Validate{},
-	"validate_bytecode":     commands.ValidateBytecode{},
-	"validate_bytecode_flc": commands.ValidateBytecodeFlc{},
-	"validate_callgraph":    commands.ValidateCallgraph{},
-	"executable":            commands.Executable{},
-	"compile":               commands.Compile{},
-	"status":                commands.Status{},
-	"login":                 commands.Login{},
-	"register":              commands.Register{},
-	"delete":                commands.Delete{},
-	"deploy":                commands.Deploy{},
+	"init":       commands.Init{},
+	"build":      commands.Build{},
+	"validate":   commands.Validate{},
+	"executable": commands.Executable{},
+	"compile":    commands.Compile{},
+	"status":     commands.Status{},
+	"login":      commands.Login{},
+	"register":   commands.Register{},
+	"delete":     commands.Delete{},
+	"deploy":     commands.Deploy{},
 }
 
 func main() {
@@ -61,9 +58,12 @@ func main() {
 	parser := arguments.NewParser()
 	if cmd, ok := AvailableCommands[subcommand]; ok {
 		cmd.PopulateParser(parser)
-		err := parser.Parse(os.Args[2:])
+		cnt, err := parser.Parse(os.Args[2:])
 		if err != nil {
 			fmt.Println(err.Error())
+			return
+		}
+		if !cnt {
 			return
 		}
 		err = cmd.Execute(parser)

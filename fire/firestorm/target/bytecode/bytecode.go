@@ -1,6 +1,7 @@
 package bytecode
 
 import (
+	"fire/firestorm/analyzer"
 	"fire/firestorm/constexpr"
 	"fire/firestorm/lineerror"
 	"fire/firestorm/parser"
@@ -10,7 +11,6 @@ import (
 	"fire/firestorm/parser/node"
 	"fire/firestorm/utils"
 	"fmt"
-	"log/slog"
 	"strconv"
 	"strings"
 )
@@ -20,14 +20,16 @@ type BYTECODE struct {
 	clabel            int
 	compiledFunctions []*CompiledFunction
 	code              string
+	analyzer          *analyzer.Analyzer
 }
 
-func NewBYTECODE(global *node.Node, code string) *BYTECODE {
+func NewBYTECODE(global *node.Node, code string, analyzer *analyzer.Analyzer) *BYTECODE {
 	return &BYTECODE{
 		global:            global,
 		clabel:            0,
 		compiledFunctions: []*CompiledFunction{},
 		code:              code,
+		analyzer:          analyzer,
 	}
 }
 
@@ -142,7 +144,6 @@ func (b *BYTECODE) generateExpression(exp *node.Node, cf *CompiledFunction) stri
 		code += "\tshift_right\n"
 	case node.FUNCTION_CALL:
 		fc := exp.Value.(function.FunctionCall)
-		cf.use(fc.Name)
 
 		for i := range fc.Arguments {
 			code += b.generateExpression(fc.Arguments[i], cf)
@@ -219,7 +220,6 @@ func (b *BYTECODE) generateCodeBlock(f function.Function, block []*node.Node, cf
 
 		case node.FUNCTION_CALL:
 			fc := block[i].Value.(function.FunctionCall)
-			cf.use(fc.Name)
 
 			for i := range fc.Arguments {
 				code += b.generateExpression(fc.Arguments[i], cf)
@@ -370,24 +370,6 @@ func (b *BYTECODE) generateFunction(f function.Function, pos int) *CompiledFunct
 	return cf
 }
 
-func (b *BYTECODE) keepFunction(name string) {
-	for i := range b.compiledFunctions {
-		f := b.compiledFunctions[i]
-		if f.name == name {
-			if f.keep {
-				return // do not cause loops
-			}
-
-			f.keep = true
-			for j := range f.usedFunctions {
-				b.keepFunction(f.usedFunctions[j])
-			}
-
-			return
-		}
-	}
-}
-
 func (b *BYTECODE) generateOffset(offset parser.Offset, pos int) string {
 	current := 0
 	code := ""
@@ -461,6 +443,10 @@ func (b *BYTECODE) Compile() string {
 	for i := range tmp {
 		switch tmp[i].Type {
 		case node.FUNCTION:
+			if !b.analyzer.IsFunctionUsed((tmp[i].Value.(function.Function)).Name) {
+				continue
+			}
+
 			f := b.generateFunction(tmp[i].Value.(function.Function), tmp[i].Pos)
 			if f != nil {
 				b.compiledFunctions = append(b.compiledFunctions, f)
@@ -473,23 +459,8 @@ func (b *BYTECODE) Compile() string {
 		}
 	}
 
-	for i := range tmp {
-		switch tmp[i].Type {
-		case node.FUNCTION:
-			if utils.IndexOf(tmp[i].Value.(function.Function).Attributes, function.Keep) != -1 {
-				b.keepFunction((tmp[i].Value.(function.Function)).Name)
-			}
-		}
-	}
-
-	b.keepFunction("spark")
-
 	for i := range b.compiledFunctions {
-		if b.compiledFunctions[i].keep {
-			code += b.compiledFunctions[i].code
-		} else {
-			slog.Debug("Removing unused function " + b.compiledFunctions[i].name)
-		}
+		code += b.compiledFunctions[i].code
 	}
 
 	return code

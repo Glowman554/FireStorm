@@ -15,6 +15,57 @@ import (
 
 type Validate struct{}
 
+type Target interface {
+	Compile(input string, includes []string) string
+	Run(file string, arguments []string) (*string, error)
+}
+
+type LLVMTarget struct{}
+
+func (LLVMTarget) Compile(input string, includes []string) string {
+	extension := firestorm.DetectExtension()
+	target := firestorm.DetectTarget()
+
+	output := input + "." + extension
+	firestorm.Compile(input, output, target, includes)
+
+	return output
+}
+
+func (LLVMTarget) Run(file string, arguments []string) (*string, error) {
+	return run("./"+file, arguments)
+}
+
+type BytecodeTarget struct{}
+
+func (BytecodeTarget) Compile(input string, includes []string) string {
+	output := input + ".flbb"
+	firestorm.Compile(input, output, "bytecode", includes)
+
+	return output
+}
+
+func (BytecodeTarget) Run(file string, arguments []string) (*string, error) {
+	return run("flvm", append([]string{file}, arguments...))
+}
+
+type BytecodeFlcTarget struct{}
+
+func (BytecodeFlcTarget) Compile(input string, includes []string) string {
+	output := input + ".flbb"
+	args := []string{"--output=" + output, "--input=" + input}
+	for _, include := range includes {
+		args = append(args, "--include="+include)
+	}
+	run("flc", args)
+
+	return output
+}
+
+func (BytecodeFlcTarget) Run(file string, arguments []string) (*string, error) {
+	return run("flvm", append([]string{file}, arguments...))
+}
+
 type Expected struct {
 	Arguments  []string `json:"arguments"`
 	Output     []string `json:"output"`
@@ -22,10 +73,11 @@ type Expected struct {
 }
 
 func (Validate) PopulateParser(parser *arguments.Parser) {
+	parser.Allow("target", "The target to run the tests against (llvm, bytecode, bytecode_flc)")
 }
 
 func run(command string, arguments []string) (*string, error) {
-	// fmt.Println("[CMD]", command)
+	slog.Debug("[CMD] " + command + " " + strings.Join(arguments, " "))
 
 	cmd := exec.Command(command, arguments...)
 	var out strings.Builder
@@ -49,10 +101,26 @@ func run(command string, arguments []string) (*string, error) {
 func (Validate) Execute(parser *arguments.Parser) error {
 	passed := 0
 	notPassed := 0
-	extension := firestorm.DetectExtension()
-	target := firestorm.DetectTarget()
+	var target Target
 
-	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+	defaultTarget := "llvm"
+	targetStr, err := parser.Consume("target", &defaultTarget)
+	if err != nil {
+		return err
+	}
+
+	switch *targetStr {
+	case "llvm":
+		target = LLVMTarget{}
+	case "bytecode":
+		target = BytecodeTarget{}
+	case "bytecode_flc":
+		target = BytecodeFlcTarget{}
+	default:
+		return errors.New("unknown target: " + *targetStr)
+	}
+
+	err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err == nil {
 			path = strings.ReplaceAll(path, "\\", "/")
 			if !strings.HasSuffix(path, ".fl") {
@@ -81,9 +149,9 @@ func (Validate) Execute(parser *arguments.Parser) error {
 					notPassed++
 				}
 			}()
-			firestorm.Compile(path, path+"."+extension, target, []string{"../libraries/stdlib/"})
+			outputFile := target.Compile(path, []string{"../libraries/stdlib/"})
 
-			output, err := run("./"+path+"."+extension, expected.Arguments)
+			output, err := target.Run(outputFile, expected.Arguments)
 			if err != nil {
 				if expected.ShouldFail {
 					slog.Debug("TEST PASSED", "path", path)

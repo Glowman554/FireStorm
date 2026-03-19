@@ -31,13 +31,13 @@ jobs:
       run: cd flc && make && sudo mv flc /usr/bin/flc
 
     - name: Run validation
-      run: cd validation && fire validate
+      run: cd validation && fire validate --target=llvm
 
     - name: Run validation (bytecode)
-      run: cd validation && fire validate_bytecode
+      run: cd validation && fire validate --target=bytecode
 
     - name: Run validation (bytecode flc)
-      run: cd validation && fire validate_bytecode_flc 
+      run: cd validation && fire validate --target=bytecode_flc
 
     - name: Test build
       run: cd examples/example && fire build && ./main.elf

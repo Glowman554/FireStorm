@@ -1,6 +1,7 @@
 package firestorm
 
 import (
+	"fire/firestorm/analyzer"
 	"fire/firestorm/parser/node"
 	"fire/firestorm/target/bytecode"
 	"fire/firestorm/target/llvm"
@@ -18,7 +19,7 @@ func isOptionActive(option string) bool {
 	return false
 }
 
-func prepareCompilation(output string, code []byte, includes []string) (*node.Node, string, Preprocessor) {
+func prepareCompilation(output string, code []byte, includes []string) (*node.Node, string, Preprocessor, *analyzer.Analyzer) {
 	preprocessor := NewPreprocessor(includes)
 	processedCode := preprocessor.Process(string(code))
 	if isOptionActive("DEBUG_PROCESSED_CODE") {
@@ -34,7 +35,18 @@ func prepareCompilation(output string, code []byte, includes []string) (*node.No
 	parser := NewParser(tokens, processedCode)
 	global := parser.Global()
 
-	return global, processedCode, preprocessor
+	analyzer := analyzer.NewAnalyzer(global, processedCode)
+	analyzer.Analyze()
+
+	if env, ok := os.LookupEnv("CALLGRAPH"); ok {
+		callgraph := analyzer.BuildGraphvizCallgraph(env)
+		err := os.WriteFile(env+".dot", []byte(callgraph), fs.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return global, processedCode, preprocessor, analyzer
 }
 
 func Compile(input string, output string, target string, includes []string) {
@@ -46,9 +58,9 @@ func Compile(input string, output string, target string, includes []string) {
 
 	switch target {
 	case "bytecode":
-		global, processedCode, preprocessor := prepareCompilation(output, code, includes)
+		global, processedCode, preprocessor, analyzer := prepareCompilation(output, code, includes)
 
-		bc := bytecode.NewBYTECODE(global, processedCode)
+		bc := bytecode.NewBYTECODE(global, processedCode, analyzer)
 		result := bc.Compile()
 
 		tmp := strings.Split(output, ".")
@@ -105,36 +117,10 @@ func Compile(input string, output string, target string, includes []string) {
 			panic("Unsupported output format " + ending)
 		}
 
-	case "callgraph":
-		tmp := strings.Split(output, ".")
-		ending := tmp[len(tmp)-1]
-
-		global, processedCode, _ := prepareCompilation(output, code, includes)
-
-		analyzer := NewAnalyzer(global, processedCode)
-		analyzer.Analyze()
-
-		callGraph := analyzer.BuildGraphvizCallgraph("spark")
-
-		switch ending {
-		case "dot":
-			err = os.WriteFile(output, []byte(callGraph), fs.ModePerm)
-			if err != nil {
-				panic(err)
-			}
-		case "png":
-			err = os.WriteFile(output+".dot", []byte(callGraph), fs.ModePerm)
-			if err != nil {
-				panic(err)
-			}
-			runCommand(fmt.Sprintf("dot -Tpng %s.dot -o %s", output, output))
-		default:
-			panic("Unsupported output format " + ending)
-		}
 	default:
-		global, processedCode, _ := prepareCompilation(output, code, includes)
+		global, processedCode, _, analyzer := prepareCompilation(output, code, includes)
 
-		bc := llvm.NewLLVM(global, target, processedCode)
+		bc := llvm.NewLLVM(global, target, processedCode, analyzer)
 		result := bc.Compile()
 
 		tmp := strings.Split(output, ".")

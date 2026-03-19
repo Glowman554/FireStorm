@@ -1,7 +1,6 @@
-package firestorm
+package analyzer
 
 import (
-	"fire/firestorm/analyzer"
 	"fire/firestorm/lineerror"
 	"fire/firestorm/parser"
 	"fire/firestorm/parser/datatype"
@@ -9,33 +8,40 @@ import (
 	"fire/firestorm/parser/node"
 	"fire/firestorm/utils"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 )
 
 type Analyzer struct {
 	global            *node.Node
-	analyzedFunctions map[string]*analyzer.Function
+	analyzedFunctions map[string]*Function
 	code              string
+	functionUsage     map[string]bool
 }
 
 func NewAnalyzer(global *node.Node, code string) *Analyzer {
 	return &Analyzer{
 		global:            global,
-		analyzedFunctions: make(map[string]*analyzer.Function),
+		analyzedFunctions: make(map[string]*Function),
 		code:              code,
+		functionUsage:     make(map[string]bool),
 	}
 }
 
-func (a *Analyzer) error(message string, pos int, fa *analyzer.Function) {
+func (a *Analyzer) error(message string, pos int, fa *Function) {
 	if fa == nil {
 		lineerror.Error(a.code, message, pos)
 	} else {
 		lineerror.Error(a.code, message+" (in: "+fa.Name+")", pos)
 	}
 }
+func (a *Analyzer) IsFunctionUsed(name string) bool {
+	used, exists := a.functionUsage[name]
+	return exists && used
+}
 
-func (a *Analyzer) analyzeExpression(exp *node.Node, fa *analyzer.Function) {
+func (a *Analyzer) analyzeExpression(exp *node.Node, fa *Function) {
 	analyzeAB := func() {
 		a.analyzeExpression(exp.A, fa)
 		a.analyzeExpression(exp.B, fa)
@@ -72,6 +78,7 @@ func (a *Analyzer) analyzeExpression(exp *node.Node, fa *analyzer.Function) {
 		analyzeAB()
 	case node.FUNCTION_CALL:
 		fc := exp.Value.(function.FunctionCall)
+		a.functionUsage[fc.Name] = true
 
 		for i := range fc.Arguments {
 			a.analyzeExpression(fc.Arguments[i], fa)
@@ -80,6 +87,7 @@ func (a *Analyzer) analyzeExpression(exp *node.Node, fa *analyzer.Function) {
 		fa.FunctionCalls = append(fa.FunctionCalls, fc.Name)
 
 	case node.VARIABLE_LOOKUP:
+
 	case node.VARIABLE_LOOKUP_ARRAY:
 		a.analyzeExpression(exp.A, fa)
 
@@ -92,7 +100,7 @@ func (a *Analyzer) analyzeExpression(exp *node.Node, fa *analyzer.Function) {
 
 }
 
-func (a *Analyzer) analyzeCodeBlock(f function.Function, block []*node.Node, fa *analyzer.Function) {
+func (a *Analyzer) analyzeCodeBlock(f function.Function, block []*node.Node, fa *Function) {
 	for i := range block {
 		switch block[i].Type {
 		case node.VARIABLE_DECLARATION:
@@ -110,6 +118,7 @@ func (a *Analyzer) analyzeCodeBlock(f function.Function, block []*node.Node, fa 
 
 		case node.FUNCTION_CALL:
 			fc := block[i].Value.(function.FunctionCall)
+			a.functionUsage[fc.Name] = true
 
 			for i := range fc.Arguments {
 				a.analyzeExpression(fc.Arguments[i], fa)
@@ -158,8 +167,8 @@ func (a *Analyzer) analyzeCodeBlock(f function.Function, block []*node.Node, fa 
 	}
 }
 
-func (a *Analyzer) analyzeFunction(f function.Function) (string, *analyzer.Function) {
-	fa := &analyzer.Function{
+func (a *Analyzer) analyzeFunction(f function.Function) (string, *Function) {
+	fa := &Function{
 		Name:           f.Name,
 		FunctionCalls:  make([]string, 0),
 		LocalVariables: make([]datatype.NamedDatatype, 0),
@@ -172,6 +181,10 @@ func (a *Analyzer) analyzeFunction(f function.Function) (string, *analyzer.Funct
 
 	if utils.IndexOf(f.Attributes, function.External) != -1 {
 		return f.Name, fa
+	}
+
+	if utils.IndexOf(f.Attributes, function.Global) != -1 || utils.IndexOf(f.Attributes, function.Keep) != -1 {
+		a.functionUsage[f.Name] = true
 	}
 
 	a.analyzeCodeBlock(f, f.Entry, fa)
@@ -253,17 +266,48 @@ func (a *Analyzer) BuildGraphvizCallgraph(entry string) string {
 	return out
 }
 
+func (a *Analyzer) analyzeCallgraph(entry string) {
+	visited := make(map[string]bool)
+	var visit func(name string)
+	visit = func(name string) {
+		if visited[name] {
+			return
+		}
+		visited[name] = true
+		fun := a.analyzedFunctions[name]
+		for i := range fun.FunctionCalls {
+			visit(fun.FunctionCalls[i])
+		}
+	}
+
+	visit(entry)
+
+	for name := range a.functionUsage {
+		if visited[name] {
+			slog.Debug("Keeping function " + name)
+			a.functionUsage[name] = true
+		}
+	}
+}
+
 func (a *Analyzer) Analyze() {
 	nodes := a.global.Value.([]*node.Node)
 	for i := range nodes {
 
 		switch nodes[i].Type {
 		case node.FUNCTION:
-			name, analyzed := a.analyzeFunction(nodes[i].Value.(function.Function))
-			a.analyzedFunctions[name] = analyzed
-
-		case node.VARIABLE_DECLARATION:
-		case node.OFFSET:
+			a.functionUsage[nodes[i].Value.(function.Function).Name] = false
 		}
 	}
+
+	for i := range nodes {
+
+		switch nodes[i].Type {
+		case node.FUNCTION:
+			name, analyzed := a.analyzeFunction(nodes[i].Value.(function.Function))
+			a.analyzedFunctions[name] = analyzed
+		}
+	}
+
+	a.analyzeCallgraph("main")
 }
