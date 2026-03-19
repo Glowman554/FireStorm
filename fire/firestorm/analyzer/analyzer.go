@@ -18,6 +18,7 @@ type Analyzer struct {
 	analyzedFunctions map[string]*Function
 	code              string
 	functionUsage     map[string]bool
+	functionKeep      []string
 }
 
 func NewAnalyzer(global *node.Node, code string) *Analyzer {
@@ -26,6 +27,7 @@ func NewAnalyzer(global *node.Node, code string) *Analyzer {
 		analyzedFunctions: make(map[string]*Function),
 		code:              code,
 		functionUsage:     make(map[string]bool),
+		functionKeep:      make([]string, 0),
 	}
 }
 
@@ -78,7 +80,6 @@ func (a *Analyzer) analyzeExpression(exp *node.Node, fa *Function) {
 		analyzeAB()
 	case node.FUNCTION_CALL:
 		fc := exp.Value.(function.FunctionCall)
-		a.functionUsage[fc.Name] = true
 
 		for i := range fc.Arguments {
 			a.analyzeExpression(fc.Arguments[i], fa)
@@ -118,7 +119,6 @@ func (a *Analyzer) analyzeCodeBlock(f function.Function, block []*node.Node, fa 
 
 		case node.FUNCTION_CALL:
 			fc := block[i].Value.(function.FunctionCall)
-			a.functionUsage[fc.Name] = true
 
 			for i := range fc.Arguments {
 				a.analyzeExpression(fc.Arguments[i], fa)
@@ -184,7 +184,7 @@ func (a *Analyzer) analyzeFunction(f function.Function) (string, *Function) {
 	}
 
 	if utils.IndexOf(f.Attributes, function.Global) != -1 || utils.IndexOf(f.Attributes, function.Keep) != -1 {
-		a.functionUsage[f.Name] = true
+		a.functionKeep = append(a.functionKeep, f.Name)
 	}
 
 	a.analyzeCodeBlock(f, f.Entry, fa)
@@ -310,4 +310,10 @@ func (a *Analyzer) Analyze() {
 	}
 
 	a.analyzeCallgraph("main")
+
+	for i := range a.functionKeep {
+		name := a.functionKeep[i]
+		slog.Debug("Analyzing callgraph for keep function " + name)
+		a.analyzeCallgraph(name)
+	}
 }
