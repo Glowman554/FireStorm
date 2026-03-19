@@ -1,0 +1,18 @@
+function testArray() -> void {
+    int[] array = array_new(8);
+    int[] scratch = allocate(8);
+
+    end {
+        array_destroy(array);
+        deallocate(scratch);
+    }
+
+    range 0 .. 32 as i up {
+        scratch[0] = i;
+        array = array_append(array, scratch);
+    }
+
+    range 0 .. array_length(array) as j up {
+        printi(array[j]);
+    }
+}

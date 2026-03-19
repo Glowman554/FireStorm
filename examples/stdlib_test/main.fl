@@ -1,0 +1,23 @@
+$include <std.fl>
+
+function spark(int argc, str[] argv) -> int {
+    int[] array = array_new(8);
+    int[] scratch = allocate(8);
+
+    end {
+        array_destroy(array);
+        deallocate(scratch);
+    }
+
+
+    range 0 .. 64 as i up {
+        scratch[0] = i;
+        array = array_append(array, scratch);
+    }
+
+    range 0 .. array_length(array) as j up {
+        printi(array[j]);
+    }
+
+    return 0;
+}

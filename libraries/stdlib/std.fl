@@ -7,6 +7,8 @@ $include <impl/file.fl>
 $include <impl/arena.fl>
 $include <impl/offset.fl>
 
+$include <data/array.fl>
+
 $include <stubs.fl>
 
 function(noreturn, keep) unreachable() -> void {

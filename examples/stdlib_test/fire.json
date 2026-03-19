@@ -1,0 +1,12 @@
+{
+	"name": "stdlib_test",
+	"version": "1.0.0",
+	"compiler": {
+		"includes": [
+            "../../libraries/stdlib/"
+        ],
+		"target": "bytecode",
+		"input": "main.fl",
+		"output": "main.flbb"
+	}
+}

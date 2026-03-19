@@ -1,4 +1,4 @@
-$use <stdlib@1.0.8>
+$use <stdlib@1.0.9>
 
 $include <std.fl>
 
@@ -7,6 +7,7 @@ $include <test_stringbuilder.fl>
 $include <test_fpic.fl>
 $include <test_file.fl>
 $include <test_arena.fl>
+$include <test_array.fl>
 
 function spark(int argc, str[] argv) -> int {
     prints("Hello world!");
@@ -16,6 +17,7 @@ function spark(int argc, str[] argv) -> int {
     testFpic();
     testFile();
     testArena();
+    testArray();
 
     return 0;
 }

@@ -1,0 +1,53 @@
+offset array_header {
+    int data_size;
+    int data_capacity;
+    int data_length;
+}
+
+function array_new(int data_size) -> ptr {
+    int initial_capacity = 16;
+
+    ptr header = allocate(array_header_size + initial_capacity * data_size);
+    set_int(offset(header, array_header_data_size), data_size);
+    set_int(offset(header, array_header_data_capacity), initial_capacity);
+    set_int(offset(header, array_header_data_length), 0);
+
+    return header + array_header_size;
+}
+
+function array_length(ptr array) -> int {
+    ptr header = array - array_header_size;
+    return get_int(offset(header, array_header_data_length));
+}
+
+function array_append(ptr array, ptr data) -> ptr {
+    ptr header = array - array_header_size;
+
+    int capacity = get_int(offset(header, array_header_data_capacity));
+    int length = get_int(offset(header, array_header_data_length));
+    int size = get_int(offset(header, array_header_data_size));
+
+    if (length + 1) > capacity {
+        int old_size = array_header_size + capacity * size;
+        capacity = capacity * 2;
+
+        ptr new_header = allocate(array_header_size + capacity * size);
+        memory_area_copy_8(new_header, header, old_size);
+
+        deallocate(header);
+        header = new_header;
+        array = new_header + array_header_size;
+        set_int(offset(header, array_header_data_capacity), capacity);
+    }
+
+    ptr data_ptr = array + length * size;
+    memory_area_copy_8(data_ptr, data, size);
+    set_int(offset(header, array_header_data_length), length + 1);
+
+    return array;
+}
+
+function array_destroy(ptr array) -> void {
+    ptr header = array - array_header_size;
+    deallocate(header);
+}
