@@ -1,0 +1,13 @@
+package analyzer
+
+import (
+	"fire/firestorm/parser/datatype"
+	"fire/firestorm/parser/function"
+)
+
+type Function struct {
+	Name           string
+	FunctionCalls  []string
+	LocalVariables []datatype.NamedDatatype
+	Attributes     []function.FunctionAttribute
+}

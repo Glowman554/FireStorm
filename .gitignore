@@ -11,6 +11,8 @@
 *.flbb
 *.so
 *.processed
+*.dot
+*.png
 
 flvm/flvm
 flvmd/flvmd
