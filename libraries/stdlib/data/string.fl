@@ -21,7 +21,7 @@ function string_append_chr(str string, chr c) -> str {
     int capacity = get_int(offset(header, s_header_capacity));
     int length = get_int(offset(header, s_header_length));
 
-    if (length + 1) > capacity {
+    if (length + 2) > capacity {
         int old_size = s_header_size + capacity;
         capacity = capacity * 2;
 
@@ -36,6 +36,7 @@ function string_append_chr(str string, chr c) -> str {
 
     chr[] data_ptr = string + length;
     data_ptr[0] = c;
+    data_ptr[1] = 0;
     set_int(offset(header, s_header_length), length + 1);
 
     return string;
