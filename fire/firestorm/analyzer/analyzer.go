@@ -19,6 +19,7 @@ type Analyzer struct {
 	code              string
 	functionUsage     map[string]bool
 	functionKeep      []string
+	globalUsage       map[string]bool
 }
 
 func NewAnalyzer(global *node.Node, code string) *Analyzer {
@@ -28,6 +29,7 @@ func NewAnalyzer(global *node.Node, code string) *Analyzer {
 		code:              code,
 		functionUsage:     make(map[string]bool),
 		functionKeep:      make([]string, 0),
+		globalUsage:       make(map[string]bool),
 	}
 }
 
@@ -40,6 +42,11 @@ func (a *Analyzer) error(message string, pos int, fa *Function) {
 }
 func (a *Analyzer) IsFunctionUsed(name string) bool {
 	used, exists := a.functionUsage[name]
+	return exists && used
+}
+
+func (a *Analyzer) IsGlobalUsed(name string) bool {
+	used, exists := a.globalUsage[name]
 	return exists && used
 }
 
@@ -88,9 +95,11 @@ func (a *Analyzer) analyzeExpression(exp *node.Node, fa *Function) {
 		fa.FunctionCalls = append(fa.FunctionCalls, fc.Name)
 
 	case node.VARIABLE_LOOKUP:
+		fa.VariableUsed = append(fa.VariableUsed, exp.Value.(string))
 
 	case node.VARIABLE_LOOKUP_ARRAY:
 		a.analyzeExpression(exp.A, fa)
+		fa.VariableUsed = append(fa.VariableUsed, exp.Value.(string))
 
 	case node.MINUS:
 		a.analyzeExpression(exp.A, fa)
@@ -113,9 +122,12 @@ func (a *Analyzer) analyzeCodeBlock(f function.Function, block []*node.Node, fa 
 			if block[i].A != nil {
 				a.analyzeExpression(block[i].A, fa)
 			}
+			fa.VariableUsed = append(fa.VariableUsed, block[i].Value.(string))
+
 		case node.VARIABLE_ASSIGN_ARRAY:
 			a.analyzeExpression(block[i].A, fa)
 			a.analyzeExpression(block[i].B, fa)
+			fa.VariableUsed = append(fa.VariableUsed, block[i].Value.(string))
 
 		case node.FUNCTION_CALL:
 			fc := block[i].Value.(function.FunctionCall)
@@ -172,6 +184,7 @@ func (a *Analyzer) analyzeFunction(f function.Function) (string, *Function) {
 		Name:           f.Name,
 		FunctionCalls:  make([]string, 0),
 		LocalVariables: make([]datatype.NamedDatatype, 0),
+		VariableUsed:   make([]string, 0),
 		Attributes:     f.Attributes,
 	}
 
@@ -196,6 +209,16 @@ func (a *Analyzer) analyzeFunction(f function.Function) (string, *Function) {
 	}
 
 	return f.Name, fa
+}
+
+func (a *Analyzer) analyzeOffset(offset parser.Offset) {
+	for _, entry := range offset.Entries {
+		name := offset.Name + "_" + entry.Name
+		a.globalUsage[name] = false
+	}
+
+	name := offset.Name + "_size"
+	a.globalUsage[name] = false
 }
 
 func (a *Analyzer) attributeToString(attribute function.FunctionAttribute) string {
@@ -290,11 +313,30 @@ func (a *Analyzer) analyzeCallgraph(entry string) {
 	}
 }
 
+func (a *Analyzer) analyzeGlobalUsage() {
+	for i := range a.functionUsage {
+		if a.functionUsage[i] {
+			fun := a.analyzedFunctions[i]
+			for j := range fun.VariableUsed {
+				if _, ok := a.globalUsage[fun.VariableUsed[j]]; ok {
+					a.globalUsage[fun.VariableUsed[j]] = true
+					slog.Debug("Keeping global variable " + fun.VariableUsed[j] + " because it is used in function " + i)
+				}
+			}
+		}
+	}
+}
+
 func (a *Analyzer) Analyze() {
 	nodes := a.global.Value.([]*node.Node)
 	for i := range nodes {
-
 		switch nodes[i].Type {
+		case node.VARIABLE_DECLARATION:
+			nd := nodes[i].Value.(datatype.NamedDatatype)
+			a.globalUsage[nd.Name] = false
+
+		case node.OFFSET:
+
 		case node.FUNCTION:
 			a.functionUsage[nodes[i].Value.(function.Function).Name] = false
 		}
@@ -316,4 +358,6 @@ func (a *Analyzer) Analyze() {
 		slog.Debug("Analyzing callgraph for keep function " + name)
 		a.analyzeCallgraph(name)
 	}
+
+	a.analyzeGlobalUsage()
 }

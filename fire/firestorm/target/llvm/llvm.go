@@ -532,14 +532,18 @@ func (b *LLVM) generateOffset(offset parser.Offset, module *ir.Module) {
 	for _, entry := range offset.Entries {
 		size := b.datatypeToSize(entry.UnnamedDatatype)
 		name := offset.Name + "_" + entry.Name
-		x := module.NewGlobalDef(name, constant.NewInt(types.I64, int64(current)))
-		b.globalVariables[name] = GlobalVariable{varivable: x, final: true}
+		if b.analyzer.IsGlobalUsed(name) {
+			x := module.NewGlobalDef(name, constant.NewInt(types.I64, int64(current)))
+			b.globalVariables[name] = GlobalVariable{varivable: x, final: true}
+		}
 		current += size
 	}
 
 	name := offset.Name + "_size"
-	x := module.NewGlobalDef(name, constant.NewInt(types.I64, int64(current)))
-	b.globalVariables[name] = GlobalVariable{varivable: x, final: true}
+	if b.analyzer.IsGlobalUsed(name) {
+		x := module.NewGlobalDef(name, constant.NewInt(types.I64, int64(current)))
+		b.globalVariables[name] = GlobalVariable{varivable: x, final: true}
+	}
 }
 
 func (b *LLVM) Compile() string {
@@ -552,6 +556,10 @@ func (b *LLVM) Compile() string {
 		switch tmp[i].Type {
 		case node.VARIABLE_DECLARATION:
 			datatype := tmp[i].Value.(datatype.NamedDatatype)
+			if !b.analyzer.IsGlobalUsed(datatype.Name) {
+				continue
+			}
+
 			d := b.datatypeToLLVM(datatype.UnnamedDatatype)
 
 			var global *ir.Global

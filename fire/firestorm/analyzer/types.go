@@ -9,5 +9,6 @@ type Function struct {
 	Name           string
 	FunctionCalls  []string
 	LocalVariables []datatype.NamedDatatype
+	VariableUsed   []string
 	Attributes     []function.FunctionAttribute
 }

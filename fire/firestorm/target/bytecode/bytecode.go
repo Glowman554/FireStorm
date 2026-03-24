@@ -377,12 +377,16 @@ func (b *BYTECODE) generateOffset(offset parser.Offset, pos int) string {
 	for _, entry := range offset.Entries {
 		size := b.datatypeToSize(entry.UnnamedDatatype, pos, nil)
 		name := offset.Name + "_" + entry.Name
-		code += "global " + name + " " + datatype.DatatypeToString(datatype.INT) + " " + fmt.Sprint(current) + "\n"
-		current += size
+		if b.analyzer.IsGlobalUsed(name) {
+			code += "global " + name + " " + datatype.DatatypeToString(datatype.INT) + " " + fmt.Sprint(current) + "\n"
+			current += size
+		}
 	}
 
 	name := offset.Name + "_size"
-	code += "global " + name + " " + datatype.DatatypeToString(datatype.INT) + " " + fmt.Sprint(current) + "\n"
+	if b.analyzer.IsGlobalUsed(name) {
+		code += "global " + name + " " + datatype.DatatypeToString(datatype.INT) + " " + fmt.Sprint(current) + "\n"
+	}
 
 	return code
 }
@@ -400,6 +404,10 @@ func (b *BYTECODE) Compile() string {
 		switch tmp[i].Type {
 		case node.FUNCTION:
 		case node.VARIABLE_DECLARATION:
+			if !b.analyzer.IsGlobalUsed((tmp[i].Value.(datatype.NamedDatatype)).Name) {
+				continue
+			}
+
 			if tmp[i].A != nil {
 				if (tmp[i].Value.(datatype.NamedDatatype)).IsArray {
 					b.error("Global array initializers not supported!", tmp[i].Pos, nil)
