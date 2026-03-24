@@ -8,6 +8,7 @@ $include <impl/arena.fl>
 $include <impl/offset.fl>
 
 $include <data/array.fl>
+$include <data/string.fl>
 
 $include <stubs.fl>
 

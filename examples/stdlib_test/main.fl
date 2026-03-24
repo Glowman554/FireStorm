@@ -19,5 +19,18 @@ function spark(int argc, str[] argv) -> int {
         printi(array[j]);
     }
 
+
+    str string = string_from("Hello ");
+    end {
+        string_destroy(string);
+    }
+    
+    range 0 .. 64 as k up {
+        string = string_append_int(string, k, 10);
+        string = string_append_chr(string, ' ');
+    }
+
+    prints(string);
+
     return 0;
 }

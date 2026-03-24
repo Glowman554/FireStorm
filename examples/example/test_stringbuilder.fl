@@ -1,17 +1,16 @@
-$use <stringbuilder@1.0.0>
-
 $include <std.fl>
-$include <stringbuilder.fl>
 
 function testStringBuilder(int argc) -> void {
-    stringbuild_initial_init();
-
-    stringbuild_init();
-    stringbuild_append_str("hello with ");
-    stringbuild_append_int(argc, 10);
-    stringbuild_append_str(" argument");
-    if argc > 1 {
-        stringbuild_append_str("s");
+    str string = string_new();
+    end {
+        string_destroy(string);
     }
-    prints(stringbuild_finish());
+
+    string = string_append(string, "hello with ");
+    string = string_append_int(string, argc, 10);
+    string = string_append(string, " argument");
+    if argc > 1 {
+        string = string_append_chr(string, 's');
+    }
+    prints(string);
 }

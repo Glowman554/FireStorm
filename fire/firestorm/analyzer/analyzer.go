@@ -298,6 +298,10 @@ func (a *Analyzer) analyzeCallgraph(entry string) {
 		}
 		visited[name] = true
 		fun := a.analyzedFunctions[name]
+		if fun == nil {
+			return
+		}
+		
 		for i := range fun.FunctionCalls {
 			visit(fun.FunctionCalls[i])
 		}

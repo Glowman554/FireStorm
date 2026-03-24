@@ -1,0 +1,74 @@
+offset s_header {
+    int capacity;
+    int length;
+}
+
+function string_new() -> ptr {
+    int initial_capacity = 16;
+
+    ptr header = allocate(s_header_size + initial_capacity);
+    set_int(offset(header, s_header_capacity), initial_capacity);
+    set_int(offset(header, s_header_length), 0);
+
+    return header + s_header_size;
+}
+
+
+
+function string_append_chr(str string, chr c) -> str {
+    ptr header = string - s_header_size;
+
+    int capacity = get_int(offset(header, s_header_capacity));
+    int length = get_int(offset(header, s_header_length));
+
+    if (length + 1) > capacity {
+        int old_size = s_header_size + capacity;
+        capacity = capacity * 2;
+
+        ptr new_header = allocate(s_header_size + capacity);
+        memory_area_copy_8(new_header, header, old_size);
+
+        deallocate(header);
+        header = new_header;
+        string = new_header + s_header_size;
+        set_int(offset(header, s_header_capacity), capacity);
+    }
+
+    chr[] data_ptr = string + length;
+    data_ptr[0] = c;
+    set_int(offset(header, s_header_length), length + 1);
+
+    return string;
+}
+
+
+function string_append(str string, chr[] s) -> str {
+    while s[0] {
+        string = string_append_chr(string, s[0]);
+        s++;
+    }
+
+    return string;
+}
+
+function string_append_int(str string, int number, int base) -> str {
+    str s = string_from_int(number, base);
+    end {
+        string_delete(s);
+    }
+
+    string = string_append(string, s);
+    return string;
+}
+
+
+function string_destroy(str string) -> void {
+    ptr header = string - s_header_size;
+    deallocate(header);
+}
+
+function string_from(str s) -> str {
+    str string = string_new();
+    string = string_append(string, s);
+    return string;
+}
