@@ -20,6 +20,7 @@ var AvailableCommands = map[string]command.Command{
 	"register":   commands.Register{},
 	"delete":     commands.Delete{},
 	"deploy":     commands.Deploy{},
+	"bindgen":    commands.Bindgen{},
 }
 
 func main() {

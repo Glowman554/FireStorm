@@ -352,7 +352,9 @@ func (a *Analyzer) Analyze() {
 		}
 	}
 
-	a.analyzeCallgraph("main")
+	if _, exists := a.analyzedFunctions["main"]; exists {
+		a.analyzeCallgraph("main")
+	}
 
 	for i := range a.functionKeep {
 		name := a.functionKeep[i]

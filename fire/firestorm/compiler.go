@@ -19,7 +19,7 @@ func isOptionActive(option string) bool {
 	return false
 }
 
-func prepareCompilation(output string, code []byte, includes []string) (*node.Node, string, Preprocessor, *analyzer.Analyzer) {
+func PrepareCompilation(output string, code []byte, includes []string) (*node.Node, string, Preprocessor, *analyzer.Analyzer) {
 	preprocessor := NewPreprocessor(includes)
 	processedCode := preprocessor.Process(string(code))
 	if isOptionActive("DEBUG_PROCESSED_CODE") {
@@ -58,7 +58,7 @@ func Compile(input string, output string, target string, includes []string) {
 
 	switch target {
 	case "bytecode":
-		global, processedCode, preprocessor, analyzer := prepareCompilation(output, code, includes)
+		global, processedCode, preprocessor, analyzer := PrepareCompilation(output, code, includes)
 
 		bc := bytecode.NewBYTECODE(global, processedCode, analyzer)
 		result := bc.Compile()
@@ -118,7 +118,7 @@ func Compile(input string, output string, target string, includes []string) {
 		}
 
 	default:
-		global, processedCode, _, analyzer := prepareCompilation(output, code, includes)
+		global, processedCode, _, analyzer := PrepareCompilation(output, code, includes)
 
 		bc := llvm.NewLLVM(global, target, processedCode, analyzer)
 		result := bc.Compile()
