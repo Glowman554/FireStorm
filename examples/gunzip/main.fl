@@ -1,4 +1,4 @@
-$use <stdlib@1.0.8>
+$use <stdlib@1.1.1>
 $use <tinf@1.0.0>
 
 $include <std.fl>
@@ -9,22 +9,15 @@ function read_le32(chr[] p) -> int {
 }
 
 function print_decompress_message(int dlen) -> void {
-    str dlen_str = string_from_int(dlen, 10);
+    str string = string_from("decompressed ");
     end {
-        string_delete(dlen_str);
+        string_destroy(string);
     }
 
-    str result_str_tmp = string_join("decompressed ", dlen_str);
-    end {
-        string_delete(result_str_tmp);
-    }
+    string = string_append_int(string, dlen, 10);
+    string = string_append(string, " bytes!");
 
-    str result_str = string_join(result_str_tmp, " bytes!");
-    end {
-        string_delete(result_str);
-    }
-
-    prints(result_str);
+    prints(string);
 }
 
 function spark(int argc, str[] argv) -> int {
