@@ -336,6 +336,7 @@ func (a *Analyzer) Analyze() {
 			a.globalUsage[nd.Name] = false
 
 		case node.OFFSET:
+			a.analyzeOffset(nodes[i].Value.(parser.Offset))
 
 		case node.FUNCTION:
 			a.functionUsage[nodes[i].Value.(function.Function).Name] = false
